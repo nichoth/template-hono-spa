@@ -1,0 +1,23 @@
+.card {
+    background: var(--color-white);
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px var(--color-shadow);
+
+    & h2 {
+        margin-top: 0;
+        color: var(--color-heading);
+        font-size: 1.1rem;
+    }
+
+    & p {
+        margin-bottom: 1rem;
+    }
+
+    & form {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+}

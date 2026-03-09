@@ -37,7 +37,6 @@ body {
 }
 
 .hero {
-    text-align: center;
     margin: 2rem 0;
 
     & h1 {
@@ -98,8 +97,8 @@ input[type="text"] {
 .counter-display {
     font-size: 3rem;
     font-weight: bold;
-    text-align: center;
     padding: 1rem;
+    text-align: center;
 }
 
 .counter-buttons {
@@ -117,7 +116,6 @@ input[type="text"] {
     padding: 1rem;
     min-height: 3.2rem;
     background: var(--color-success-bg);
-    text-align: center;
     margin-top: 1rem;
 }
 

@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "template-hono-preact-test",
+  "main": "src/server/index.tsx",
+  "compatibility_date": "2025-12-17",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": "./_public/",
+    "not_found_handling": "none",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "NODE_ENV": "test"
+  }
+}

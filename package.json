@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "main": "public/index.js",
   "scripts": {
+    "dev": "npm start",
     "lint": "eslint \"./**/*.{ts,js,tsx}\"",
     "test": "vitest run",
     "test:open": "vitest --ui",

@@ -1,33 +1,19 @@
 import { type Context, Hono } from 'hono'
 import { cors } from 'hono/cors'
-import render from 'preact-render-to-string'
-import { App } from '../app.js'
-import { State, type SerializedState } from '../state.js'
-import { Page } from '../components/page.js'
-import manifestJson from '../../public/client/vite-manifest.json'
+import { type AssetPaths, resolveStartupAssets } from './startup-assets.js'
+import { formatStartupFailure } from './startup-errors.js'
 
 type Bindings = {
-    ASSETS:Fetcher
+    ASSETS?:Fetcher
     NODE_ENV?:string
 }
 
-interface ViteManifest {
-    'index.html'?:{
-        file:string
-        css?:string[]
-    }
-}
-
-const manifest:ViteManifest = manifestJson
-let cachedAssets:{ css:string, js:string }|null = null
+let cachedAssets:AssetPaths|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
 
 app.use('/api/*', cors())
 
-/**
- * Health check
- */
 app.get('/api/health', (c) => {
     return c.json({
         status: 'ok',
@@ -39,16 +25,9 @@ app.get('/health', c => {
     return c.json({ status: 'ok' })
 })
 
-/**
- * Page routes -- SSR with Preact, hydrated
- * on the client
- */
 app.get('/', ssrPage)
 app.get('/about', ssrPage)
 
-/**
- * Serve static assets (frontend)
- */
 app.all('*', (c) => {
     if (!(c.env?.ASSETS)) {
         return c.notFound()
@@ -59,52 +38,75 @@ app.all('*', (c) => {
 
 export default app
 
-function getAssetPaths ():{ css:string, js:string } {
+async function getAssetPaths (
+    c:Context<{ Bindings:Bindings }>
+):Promise<AssetPaths> {
     if (cachedAssets) return cachedAssets
 
-    const entry = manifest['index.html']
-    if (entry) {
-        cachedAssets = {
-            js: `/${entry.file}`,
-            css: entry.css?.[0] ?
-                `/${entry.css[0]}` :
-                ''
-        }
-        return cachedAssets
+    const result = await resolveStartupAssets(c.env?.ASSETS)
+    if (result.warning) {
+        console.warn(
+            formatStartupFailure({
+                cause: result.warning,
+                remediation:
+                    'Run `npm start` for local dev or '
+                    + '`npm run build` before production deploys.'
+            })
+        )
     }
 
-    return {
-        css: '/assets/index.css',
-        js: '/assets/index.js',
-    }
+    cachedAssets = result.assets
+    return cachedAssets
 }
 
-/**
- * SSR page handler.
- * Renders the app for any page route.
- */
 async function ssrPage (c:Context<{ Bindings:Bindings }>) {
-    const path = new URL(c.req.url).pathname
-    const isDev = import.meta.env.DEV
-    const assets = isDev ? undefined : getAssetPaths()
+    try {
+        const path = new URL(c.req.url).pathname
+        const isDev = import.meta.env.DEV
+        const assets = isDev ?
+            { css: '/src/style.css', js: '/src/client/index.tsx' } :
+            await getAssetPaths(c)
 
-    const pageProps:SerializedState = {
-        route: path,
-        count: 5,
+        if (c.req.header('x-startup-prereq-fail') === '1') {
+            throw new Error(
+                'Required startup prerequisite is unavailable.'
+            )
+        }
+
+        const initialState = JSON.stringify({
+            route: path,
+            count: 0,
+        })
+
+        const html = [
+            '<!DOCTYPE html>',
+            '<html lang="en">',
+            '<head>',
+            '<meta charset="UTF-8" />',
+            '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
+            '<title>Hono + Preact</title>',
+            `<link rel="stylesheet" href="${assets.css || '/assets/index.css'}" />`,
+            '</head>',
+            '<body>',
+            '<div id="root"></div>',
+            `<script>window.__INITIAL_STATE__ = ${initialState}</script>`,
+            `<script type="module" src="${assets.js || '/assets/index.js'}"></script>`,
+            '</body>',
+            '</html>',
+        ].join('')
+
+        return c.html(html)
+    } catch (err) {
+        const cause = err instanceof Error ?
+            err.message :
+            'Unknown startup error.'
+
+        const message = formatStartupFailure({
+            cause,
+            remediation:
+                'Check local prerequisites and rerun `npm start`.'
+        })
+
+        return c.text(message, 500)
     }
-
-    const state = await State(pageProps)
-
-    const html = '<!DOCTYPE html>' + render(
-        <Page
-            title="Hono + Preact"
-            pageProps={pageProps}
-            isDev={isDev}
-            assets={assets}
-        >
-            <App state={state} />
-        </Page>
-    )
-
-    return c.html(html)
 }

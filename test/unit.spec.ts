@@ -34,7 +34,7 @@ describe('Hono worker', () => {
             }
         )
 
-        it('includes __INITIAL_STATE__ script',
+        it('does not inject server bootstrap state',
             async () => {
                 const request = new Request(
                     'http://example.com/'
@@ -46,11 +46,8 @@ describe('Hono worker', () => {
                 await waitOnExecutionContext(ctx)
 
                 const html = await response.text()
-                expect(html).toContain(
-                    'window.__INITIAL_STATE__'
-                )
-                expect(html).toContain(
-                    '"count":0'
+                expect(html).not.toContain(
+                    '__INITIAL_STATE__'
                 )
             }
         )

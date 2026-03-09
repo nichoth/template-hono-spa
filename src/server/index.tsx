@@ -25,8 +25,8 @@ app.get('/health', c => {
     return c.json({ status: 'ok' })
 })
 
-app.get('/', ssrPage)
-app.get('/about', ssrPage)
+app.get('/', shellPage)
+app.get('/about', shellPage)
 
 app.all('*', (c) => {
     if (!(c.env?.ASSETS)) {
@@ -59,9 +59,8 @@ async function getAssetPaths (
     return cachedAssets
 }
 
-async function ssrPage (c:Context<{ Bindings:Bindings }>) {
+async function shellPage (c:Context<{ Bindings:Bindings }>) {
     try {
-        const path = new URL(c.req.url).pathname
         const isDev = import.meta.env.DEV
         const assets = isDev ?
             { css: '/src/style.css', js: '/src/client/index.tsx' } :
@@ -72,11 +71,6 @@ async function ssrPage (c:Context<{ Bindings:Bindings }>) {
                 'Required startup prerequisite is unavailable.'
             )
         }
-
-        const initialState = JSON.stringify({
-            route: path,
-            count: 0,
-        })
 
         const html = [
             '<!DOCTYPE html>',
@@ -89,7 +83,6 @@ async function ssrPage (c:Context<{ Bindings:Bindings }>) {
             '</head>',
             '<body>',
             '<div id="root"></div>',
-            `<script>window.__INITIAL_STATE__ = ${initialState}</script>`,
             `<script type="module" src="${assets.js || '/assets/index.js'}"></script>`,
             '</body>',
             '</html>',

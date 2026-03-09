@@ -31,18 +31,15 @@ describe('Integration tests', () => {
             }
         )
 
-        it('injects initial state for hydration',
+        it('does not inject server bootstrap state',
             async () => {
                 const response = await SELF.fetch(
                     'http://localhost/'
                 )
                 const html = await response.text()
 
-                expect(html).toContain(
-                    'window.__INITIAL_STATE__'
-                )
-                expect(html).toContain(
-                    '"count":0'
+                expect(html).not.toContain(
+                    '__INITIAL_STATE__'
                 )
             }
         )

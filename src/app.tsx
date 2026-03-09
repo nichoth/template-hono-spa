@@ -45,8 +45,7 @@ function renderRoute (state:AppState) {
                 <>
                     <p>
                         This page is rendered on the
-                        server with Hono, then hydrated on
-                        the client with Preact.
+                        client with Preact.
                     </p>
                     <Counter count={state.count} />
                 </>

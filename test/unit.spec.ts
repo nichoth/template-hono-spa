@@ -5,6 +5,12 @@ import {
 } from 'cloudflare:test'
 import { describe, it, expect } from 'vitest'
 import worker from '../src/server/index.js'
+import {
+    resolveStartupAssets
+} from '../src/server/startup-assets.js'
+import {
+    formatStartupFailure
+} from '../src/server/startup-errors.js'
 
 describe('Hono worker', () => {
     describe('Homepage', () => {
@@ -44,12 +50,12 @@ describe('Hono worker', () => {
                     'window.__INITIAL_STATE__'
                 )
                 expect(html).toContain(
-                    '"count":5'
+                    '"count":0'
                 )
             }
         )
 
-        it('SSRs the Counter component', async () => {
+        it('returns a client-rendered shell', async () => {
             const request = new Request(
                 'http://example.com/'
             )
@@ -60,8 +66,8 @@ describe('Hono worker', () => {
             await waitOnExecutionContext(ctx)
 
             const html = await response.text()
-            expect(html).toContain('Counter')
-            expect(html).toContain('counter-display')
+            expect(html).toContain('<div id="root"></div>')
+            expect(html).not.toContain('counter-display')
         })
     })
 
@@ -118,5 +124,59 @@ describe('Hono worker', () => {
                 expect(response.status).toBe(404)
             }
         )
+    })
+
+    describe('Startup asset resolution', () => {
+        it('falls back to default assets when no binding exists',
+            async () => {
+                const result = await resolveStartupAssets()
+                expect(result.recovered).toBe(true)
+                expect(result.assets).toEqual({
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
+                })
+                expect(result.warning).toContain(
+                    'Static asset binding'
+                )
+            }
+        )
+
+        it('reads manifest asset paths from asset binding',
+            async () => {
+                const fetcher = {
+                    fetch: async () => new Response(
+                        JSON.stringify({
+                            'index.html': {
+                                file: 'client/index.js',
+                                css: ['client/index.css']
+                            }
+                        }),
+                        { status: 200 }
+                    )
+                } as unknown as Fetcher
+
+                const result = await resolveStartupAssets(fetcher)
+                expect(result.recovered).toBe(false)
+                expect(result.assets).toEqual({
+                    css: '/client/index.css',
+                    js: '/client/index.js',
+                })
+            }
+        )
+    })
+
+    describe('Startup failure messaging', () => {
+        it('formats actionable failure text', () => {
+            const message = formatStartupFailure({
+                cause: 'Manifest missing',
+                remediation: 'Run npm start'
+            })
+            expect(message).toContain(
+                'Startup prerequisite error: Manifest missing'
+            )
+            expect(message).toContain(
+                'Next step: Run npm start'
+            )
+        })
     })
 })

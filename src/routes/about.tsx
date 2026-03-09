@@ -13,4 +13,3 @@ export const About:FunctionComponent = function () {
         </section>
     )
 }
-

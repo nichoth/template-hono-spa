@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
             }
         },
         plugins: [
-            cloudflare({ viteEnvironment: { name: 'ssr' } }),
+            cloudflare(),
         ],
         // https://github.com/vitejs/vite/issues/8644#issuecomment-1159308803
         esbuild: {

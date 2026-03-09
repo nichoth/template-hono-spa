@@ -3,16 +3,18 @@
 A template for web apps with [Hono](https://hono.dev/) and
 [Preact](https://preactjs.com/).
 
-This is a server that renders JSX with `preact-render-to-string`.
+This is a server that serves a client-rendered Preact app shell.
 At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
 1. A Cloudflare Worker bundle (the server)                                    
 2. Client-side JS/CSS assets in public/
 
-At request time, when the Worker handles a GET `/` request, it SSRs the page.
-`preact-render-to-string` renders `<App initialCount={5} />` into HTML, the Page
-component wraps it in a full document, and the __INITIAL_STATE__ script tag
-is injected. The server sets the initial count state to `5`.
+At request time, when the Worker handles a GET `/` request, it returns a shell
+document with an empty `#root`, initial state, and client script tags. The app
+is rendered in the browser by Preact.
 
+```sh
+export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
+```
 
 <details><summary><h2>Contents</h2></summary>
 
@@ -78,6 +80,13 @@ is why the worker server works locally.
 
 Vite builds to `public/`, but we do not use that folder during development.
 
+`npm start` is the canonical local entrypoint and should work from a clean
+checkout. Missing generated `public/client/vite-manifest.json` should not
+prevent local startup.
+
+If startup prerequisites fail, the server now returns an actionable message
+that includes a concrete next step.
+
 
 ## Components
 
@@ -87,9 +96,9 @@ handles it. In production, `ASSETS` does exist, so it serves the static asset.
 
 When you run `npm start`, the Cloudflare Vite plugin routes requests
 to your Hono server at
-[`src/server/index.tsx`](./src/server/index.tsx), which renders the
-`Page` component. The shared `App` component (containing `Counter`,
-`Card`) is server-side rendered into that page.
+[`src/server/index.tsx`](./src/server/index.tsx), which returns the
+HTML shell and client assets. The shared `App` component (containing
+`Counter`, `Card`) is rendered in the browser.
 
 ### `page.tsx`
 
@@ -108,15 +117,11 @@ export function Page ({
 It injects `appProps` as `window.__INITIAL_STATE__` so the client
 can hydrate with the same data.
 
----
+## The Client Render Pattern
 
-## The SSR + Hydration Pattern
-
-* Server renders the full HTML with Preact components
-  via `preact-render-to-string`
-* `window.__INITIAL_STATE__` passes initial props to the client
-* The client calls `hydrate()` to attach event handlers
-  to the existing DOM
+* Server returns the HTML shell and `window.__INITIAL_STATE__`
+* Client script loads and renders the app into `#root`
+* Route state is sourced from the browser URL
 
 ---
 

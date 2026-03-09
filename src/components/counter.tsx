@@ -7,13 +7,7 @@ export const Counter:FunctionComponent<{ count:Signal<number> }> = function (
     { count }:{ count:Signal<number> }
 ) {
     return (
-        <Card
-            title="Counter"
-            description={
-                'An interactive counter with '
-                + 'Preact hydration:'
-            }
-        >
+        <Card title="Counter">
             <div class="counter-display">{count}</div>
             <div class="counter-buttons">
                 <Button

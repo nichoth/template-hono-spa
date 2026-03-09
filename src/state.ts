@@ -7,36 +7,25 @@ export type AppState = {
 }
 
 /**
- * The serializable shape of state, used for
- * __INITIAL_STATE__ transfer from server to client.
- */
-export interface SerializedState {
-    route?:string;
-    count?:number;
-}
-
-/**
  * Setup application state.
  *   - routes
  *   - count
  *
  * On the client, dynamically imports route-event to
  * handle client-side navigation.
- * On the server, just creates signals from the
- * given initial values.
+ * On non-browser runtimes, this initializes with
+ * safe defaults.
  */
-export async function State (
-    opts?:SerializedState
-):Promise<AppState> {  // eslint-disable-line indent
+export async function State ():Promise<AppState> {
     const isBrowser = typeof document !== 'undefined'
 
     const state:AppState = {
         route: signal<string>(
             isBrowser ?
                 location.pathname + location.search :
-                (opts?.route ?? '/')
+                '/'
         ),
-        count: signal<number>(opts?.count ?? 0),
+        count: signal<number>(0),
     }
 
     if (isBrowser) {

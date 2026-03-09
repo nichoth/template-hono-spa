@@ -8,9 +8,9 @@ At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
 1. A Cloudflare Worker bundle (the server)                                    
 2. Client-side JS/CSS assets in public/
 
-At request time, when the Worker handles a GET `/` request, it returns a shell
-document with an empty `#root`, initial state, and client script tags. The app
-is rendered in the browser by Preact.
+At request time, when the Worker handles app-page requests, it returns a shell
+document with an empty `#root` plus client script tags. The app is rendered in
+the browser by Preact.
 
 ```sh
 export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
@@ -26,9 +26,7 @@ export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
-- [Components](#components)
-  * [`page.tsx`](#pagetsx)
-- [The SSR + Hydration Pattern](#the-ssr--hydration-pattern)
+- [Rendering](#rendering)
 - [Notes](#notes)
 
 <!-- tocstop -->
@@ -88,40 +86,13 @@ If startup prerequisites fail, the server now returns an actionable message
 that includes a concrete next step.
 
 
-## Components
+## Rendering
 
-In the worker file (`./src/server/index.tsx`), it checks if we are in local dev
-or production. In dev, `ASSETS` doesn't exist; it returns `notFound()` and Vite
-handles it. In production, `ASSETS` does exist, so it serves the static asset.
-
-When you run `npm start`, the Cloudflare Vite plugin routes requests
-to your Hono server at
-[`src/server/index.tsx`](./src/server/index.tsx), which returns the
-HTML shell and client assets. The shared `App` component (containing
-`Counter`, `Card`) is rendered in the browser.
-
-### `page.tsx`
-
-The `page.tsx` is a layout skeleton that accepts props.
-
-```ts
-export function Page ({
-    title,
-    appProps,
-    isDev = false,
-    assets,
-    children
-}:PageProps)
-```
-
-It injects `appProps` as `window.__INITIAL_STATE__` so the client
-can hydrate with the same data.
-
-## The Client Render Pattern
-
-* Server returns the HTML shell and `window.__INITIAL_STATE__`
+* Server returns the HTML shell only
 * Client script loads and renders the app into `#root`
 * Route state is sourced from the browser URL
+* Client route definitions live in `src/client/routes/index.ts`
+* Server keeps ownership of `/api/*` and `/health`
 
 ---
 

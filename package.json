@@ -21,10 +21,9 @@
     "@substrate-system/a11y": "^0.0.17",
     "@substrate-system/button": "^0.0.31",
     "@substrate-system/css-normalize": "^0.0.13",
-    "@substrate-system/dom": "^0.1.13",
+    "@substrate-system/routes": "^5.0.5",
     "hono": "^4.11.3",
     "preact": "^10.28.3",
-    "preact-render-to-string": "^6.6.5",
     "route-event": "^7.4.0"
   },
   "devDependencies": {
@@ -33,6 +32,7 @@
     "@cloudflare/workers-types": "^4.20250109.0",
     "@hono/vite-dev-server": "^0.23.0",
     "@substrate-system/debug": "^0.9.38",
+    "@substrate-system/dom": "^0.1.13",
     "@substrate-system/tapzero": "^0.10.16",
     "@types/node": "^25.0.9",
     "@typescript-eslint/eslint-plugin": "^8.18.2",

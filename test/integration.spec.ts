@@ -2,8 +2,8 @@ import { SELF } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 
 describe('Integration tests', () => {
-    describe('Homepage rendering', () => {
-        it('renders full HTML page', async () => {
+    describe('App shell', () => {
+        it('renders full HTML shell', async () => {
             const response = await SELF.fetch(
                 'http://localhost/'
             )
@@ -13,37 +13,31 @@ describe('Integration tests', () => {
             expect(html).toContain('<html')
             expect(html).toContain('</html>')
             expect(html).toContain('Hono + Preact')
+            expect(html).toContain('<div id="root"></div>')
+            expect(html).not.toContain('__INITIAL_STATE__')
         })
 
-        it('returns a client-rendered shell',
+        it('serves shell for known client route deep links',
             async () => {
                 const response = await SELF.fetch(
-                    'http://localhost/'
+                    'http://localhost/about'
                 )
                 const html = await response.text()
 
-                expect(html).toContain(
-                    '<div id="root"></div>'
-                )
-                expect(html).not.toContain(
-                    'counter-display'
-                )
+                expect(response.status).toBe(200)
+                expect(html).toContain('<div id="root"></div>')
             }
         )
 
-        it('injects initial state for hydration',
+        it('serves shell for unknown client paths',
             async () => {
                 const response = await SELF.fetch(
-                    'http://localhost/'
+                    'http://localhost/unknown-path'
                 )
                 const html = await response.text()
 
-                expect(html).toContain(
-                    'window.__INITIAL_STATE__'
-                )
-                expect(html).toContain(
-                    '"count":0'
-                )
+                expect(response.status).toBe(200)
+                expect(html).toContain('<div id="root"></div>')
             }
         )
 
@@ -61,17 +55,12 @@ describe('Integration tests', () => {
             )
         })
 
-        it('starts successfully without a manifest dependency in dev',
-            async () => {
-                const response = await SELF.fetch(
-                    'http://localhost/'
-                )
-                const html = await response.text()
-
-                expect(response.status).toBe(200)
-                expect(html).toContain('Hono + Preact')
-            }
-        )
+        it('returns asset-like misses as not found', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/missing-client.js'
+            )
+            expect(response.status).toBe(404)
+        })
     })
 
     describe('API endpoints', () => {
@@ -89,6 +78,18 @@ describe('Integration tests', () => {
                 status: 'ok',
                 service: 'template-hono-preact',
             })
+        })
+
+        it('worker health endpoint stays available', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/health'
+            )
+            expect(response.status).toBe(200)
+
+            const data = await response.json() as {
+                status:string
+            }
+            expect(data).toEqual({ status: 'ok' })
         })
     })
 

@@ -25,18 +25,40 @@ app.get('/health', c => {
     return c.json({ status: 'ok' })
 })
 
-app.get('/', ssrPage)
-app.get('/about', ssrPage)
+app.get('*', async (c) => {
+    const pathname = new URL(c.req.url).pathname
+
+    if (shouldServeShell(pathname)) {
+        return shellPage(c)
+    }
+
+    return fetchAsset(c)
+})
 
 app.all('*', (c) => {
+    return fetchAsset(c)
+})
+
+export default app
+
+function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     if (!(c.env?.ASSETS)) {
         return c.notFound()
     }
 
     return c.env.ASSETS.fetch(c.req.raw)
-})
+}
 
-export default app
+function shouldServeShell (pathname:string):boolean {
+    if (pathname === '/health') return false
+    if (pathname === '/api' || pathname.startsWith('/api/')) return false
+
+    return !looksLikeAssetPath(pathname)
+}
+
+function looksLikeAssetPath (pathname:string):boolean {
+    return /\.[a-z0-9]+$/i.test(pathname)
+}
 
 async function getAssetPaths (
     c:Context<{ Bindings:Bindings }>
@@ -59,9 +81,8 @@ async function getAssetPaths (
     return cachedAssets
 }
 
-async function ssrPage (c:Context<{ Bindings:Bindings }>) {
+async function shellPage (c:Context<{ Bindings:Bindings }>) {
     try {
-        const path = new URL(c.req.url).pathname
         const isDev = import.meta.env.DEV
         const assets = isDev ?
             { css: '/src/style.css', js: '/src/client/index.tsx' } :
@@ -72,11 +93,6 @@ async function ssrPage (c:Context<{ Bindings:Bindings }>) {
                 'Required startup prerequisite is unavailable.'
             )
         }
-
-        const initialState = JSON.stringify({
-            route: path,
-            count: 0,
-        })
 
         const html = [
             '<!DOCTYPE html>',
@@ -89,7 +105,6 @@ async function ssrPage (c:Context<{ Bindings:Bindings }>) {
             '</head>',
             '<body>',
             '<div id="root"></div>',
-            `<script>window.__INITIAL_STATE__ = ${initialState}</script>`,
             `<script type="module" src="${assets.js || '/assets/index.js'}"></script>`,
             '</body>',
             '</html>',

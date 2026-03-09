@@ -52,6 +52,13 @@ function fetchAsset (c:Context<{ Bindings:Bindings }>) {
 function shouldServeShell (pathname:string):boolean {
     if (pathname === '/health') return false
     if (pathname === '/api' || pathname.startsWith('/api/')) return false
+    if (
+        pathname.startsWith('/@')
+        || pathname.startsWith('/__vite')
+        || pathname.startsWith('/node_modules/')
+    ) {
+        return false
+    }
 
     return !looksLikeAssetPath(pathname)
 }

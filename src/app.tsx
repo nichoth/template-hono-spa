@@ -1,17 +1,28 @@
+import { type FunctionComponent } from 'preact'
+import { useComputed } from '@preact/signals'
+import { createRouter, routes } from './client/routes/index.js'
 import type { AppState } from './state.js'
-import { Counter } from './components/counter.js'
-import { About } from './routes/about.js'
+
+const router = createRouter()
 
 export function App ({ state }:{ state:AppState }) {
+    const path = useComputed(() => {
+        return normalizePath(state.route.value)
+    })
+
+    const match = useComputed(() => {
+        return router.match(path.value)
+    })
+
     return (
         <>
             <header class="hero">
                 <h1>Hono + Preact</h1>
-                <Nav route={state.route.value} />
+                <Nav route={path.value} />
             </header>
 
             <main class="cards">
-                {renderRoute(state)}
+                {renderRoute(match.value, state)}
             </main>
         </>
     )
@@ -21,40 +32,48 @@ function Nav ({ route }:{ route:string }) {
     return (
         <nav aria-label="Main navigation">
             <ul>
-                <li class={route === '/' ?
-                    'active' :
-                    ''}
-                >
-                    <a href="/">Home</a>
-                </li>
-                <li class={route === '/about' ?
-                    'active' :
-                    ''}
-                >
-                    <a href="/about">About</a>
-                </li>
+                {routes.map(appRoute => {
+                    return (
+                        <li class={route === appRoute.href ? 'active' : ''}>
+                            <a href={appRoute.href}>{appRoute.text}</a>
+                        </li>
+                    )
+                })}
             </ul>
         </nav>
     )
 }
 
-function renderRoute (state:AppState) {
-    switch (state.route.value) {
-        case '/':
-            return (
-                <>
-                    <p>
-                        This page is rendered on the
-                        client with Preact.
-                    </p>
-                    <Counter count={state.count} />
-                </>
-            )
-        case '/about':
-            return <About />
-        default:
-            return <NotFound />
+function renderRoute (match:unknown, state:AppState) {
+    if (!isRouteMatch(match)) {
+        return <NotFound />
     }
+
+    const RouteComponent = match.action(match, state.route.value) as FunctionComponent<{
+        state:AppState
+    }>
+
+    return <RouteComponent state={state} />
+}
+
+function normalizePath (route:string):string {
+    if (!route) return '/'
+
+    const queryStart = route.indexOf('?')
+    if (queryStart >= 0) {
+        return route.slice(0, queryStart) || '/'
+    }
+
+    return route
+}
+
+function isRouteMatch (value:unknown):value is {
+    action:(match:unknown, path:string) => FunctionComponent<{ state:AppState }>;
+} {
+    return !!value
+        && typeof value === 'object'
+        && 'action' in value
+        && typeof (value as { action:unknown }).action === 'function'
 }
 
 function NotFound () {

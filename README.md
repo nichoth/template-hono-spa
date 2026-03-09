@@ -8,9 +8,9 @@ At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
 1. A Cloudflare Worker bundle (the server)                                    
 2. Client-side JS/CSS assets in public/
 
-At request time, when the Worker handles a GET `/` request, it returns a shell
-document with an empty `#root`, initial state, and client script tags. The app
-is rendered in the browser by Preact.
+At request time, when the Worker handles app-page requests, it returns a shell
+document with an empty `#root` plus client script tags. The app is rendered in
+the browser by Preact.
 
 ```sh
 export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
@@ -91,6 +91,8 @@ that includes a concrete next step.
 * Server returns the HTML shell only
 * Client script loads and renders the app into `#root`
 * Route state is sourced from the browser URL
+* Client route definitions live in `src/client/routes/index.ts`
+* Server keeps ownership of `/api/*` and `/health`
 
 ---
 

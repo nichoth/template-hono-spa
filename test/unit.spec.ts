@@ -11,10 +11,11 @@ import {
 import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
+import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
 
 describe('Hono worker', () => {
-    describe('Homepage', () => {
-        it('renders the homepage with HTML structure',
+    describe('App shell routes', () => {
+        it('renders homepage shell HTML',
             async () => {
                 const request = new Request(
                     'http://example.com/'
@@ -30,31 +31,15 @@ describe('Hono worker', () => {
 
                 expect(html).toContain('<html lang="en">')
                 expect(html).toContain('Hono + Preact')
-                expect(html).toContain('<div id="root">')
+                expect(html).toContain('<div id="root"></div>')
+                expect(html).not.toContain('__INITIAL_STATE__')
+                expect(html).not.toContain('counter-display')
             }
         )
 
-        it('does not inject server bootstrap state',
-            async () => {
-                const request = new Request(
-                    'http://example.com/'
-                )
-                const ctx = createExecutionContext()
-                const response = await worker.fetch(
-                    request, env, ctx
-                )
-                await waitOnExecutionContext(ctx)
-
-                const html = await response.text()
-                expect(html).not.toContain(
-                    '__INITIAL_STATE__'
-                )
-            }
-        )
-
-        it('returns a client-rendered shell', async () => {
+        it('serves shell for deep-link routes', async () => {
             const request = new Request(
-                'http://example.com/'
+                'http://example.com/some/new/path'
             )
             const ctx = createExecutionContext()
             const response = await worker.fetch(
@@ -62,10 +47,25 @@ describe('Hono worker', () => {
             )
             await waitOnExecutionContext(ctx)
 
+            expect(response.status).toBe(200)
             const html = await response.text()
             expect(html).toContain('<div id="root"></div>')
-            expect(html).not.toContain('counter-display')
         })
+
+        it('returns not found for asset-like route misses',
+            async () => {
+                const request = new Request(
+                    'http://example.com/missing-file.js'
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request, env, ctx
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(404)
+            }
+        )
     })
 
     describe('API endpoints', () => {
@@ -106,21 +106,24 @@ describe('Hono worker', () => {
             }
             expect(data).toEqual({ status: 'ok' })
         })
+    })
 
-        it('returns 404 for unknown routes',
-            async () => {
-                const request = new Request(
-                    'http://example.com/does-not-exist'
-                )
-                const ctx = createExecutionContext()
-                const response = await worker.fetch(
-                    request, env, ctx
-                )
-                await waitOnExecutionContext(ctx)
+    describe('Client route definitions', () => {
+        it('keeps centralized nav route metadata', () => {
+            expect(routes).toEqual([
+                { href: '/', text: 'Home' },
+                { href: '/about', text: 'About' },
+            ])
+        })
 
-                expect(response.status).toBe(404)
-            }
-        )
+        it('maps known routes and rejects unknown ones', () => {
+            const router = createRouter()
+            expect(router.match('/')).toBeTruthy()
+            expect(router.match('/about')).toBeTruthy()
+            expect(router.match('/missing')).toBeFalsy()
+            expect(isKnownClientRoute('/about')).toBe(true)
+            expect(isKnownClientRoute('/missing')).toBe(false)
+        })
     })
 
     describe('Startup asset resolution', () => {

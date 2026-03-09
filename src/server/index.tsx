@@ -25,18 +25,40 @@ app.get('/health', c => {
     return c.json({ status: 'ok' })
 })
 
-app.get('/', shellPage)
-app.get('/about', shellPage)
+app.get('*', async (c) => {
+    const pathname = new URL(c.req.url).pathname
+
+    if (shouldServeShell(pathname)) {
+        return shellPage(c)
+    }
+
+    return fetchAsset(c)
+})
 
 app.all('*', (c) => {
+    return fetchAsset(c)
+})
+
+export default app
+
+function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     if (!(c.env?.ASSETS)) {
         return c.notFound()
     }
 
     return c.env.ASSETS.fetch(c.req.raw)
-})
+}
 
-export default app
+function shouldServeShell (pathname:string):boolean {
+    if (pathname === '/health') return false
+    if (pathname === '/api' || pathname.startsWith('/api/')) return false
+
+    return !looksLikeAssetPath(pathname)
+}
+
+function looksLikeAssetPath (pathname:string):boolean {
+    return /\.[a-z0-9]+$/i.test(pathname)
+}
 
 async function getAssetPaths (
     c:Context<{ Bindings:Bindings }>

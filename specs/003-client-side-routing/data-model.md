@@ -5,13 +5,12 @@
 - **Description**: Route entry used by client-side navigation to determine view mapping and transition behavior.
 - **Fields**:
   - `path`: string
-  - `viewKey`: string
   - `displayLabel`: string
-  - `isDefault`: boolean
+  - `componentRef`: route component reference
 - **Validation Rules**:
   - `path` values must be unique among client-managed routes.
-  - Exactly one default route should be identified for initial app entry behavior.
-  - `viewKey` must map to a valid render target.
+  - `path` values should align with router matching entries.
+  - `componentRef` must map to a valid render target.
 - **State Transitions**:
   - `registered -> active` (when navigated)
   - `active -> inactive` (when user navigates elsewhere)

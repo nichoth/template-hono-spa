@@ -10,6 +10,7 @@
 
 - Client route definitions are available in dedicated routing structure.
 - App shell and client assets load successfully.
+- Route definitions are maintained under `src/client/routes/`.
 
 ## Guaranteed Behavior
 
@@ -17,6 +18,7 @@
 2. Browser history (back/forward) reflects route transitions predictably.
 3. Unknown client routes resolve to explicit fallback behavior.
 4. Server API/health endpoints remain available and are not consumed by client route handling.
+5. Non-asset app paths return the client shell so deep links can resolve client-side.
 
 ## Verification Signals
 

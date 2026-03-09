@@ -24,8 +24,8 @@ npm start
 
 ## 5. Validate deep-link and fallback behavior
 
-- Load a known deep-link route directly.
-- Load an unknown client route and confirm fallback behavior.
+- Load a known deep-link route directly (for example `/about`).
+- Load an unknown client route and confirm the shell loads and the app shows fallback behavior.
 
 ## 6. Validate server endpoint coexistence
 
@@ -41,5 +41,5 @@ HOME=/tmp npm test
 ## Expected Result
 
 - Client route transitions are smooth and history-aware.
-- Route definitions are centralized and maintainable.
+- Route definitions are centralized at `src/client/routes/index.ts` and remain maintainable.
 - Server endpoints remain stable while client routing is active.

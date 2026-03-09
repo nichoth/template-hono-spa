@@ -50,7 +50,10 @@ src/
 ├── app.tsx
 ├── client/
 │   ├── index.tsx
-│   └── routes.ts
+│   └── routes/
+│       ├── index.ts
+│       ├── home.tsx
+│       └── about.tsx
 ├── components/
 ├── routes/
 ├── server/

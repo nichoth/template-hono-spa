@@ -31,7 +31,7 @@
     "@cloudflare/vitest-pool-workers": "^0.12.4",
     "@cloudflare/workers-types": "^4.20250109.0",
     "@hono/vite-dev-server": "^0.23.0",
-    "@substrate-system/debug": "^0.9.38",
+    "@substrate-system/debug": "^0.9.60",
     "@substrate-system/dom": "^0.1.13",
     "@substrate-system/tapzero": "^0.10.16",
     "@types/node": "^25.0.9",

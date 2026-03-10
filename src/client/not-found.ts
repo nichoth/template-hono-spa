@@ -1,12 +1,10 @@
 import { type FunctionComponent } from 'preact'
-import htm from 'htm'
-import { h } from 'preact'
-
-const html = htm.bind(h)
+import { html } from 'htm/preact'
+import './not-found.css'
 
 export const NotFound:FunctionComponent = function NotFound () {
-    return html`<section class="not-found">
+    return html`<div class="not-found">
         <h2>404</h2>
         <p>Page not found.</p>
-    </section>`
+    </div>`
 }

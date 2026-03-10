@@ -1,8 +1,5 @@
 import type { FunctionComponent, ComponentChildren } from 'preact'
-import htm from 'htm'
-import { h, Fragment } from 'preact'
-
-const html = htm.bind(h)
+import { html } from 'htm/preact'
 
 interface CardProps {
     title:string
@@ -16,8 +13,8 @@ export const Card:FunctionComponent<CardProps> = function ({
     children
 }) {
     return html`<div class="card">
-            <h2>${title}</h2>
-            ${description ? html`<p>${description}</p>` : null}
-            <${Fragment}>${children}</${Fragment}>
-        </div>`
+        <h2>${title}</h2>
+        ${description ? html`<p>${description}</p>` : null}
+        ${children}
+    </div>`
 }

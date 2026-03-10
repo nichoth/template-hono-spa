@@ -11,6 +11,7 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - Filesystem static assets and generated build output (no new persistent storage) (004-rewrite-nav-jsx)
 - TypeScript (ES2022, strict mode) + Preact, route-event, Hono, Vite build pipeline (006-migrate-htm-rendering)
 - TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite (007-fix-grid-columns)
+- TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite build/runtime tooling (009-staging-basic-auth)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -30,7 +31,7 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
-- 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
+- 009-staging-basic-auth: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite build/runtime tooling
 - 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
 - 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
 

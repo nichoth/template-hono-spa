@@ -20,7 +20,9 @@
     --color-warning: #fde68a;
     --color-warning-border: #f59e0b;
     --layout-main-max-width: 76rem;
-    --layout-main-padding-inline: 1rem;
+    --layout-main-padding-inline: clamp(0.75rem, 4vw, 1rem);
+    --layout-main-padding-block: clamp(0.25rem, 2vw, 0.5rem);
+    --layout-grid-gap-mobile: 0.75rem;
     --layout-grid-gap: 1rem;
     --layout-grid-gap-wide: 1.5rem;
     --layout-card-min-width: 17rem;
@@ -30,6 +32,8 @@ main {
     max-width: var(--layout-main-max-width);
     margin: 0 auto;
     padding-inline: var(--layout-main-padding-inline);
+    padding-block: var(--layout-main-padding-block);
+    box-sizing: border-box;
 }
 
 a {
@@ -42,17 +46,19 @@ a {
 }
 
 header {
-    padding: 1rem;
-    min-height: 6.2rem;
-    width: 100vw;
+    padding: clamp(0.75rem, 2.5vw, 1rem);
+    min-height: 4.75rem;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+    box-sizing: border-box;
+    gap: 0.5rem;
 
     & h1 {
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 6vw, 2rem);
         margin: 0;
 
         & a {
@@ -65,7 +71,7 @@ header {
         & a {
             & img {
                 transition: all 0.2s;
-                width: 4rem;
+                width: clamp(2.25rem, 8vw, 4rem);
                 border-radius: 50%;
                 border: 1px solid black;
                 outline: 2px solid transparent;
@@ -100,7 +106,7 @@ h2 {
 
 .cards {
     display: grid;
-    gap: var(--layout-grid-gap);
+    gap: var(--layout-grid-gap-mobile);
 }
 
 input, .btn {
@@ -118,8 +124,11 @@ input, .btn {
     display: flex;
     gap: 0.5rem;
     justify-content: center;
+    flex-wrap: wrap;
+    min-width: 0;
 
     & .btn {
-        min-width: 3rem;
+        min-width: 2.5rem;
+        padding-inline: 0.75rem;
     }
 }

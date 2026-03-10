@@ -2,14 +2,10 @@
     width: 100%;
 
     & .cards-grid {
-        --min: 15ch;
-        --gap: 1rem;
-
         display: grid;
-        gap: var(--gap);
-        /* min() with 100% prevents overflow
-        in extra narrow spaces */
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min)), 1fr));
+        gap: var(--layout-grid-gap-mobile);
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
     }
 
     & .card {
@@ -18,8 +14,15 @@
     }
 }
 
+@media (min-width: 32rem) {
+    .route.home .cards-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--layout-grid-gap);
+    }
+}
+
 @media (min-width: 70rem) {
-    .cards-grid {
+    .route.home .cards-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: var(--layout-grid-gap-wide);
     }

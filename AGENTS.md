@@ -30,9 +30,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
-- 007-fix-grid-columns: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
-- 006-migrate-htm-rendering: Added TypeScript (ES2022, strict mode) + Preact, route-event, Hono, Vite build pipeline
-- 006-migrate-htm-rendering: Added TypeScript (ES2022, strict mode) + Preact, route-event, Hono, Vite build pipeline
+- 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
+- 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
+- 001-fix-mobile-view: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite
 
 
 <!-- MANUAL ADDITIONS START -->

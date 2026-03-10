@@ -92,7 +92,7 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
     try {
         const isDev = import.meta.env.DEV
         const assets = isDev ?
-            { css: '/src/style.css', js: '/src/client/index.tsx' } :
+            { css: '/src/style.css', js: '/src/client/index.ts' } :
             await getAssetPaths(c)
 
         if (c.req.header('x-startup-prereq-fail') === '1') {

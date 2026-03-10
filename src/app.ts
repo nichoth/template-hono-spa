@@ -1,10 +1,13 @@
 import { type FunctionComponent } from 'preact'
 import { useComputed } from '@preact/signals'
+import htm from 'htm'
+import { h, Fragment } from 'preact'
 import { createRouter } from './client/routes/index.js'
 import type { AppState } from './client/state.js'
 import { Nav } from './components/nav.js'
 
 const router = createRouter()
+const html = htm.bind(h)
 
 export function App ({ state }:{ state:AppState }) {
     const path = useComputed(() => {
@@ -15,30 +18,28 @@ export function App ({ state }:{ state:AppState }) {
         return router.match(path.value)
     })
 
-    return (
-        <>
+    return html`<${Fragment}>
             <header class="hero">
                 <h1>Hono + Preact</h1>
-                <Nav state={state} />
+                <${Nav} state=${state} />
             </header>
 
             <main class="cards">
-                {renderRoute(match.value, state)}
+                ${renderRoute(match.value, state)}
             </main>
-        </>
-    )
+        </${Fragment}>`
 }
 
 function renderRoute (match:unknown, state:AppState) {
     if (!isRouteMatch(match)) {
-        return <NotFound />
+        return html`<${NotFound} />`
     }
 
     const RouteComponent = match.action(match, state.route.value) as FunctionComponent<{
         state:AppState
     }>
 
-    return <RouteComponent state={state} />
+    return html`<${RouteComponent} state=${state} />`
 }
 
 function normalizePath (route:string):string {
@@ -62,10 +63,8 @@ function isRouteMatch (value:unknown):value is {
 }
 
 function NotFound () {
-    return (
-        <section class="card">
+    return html`<section class="card">
             <h2>404</h2>
             <p>Page not found.</p>
-        </section>
-    )
+        </section>`
 }

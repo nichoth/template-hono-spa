@@ -13,6 +13,12 @@ import {
 } from '../src/server/startup-errors.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
 
+const sourceFiles = import.meta.glob('/src/**/*.ts', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+}) as Record<string, string>
+
 describe('Hono worker', () => {
     describe('App shell routes', () => {
         it('renders homepage shell HTML',
@@ -192,6 +198,20 @@ describe('Hono worker', () => {
             expect(message).toContain(
                 'Next step: Run npm start'
             )
+        })
+    })
+
+    describe('Migration constraints', () => {
+        it('server entry keeps non-JSX source', () => {
+            const serverSource = sourceFiles['/src/server/index.ts']
+            expect(serverSource).toBeTruthy()
+            expect(serverSource).not.toMatch(/return\s*\(\s*</)
+            expect(serverSource).not.toMatch(/return\s*</)
+        })
+
+        it('source tree has no remaining .tsx files', () => {
+            const tsxFiles = import.meta.glob('/src/**/*.tsx', { eager: true })
+            expect(Object.keys(tsxFiles)).toEqual([])
         })
     })
 })

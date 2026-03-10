@@ -4,7 +4,7 @@ import type { AppState } from '../client/state.js'
 import './nav.css'
 
 export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
-    const currentPath = normalizePath(state.route.value)
+    const currentPath = state.route.value
 
     return (
         <nav class="app-nav" aria-label="Main navigation">
@@ -44,15 +44,4 @@ function NavLink (props:{
             {props.children}
         </a>
     )
-}
-
-function normalizePath (route:string):string {
-    if (!route) return '/'
-
-    const queryStart = route.indexOf('?')
-    if (queryStart >= 0) {
-        return route.slice(0, queryStart) || '/'
-    }
-
-    return route
 }

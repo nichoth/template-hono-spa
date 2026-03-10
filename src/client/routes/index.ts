@@ -1,6 +1,7 @@
 import Router from '@substrate-system/routes'
 import { HomeRoute } from './home.js'
 import { AboutRoute } from './about.js'
+import { type AppState } from '../state.js'
 
 export type AppRoute = {
     href:string;
@@ -12,7 +13,7 @@ export const routes:ReadonlyArray<AppRoute> = [
     { href: '/about', text: 'About' },
 ]
 
-export function createRouter ():InstanceType<typeof Router> {
+export function createRouter (_state:AppState):InstanceType<typeof Router> {
     const router = new Router()
 
     router.addRoute('/', () => {

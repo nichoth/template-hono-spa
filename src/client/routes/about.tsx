@@ -1,5 +1,5 @@
 import { type FunctionComponent } from 'preact'
-import type { AppState } from '../../state.js'
+import type { AppState } from '../state.js'
 
 export const AboutRoute:FunctionComponent<{ state:AppState }> = function () {
     return <div class="card">

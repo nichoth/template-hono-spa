@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "template-hono-preact-test",
-  "main": "src/server/index.tsx",
+  "main": "src/server/index.ts",
   "compatibility_date": "2025-12-17",
   "compatibility_flags": [
     "nodejs_compat"

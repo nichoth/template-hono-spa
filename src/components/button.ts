@@ -1,7 +1,11 @@
 import { useSignal, type Signal } from '@preact/signals'
 import { type ComponentChildren, type FunctionComponent } from 'preact'
 import { useCallback } from 'preact/hooks'
+import htm from 'htm'
+import { h, Fragment } from 'preact'
 import './button.css'
+
+const html = htm.bind(h)
 
 interface ButtonProps {
     onClick?:(ev:MouseEvent)=>void|Promise<void>;
@@ -31,12 +35,14 @@ export const Button:FunctionComponent<ButtonProps> = function (props) {
         }
     }, [])
 
-    return <button
-        {..._props}
-        onClick={click}
-        disabled={isSpinning.value || _props.disabled}
-        className={classes}
+    return html`<button
+        ...${_props}
+        onClick=${click}
+        disabled=${isSpinning.value || _props.disabled}
+        className=${classes}
     >
-        <span className="btn-content">{props.children}</span>
-    </button>
+        <span className="btn-content">
+            <${Fragment}>${props.children}</${Fragment}>
+        </span>
+    </button>`
 }

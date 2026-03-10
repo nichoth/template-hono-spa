@@ -1,12 +1,13 @@
-import { render } from 'preact'
+import { render, h, Fragment, type FunctionComponent } from 'preact'
 import { State } from './state.js'
-import { type FunctionComponent } from 'preact'
 import { useComputed } from '@preact/signals'
+import htm from 'htm'
 import { createRouter } from './routes/index.js'
 import type { AppState } from './state.js'
 import { NotFound } from './not-found.js'
 import { Nav } from '../components/nav.js'
 
+const html = htm.bind(h)
 const state = State()
 const router = createRouter(state)
 
@@ -20,29 +21,27 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
     })
 
     if (!isRouteMatch(match)) {
-        return <NotFound />
+        return html`<${NotFound} />`
     }
 
     const ChildNode = match.action(match, state.route.value)
 
-    return (
-        <>
+    return html`<${Fragment}>
             <header class="hero">
                 <h1>Hono + Preact</h1>
-                <Nav state={state} />
+                <${Nav} state=${state} />
             </header>
 
             <main class="main">
-                <ChildNode state={state} />
+                <${ChildNode} state=${state} />
             </main>
-        </>
-    )
+        </${Fragment}>`
 }
 
 const root = document.getElementById('root')
 
 if (root) {
-    render(<App state={state} />, root)
+    render(html`<${App} state=${state} />`, root)
 }
 
 function normalizePath (route:string):string {

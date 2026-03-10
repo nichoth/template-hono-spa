@@ -53,6 +53,7 @@ describe('Integration tests', () => {
             expect(html).toContain(
                 '<link rel="stylesheet"'
             )
+            expect(html).not.toContain('.tsx')
         })
 
         it('returns asset-like misses as not found', async () => {

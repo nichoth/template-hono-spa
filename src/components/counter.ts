@@ -1,34 +1,36 @@
 import type { Signal } from '@preact/signals'
 import { type FunctionComponent } from 'preact'
+import htm from 'htm'
+import { h } from 'preact'
 import { Button } from './button.js'
 import { Card } from './card.js'
+
+const html = htm.bind(h)
 
 export const Counter:FunctionComponent<{ count:Signal<number> }> = function (
     { count }:{ count:Signal<number> }
 ) {
-    return (
-        <Card title="Counter">
+    return html`<${Card} title="Counter">
             <div class="counter-display">{count}</div>
             <div class="counter-buttons">
-                <Button
+                <${Button}
                     class="btn"
-                    onClick={() => { count.value-- }}
+                    onClick=${() => { count.value-- }}
                 >
-                    &ndash;
-                </Button>
-                <Button
+                    -
+                </${Button}>
+                <${Button}
                     class="btn"
-                    onClick={() => { count.value = 0 }}
+                    onClick=${() => { count.value = 0 }}
                 >
                     Reset
-                </Button>
-                <Button
+                </${Button}>
+                <${Button}
                     class="btn"
-                    onClick={() => { count.value++ }}
+                    onClick=${() => { count.value++ }}
                 >
                     +
-                </Button>
+                </${Button}>
             </div>
-        </Card>
-    )
+        </${Card}>`
 }

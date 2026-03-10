@@ -11,7 +11,7 @@ const TEXT = 'This page is rendered on the client with Preact.'
 export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
-    return html`<div class="route home">
+    return html`<div class="route home home-layout">
         <div class="cards cards-grid" aria-label="Home content grid">
             <${Counter} count=${state.count} />
             <${Card} description=${TEXT} />

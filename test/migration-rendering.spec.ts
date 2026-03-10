@@ -12,10 +12,9 @@ const clientRenderFileKeys = [
     '/src/client/routes/about.ts',
     '/src/client/routes/home.ts',
     '/src/app.ts',
-    '/src/components/button.ts',
-    '/src/components/card.ts',
-    '/src/components/counter.ts',
-    '/src/components/nav.ts',
+    '/src/client/components/card.ts',
+    '/src/client/components/counter.ts',
+    '/src/client/components/nav.ts',
 ]
 
 describe('Rendering migration guards', () => {

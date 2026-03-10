@@ -1,0 +1,26 @@
+.route.home {
+    width: 100%;
+
+    & .cards-grid {
+        --min: 15ch;
+        --gap: 1rem;
+
+        display: grid;
+        gap: var(--gap);
+        /* min() with 100% prevents overflow
+        in extra narrow spaces */
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--min)), 1fr));
+    }
+
+    & .card {
+        margin: 0;
+        max-width: none;
+    }
+}
+
+@media (min-width: 70rem) {
+    .cards-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--layout-grid-gap-wide);
+    }
+}

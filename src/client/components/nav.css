@@ -13,8 +13,6 @@ nav.app-nav {
     }
 
     & a {
-        transition: all 0.2s;
-
         &.active {
             text-underline-offset: 3px;
             text-decoration-thickness: 3px;

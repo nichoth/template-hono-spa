@@ -24,7 +24,7 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
         return router.match(path)
     })
 
-    debug('the match', match)
+    debug('the match', match.value)
 
     if (!match.value || !match.value.action) {
         return html`<${NotFound} />`
@@ -35,11 +35,16 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
     return html`
         <header>
             <h1>
-                <a href="/">Template</a>  ${/* <-- logo here */null}
+                <a href="/">T</a>  ${/* <-- site logo here */null}
             </h1>
             <${Nav} state=${state} />
-            <div>
-                <span>avatar here</span>
+            <div class="avatar">
+                <a href="/profile">
+                    <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"
+                        class="avatar"
+                    />
+                </a>
             </div>
         </header>
 

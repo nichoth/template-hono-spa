@@ -1,8 +1,10 @@
 .card {
-    max-width: 30rem;
+    width: 100%;
     background: var(--color-white);
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     box-shadow: 0 1px 3px var(--color-shadow);
+    box-sizing: border-box;
+    height: 100%;
 
     & h2 {
         margin-top: 0;
@@ -11,14 +13,6 @@
     }
 
     & p {
-        margin-bottom: 1rem;
-    }
-
-    & form {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-wrap: wrap;
         margin-bottom: 1rem;
     }
 

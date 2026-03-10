@@ -7,7 +7,7 @@ export type AppRoute = {
     text:string;
 }
 
-export const routes:AppRoute[] = [
+export const routes:ReadonlyArray<AppRoute> = [
     { href: '/', text: 'Home' },
     { href: '/about', text: 'About' },
 ]

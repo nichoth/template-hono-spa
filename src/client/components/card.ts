@@ -2,7 +2,7 @@ import type { FunctionComponent, ComponentChildren } from 'preact'
 import { html } from 'htm/preact'
 
 interface CardProps {
-    title:string
+    title?:string
     description?:string
     children?:ComponentChildren
 }
@@ -13,7 +13,11 @@ export const Card:FunctionComponent<CardProps> = function ({
     children
 }) {
     return html`<div class="card">
-        <h2>${title}</h2>
+        ${title ?
+            html`<h2>${title}</h2>` :
+            null
+        }
+        
         ${description ? html`<p>${description}</p>` : null}
         ${children}
     </div>`

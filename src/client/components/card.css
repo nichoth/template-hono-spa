@@ -2,7 +2,7 @@
     width: 100%;
     min-width: 0;
     background: var(--color-white);
-    padding: clamp(1rem, 3vw, 2rem) clamp(0.875rem, 3vw, 1.5rem);
+    padding: 2rem 1rem;
     box-shadow: 0 1px 3px var(--color-shadow);
     box-sizing: border-box;
     height: 100%;

@@ -66,6 +66,21 @@ describe('Hono worker', () => {
                 expect(response.status).toBe(404)
             }
         )
+
+        it('does not serve shell for vite module client path',
+            async () => {
+                const request = new Request(
+                    'http://example.com/@vite/client'
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request, env, ctx
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(404)
+            }
+        )
     })
 
     describe('API endpoints', () => {

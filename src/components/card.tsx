@@ -12,10 +12,10 @@ export const Card:FunctionComponent<CardProps> = function ({
     children
 }) {
     return (
-        <section class="card">
+        <div class="card">
             <h2>{title}</h2>
             {description && <p>{description}</p>}
             {children}
-        </section>
+        </div>
     )
 }

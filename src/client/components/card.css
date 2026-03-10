@@ -1,4 +1,5 @@
 .card {
+    max-width: 30rem;
     background: var(--color-white);
     padding: 1.5rem;
     box-shadow: 0 1px 3px var(--color-shadow);

@@ -7,10 +7,7 @@ export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
     return html`
-        <p>
-            This page is rendered on the
-            client with Preact.
-        </p>
+        <p>This page is rendered on the client with Preact.</p>
         <${Counter} count=${state.count} />
     `
 }

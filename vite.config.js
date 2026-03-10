@@ -22,8 +22,6 @@ export default defineConfig(({ mode }) => {
         ],
         // https://github.com/vitejs/vite/issues/8644#issuecomment-1159308803
         esbuild: {
-            jsx: 'automatic',
-            jsxImportSource: 'preact',
             logOverride: { 'this-is-undefined-in-esm': 'silent' }
         },
         publicDir: '_public',

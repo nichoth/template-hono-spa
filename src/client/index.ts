@@ -1,7 +1,7 @@
-import { render, h, type FunctionComponent } from 'preact'
+import { render, type FunctionComponent } from 'preact'
 import { State } from './state.js'
 import { useComputed } from '@preact/signals'
-import htm from 'htm'
+import { html } from 'htm/preact'
 import { createRouter } from './routes/index.js'
 import type { AppState } from './state.js'
 import { NotFound } from './not-found.js'
@@ -9,7 +9,6 @@ import { Nav } from './components/nav.js'
 import Debug from '@substrate-system/debug'
 const debug = Debug('template')
 
-const html = htm.bind(h)
 const state = State()
 const router = createRouter(state)
 
@@ -35,7 +34,13 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
 
     return html`
         <header>
+            <h1>
+                <a href="/">Template</a>  ${/* <-- logo here */null}
+            </h1>
             <${Nav} state=${state} />
+            <div>
+                <span>avatar here</span>
+            </div>
         </header>
 
         <main class="main">

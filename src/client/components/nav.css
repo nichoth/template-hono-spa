@@ -1,24 +1,9 @@
 nav.app-nav {
     display: flex;
-    border-bottom: 1px solid;
     padding: 1rem;
+    gap: 1rem;
     justify-content: space-between;
     align-items: center;
-
-    & h1 {
-        font-size: 1.4rem;
-        margin: 0;
-        min-width: 8rem;
-
-        & a {
-            text-decoration: none;
-            color: black;
-
-            &:hover {
-                font-size: 1.5rem;
-            }
-        }
-    }
 
     & ul.nav-links {
         list-style: none;
@@ -26,8 +11,6 @@ nav.app-nav {
         gap: 1rem;
         padding: 0;
     }
-
-    margin-bottom: 2rem;
 
     & a {
         transition: all 0.2s;

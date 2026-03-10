@@ -28,6 +28,9 @@
 	"vars": {
 		"NODE_ENV": "production",
 		"DOMAIN": "template-hono-preact.nichoth.workers.dev",
+		"MAIN_BRANCH": "main",
+		"DEPLOY_BRANCH": "main",
+		"BASIC_AUTH_REALM": "Staging",
 	},
 	"observability": {
 		"enabled": true

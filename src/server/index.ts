@@ -1,16 +1,56 @@
 import { type Context, Hono } from 'hono'
 import { cors } from 'hono/cors'
+import {
+    credentialsMatch,
+    parseBasicAuthHeader,
+} from './basic-auth.js'
+import { resolveDeploymentContext } from './deployment-context.js'
+import { unauthorizedBasicAuthResponse } from './access-response.js'
 import { type AssetPaths, resolveStartupAssets } from './startup-assets.js'
 import { formatStartupFailure } from './startup-errors.js'
 
 type Bindings = {
     ASSETS?:Fetcher
     NODE_ENV?:string
+    DEPLOY_BRANCH?:string
+    MAIN_BRANCH?:string
+    STAGING_BASIC_AUTH_USERNAME?:string
+    STAGING_BASIC_AUTH_PASSWORD?:string
+    BASIC_AUTH_REALM?:string
 }
 
 let cachedAssets:AssetPaths|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
+
+app.use('*', async (c, next) => {
+    const context = resolveDeploymentContext(
+        resolveRequestBranch(c),
+        c.env?.MAIN_BRANCH,
+    )
+
+    if (!context.requiresAuth) {
+        await next()
+        return
+    }
+
+    const credential = parseBasicAuthHeader(
+        c.req.header('authorization')
+    )
+
+    if (
+        credentialsMatch(
+            credential,
+            c.env?.STAGING_BASIC_AUTH_USERNAME,
+            c.env?.STAGING_BASIC_AUTH_PASSWORD,
+        )
+    ) {
+        await next()
+        return
+    }
+
+    return unauthorizedBasicAuthResponse(c.env?.BASIC_AUTH_REALM)
+})
 
 app.use('/api/*', cors())
 
@@ -47,6 +87,15 @@ function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     }
 
     return c.env.ASSETS.fetch(c.req.raw)
+}
+
+function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefined {
+    if (c.env?.NODE_ENV === 'test') {
+        const overrideBranch = c.req.header('x-deploy-branch')
+        if (overrideBranch) return overrideBranch
+    }
+
+    return c.env?.DEPLOY_BRANCH
 }
 
 function shouldServeShell (pathname:string):boolean {

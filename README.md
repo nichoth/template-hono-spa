@@ -1,4 +1,4 @@
-# template hono preact
+# template hono spa
 
 A template for web apps with [Hono](https://hono.dev/) and
 [Preact](https://preactjs.com/).

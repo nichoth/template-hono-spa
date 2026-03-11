@@ -153,7 +153,7 @@ async function getAssetPaths (
                 cause: result.warning,
                 remediation:
                     'Run `npm start` for local dev or '
-                    + '`npm run build` before production deploys.'
+                    + '`npm run build` and verify `public/client/` assets are deployed.'
             })
         )
     }
@@ -182,11 +182,11 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
             '<meta charset="UTF-8" />',
             '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
             '<title>Hono + Preact</title>',
-            `<link rel="stylesheet" href="${assets.css || '/assets/index.css'}" />`,
+            `<link rel="stylesheet" href="${assets.css || '/client/index.css'}" />`,
             '</head>',
             '<body>',
             '<div id="root"></div>',
-            `<script type="module" src="${assets.js || '/assets/index.js'}"></script>`,
+            `<script type="module" src="${assets.js || '/client/index.js'}"></script>`,
             '</body>',
             '</html>',
         ].join('')

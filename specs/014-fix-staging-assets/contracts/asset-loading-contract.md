@@ -15,6 +15,7 @@ Defines how the shell HTML chooses and emits CSS and JavaScript asset URLs acros
 3. When deployment asset metadata is missing or invalid, the system must not silently emit staging asset URLs that 404.
 4. Local development must continue to emit valid asset URLs for the development workflow.
 5. Failures in asset resolution must be diagnosable from the server-side behavior or emitted failure signal.
+6. The default recovery asset paths must remain aligned with the actual deploy output layout used by non-dev builds.
 
 ## Acceptance Scenarios
 

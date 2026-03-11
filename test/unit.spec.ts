@@ -232,11 +232,50 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets()
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/assets/index.css',
-                    js: '/assets/index.js',
+                    css: '/client/index.css',
+                    js: '/client/index.js',
                 })
                 expect(result.warning).toContain(
                     'Static asset binding'
+                )
+            }
+        )
+
+        it('uses deploy-valid fallback assets when manifest is missing',
+            async () => {
+                const fetcher = {
+                    fetch: async () => new Response('', { status: 404 })
+                } as unknown as Fetcher
+
+                const result = await resolveStartupAssets(fetcher)
+                expect(result.recovered).toBe(true)
+                expect(result.assets).toEqual({
+                    css: '/client/index.css',
+                    js: '/client/index.js',
+                })
+                expect(result.warning).toContain(
+                    'Vite manifest was not found at client/vite-manifest.json.'
+                )
+            }
+        )
+
+        it('reports invalid manifest data without returning broken asset paths',
+            async () => {
+                const fetcher = {
+                    fetch: async () => new Response(
+                        JSON.stringify({}),
+                        { status: 200 }
+                    )
+                } as unknown as Fetcher
+
+                const result = await resolveStartupAssets(fetcher)
+                expect(result.recovered).toBe(true)
+                expect(result.assets).toEqual({
+                    css: '/client/index.css',
+                    js: '/client/index.js',
+                })
+                expect(result.warning).toContain(
+                    'Vite manifest at client/vite-manifest.json is missing index.html entry.'
                 )
             }
         )

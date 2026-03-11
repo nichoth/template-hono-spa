@@ -13,6 +13,7 @@
 3. Preserve manifest-driven asset selection when deployment metadata is valid.
 4. Add unit coverage for resolver success, fallback, and invalid-manifest scenarios.
 5. Add request-level coverage for shell HTML asset references in deploy-like conditions.
+6. Confirm fallback references align with `/client/` asset output instead of broken `/assets/` paths.
 
 ## Verification Commands
 
@@ -30,6 +31,7 @@
 3. Confirm the HTML shell references deploy-valid asset URLs for staging.
 4. Run the app locally and confirm local asset loading remains unchanged.
 5. Simulate a missing or invalid manifest path and confirm the failure is diagnosable.
+6. Confirm the shell no longer emits `/assets/index.css` or `/assets/index.js` in non-dev fallback scenarios.
 
 ## Completion Criteria
 

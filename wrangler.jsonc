@@ -21,7 +21,7 @@
 	 */
 	"assets": {
 		"directory": "./public/",  // SPA build output
-		"not_found_handling": "none",
+		"not_found_handling": "single-page-application",
 		"binding": "ASSETS",
 		"run_worker_first": true  // try route matching on the server first
 	},

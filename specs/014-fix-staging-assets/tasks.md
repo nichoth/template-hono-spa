@@ -17,8 +17,8 @@
 
 **Purpose**: Prepare the build, runtime, and documentation context for the staging asset-path fix.
 
-- [ ] T001 Review current staging asset expectations and manual verification steps in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md
-- [ ] T002 Confirm build output and deploy metadata assumptions in /Users/nick/code/template-hono-spa/package.json, /Users/nick/code/template-hono-spa/wrangler.jsonc, and /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
+- [X] T001 Review current staging asset expectations and manual verification steps in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md
+- [X] T002 Confirm build output and deploy metadata assumptions in /Users/nick/code/template-hono-spa/package.json, /Users/nick/code/template-hono-spa/wrangler.jsonc, and /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
 
 ---
 
@@ -28,9 +28,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add or update startup asset resolver unit coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts for valid manifest, missing manifest, and fallback path behavior
-- [ ] T004 Update deploy-path fallback rules in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts so non-dev asset references remain deploy-valid
-- [ ] T005 Align shell asset insertion with the shared resolver output in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T003 Add or update startup asset resolver unit coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts for valid manifest, missing manifest, and fallback path behavior
+- [X] T004 Update deploy-path fallback rules in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts so non-dev asset references remain deploy-valid
+- [X] T005 Align shell asset insertion with the shared resolver output in /Users/nick/code/template-hono-spa/src/server/index.ts
 
 **Checkpoint**: Resolver and shell path selection are stable enough for story-specific verification.
 
@@ -44,13 +44,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T006 [US1] Add request-level staging shell asset regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
-- [ ] T007 [US1] Add resolver-level staging fallback regression coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts
+- [X] T006 [US1] Add request-level staging shell asset regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T007 [US1] Add resolver-level staging fallback regression coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Update staging asset recovery behavior in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
-- [ ] T009 [US1] Ensure shell HTML uses the corrected asset paths in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T008 [US1] Update staging asset recovery behavior in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
+- [X] T009 [US1] Ensure shell HTML uses the corrected asset paths in /Users/nick/code/template-hono-spa/src/server/index.ts
 
 **Checkpoint**: Staging asset URLs are independently testable and no longer depend on broken fallback names.
 
@@ -64,12 +64,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [US2] Add local and non-staging asset regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T010 [US2] Add local and non-staging asset regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Preserve development asset selection behavior in /Users/nick/code/template-hono-spa/src/server/index.ts
-- [ ] T012 [US2] Preserve non-staging resolver behavior in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
+- [X] T011 [US2] Preserve development asset selection behavior in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T012 [US2] Preserve non-staging resolver behavior in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
 
 **Checkpoint**: The staging fix does not regress environments that already worked.
 
@@ -83,12 +83,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T013 [US3] Add invalid-manifest and incomplete-metadata diagnostics coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts
+- [X] T013 [US3] Add invalid-manifest and incomplete-metadata diagnostics coverage in /Users/nick/code/template-hono-spa/test/unit.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T014 [US3] Improve asset-resolution diagnostics in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
-- [ ] T015 [US3] Ensure startup failure messaging remains actionable in /Users/nick/code/template-hono-spa/src/server/startup-errors.ts and /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T014 [US3] Improve asset-resolution diagnostics in /Users/nick/code/template-hono-spa/src/server/startup-assets.ts
+- [X] T015 [US3] Ensure startup failure messaging remains actionable in /Users/nick/code/template-hono-spa/src/server/startup-errors.ts and /Users/nick/code/template-hono-spa/src/server/index.ts
 
 **Checkpoint**: Asset-resolution failures are independently diagnosable without relying on browser-side 404s alone.
 
@@ -98,9 +98,9 @@
 
 **Purpose**: Final documentation alignment and full verification across all stories.
 
-- [ ] T016 [P] Update the shell asset loading contract in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/contracts/asset-loading-contract.md
-- [ ] T017 [P] Update manual verification and completion notes in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md
-- [ ] T018 Run full verification commands from /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md using /Users/nick/code/template-hono-spa/package.json scripts
+- [X] T016 [P] Update the shell asset loading contract in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/contracts/asset-loading-contract.md
+- [X] T017 [P] Update manual verification and completion notes in /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md
+- [X] T018 Run full verification commands from /Users/nick/code/template-hono-spa/specs/014-fix-staging-assets/quickstart.md using /Users/nick/code/template-hono-spa/package.json scripts
 
 ---
 

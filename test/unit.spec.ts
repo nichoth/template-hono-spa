@@ -3,7 +3,7 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from 'cloudflare:test'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import worker from '../src/server/index.js'
 import {
     resolveStartupAssets
@@ -12,6 +12,13 @@ import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+
+vi.mock('@substrate-system/button', () => ({
+    SubstrateButton: {
+        TAG: 'button',
+        define: () => {},
+    },
+}))
 
 const sourceFiles = import.meta.glob('/src/**/*.ts', {
     query: '?raw',

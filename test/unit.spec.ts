@@ -4,8 +4,16 @@ import {
     waitOnExecutionContext,
 } from 'cloudflare:test'
 import { signal } from '@preact/signals'
+import {
+    type RequestFor,
+    RequestState
+} from '@substrate-system/state'
+import type { HTTPError } from 'ky'
 import { describe, it, expect, vi } from 'vitest'
 import worker from '../src/server/index.js'
+import {
+    resolveDeploymentContext
+} from '../src/server/deployment-context.js'
 import {
     resolveStartupAssets
 } from '../src/server/startup-assets.js'
@@ -32,10 +40,65 @@ function createTestState ():AppState {
     return {
         route: signal('/'),
         count: signal(0),
+        response: signal<RequestFor<{ message:string }, HTTPError>>(
+            RequestState()
+        ),
     }
 }
 
 describe('Hono worker', () => {
+    describe('Deployment context', () => {
+        it('requires auth only for the staging branch', () => {
+            expect(resolveDeploymentContext('staging', 'main')).toEqual({
+                branchName: 'staging',
+                environmentType: 'staging',
+                requiresAuth: true,
+            })
+
+            expect(resolveDeploymentContext('main', 'main')).toEqual({
+                branchName: 'main',
+                environmentType: 'main',
+                requiresAuth: false,
+            })
+        })
+
+        it('keeps non-staging non-main branches public', () => {
+            expect(resolveDeploymentContext('preview', 'main')).toEqual({
+                branchName: 'preview',
+                environmentType: 'preview',
+                requiresAuth: false,
+            })
+
+            expect(resolveDeploymentContext(undefined, 'main')).toEqual({
+                branchName: 'unknown',
+                environmentType: 'unknown',
+                requiresAuth: false,
+            })
+        })
+
+        it('keeps localhost requests public outside the test branch override path',
+            async () => {
+                const request = new Request(
+                    'http://localhost/api/health'
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request,
+                    {
+                        ...env,
+                        NODE_ENV: 'production',
+                        MAIN_BRANCH: 'main',
+                        DEPLOY_BRANCH: 'staging',
+                    },
+                    ctx,
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(200)
+            }
+        )
+    })
+
     describe('App shell routes', () => {
         it('renders homepage shell HTML',
             async () => {

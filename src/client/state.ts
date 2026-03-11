@@ -11,7 +11,7 @@ const debug = Debug('template:state')
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    response:Signal<RequestFor<{ message }, HTTPError>>;
+    response:Signal<RequestFor<{ message }, HTTPError|Error>>;
     _setRoute?:(path:string) => void;
 }
 
@@ -67,6 +67,14 @@ State.fetch = async function (state:AppState) {
         error(state.response, err)
     }
 }
+
+Object.assign(State.fetch, {
+    error: async (state:AppState) => {
+        start(state.response)
+        await sleep(2000)
+        error(state.response, new Error('testing errors'))
+    }
+})
 
 State.Increase = function (state:AppState) {
     state.count.value++

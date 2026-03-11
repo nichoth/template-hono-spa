@@ -21,7 +21,7 @@ if (typeof document !== 'undefined') {
     SubstrateButton.define()
 }
 
-if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
+if (import.meta.env.DEV) {
     localStorage.setItem('DEBUG', 'template,template:*')
 } else {
     localStorage.removeItem('DEBUG')

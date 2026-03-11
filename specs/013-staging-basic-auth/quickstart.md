@@ -28,6 +28,7 @@
 3. Open the production site in a fresh browser session and confirm it loads without a password prompt.
 4. Run the app locally and confirm localhost loads without a password prompt.
 5. Retry the staging site with invalid credentials and confirm access remains blocked.
+6. From a local checkout of the staging branch, confirm `localhost` still opens without a password prompt.
 
 ## Completion Criteria
 

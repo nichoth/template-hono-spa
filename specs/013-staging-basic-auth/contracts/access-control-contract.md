@@ -16,6 +16,7 @@ Defines how incoming requests are handled for staging, production, and localhost
 4. Missing, malformed, or invalid credentials on staging must result in access denial with a standard basic-auth challenge response.
 5. Valid credentials on staging must allow the original route or API request to continue normally.
 6. Credential values must never appear in response bodies or other user-visible content.
+7. Real localhost requests must remain public even when the current working branch is `staging`.
 
 ## Acceptance Scenarios
 

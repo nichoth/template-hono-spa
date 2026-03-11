@@ -17,8 +17,8 @@
 
 **Purpose**: Prepare the existing test and configuration surface for the staging-only access-control change.
 
-- [ ] T001 Review and update feature quickstart expectations in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md
-- [ ] T002 Confirm staging secret names and branch metadata usage in /Users/nick/code/template-hono-spa/wrangler.jsonc and /Users/nick/code/template-hono-spa/wrangler.test.jsonc
+- [X] T001 Review and update feature quickstart expectations in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md
+- [X] T002 Confirm staging secret names and branch metadata usage in /Users/nick/code/template-hono-spa/wrangler.jsonc and /Users/nick/code/template-hono-spa/wrangler.test.jsonc
 
 ---
 
@@ -28,9 +28,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Update environment classification rules in /Users/nick/code/template-hono-spa/src/server/deployment-context.ts to distinguish staging-only protection from production and localhost/public behavior
-- [ ] T004 Add or adjust unit coverage for deployment-context classification in /Users/nick/code/template-hono-spa/test/unit.spec.ts
-- [ ] T005 Verify Worker request gating consumes the revised deployment context contract in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T003 Update environment classification rules in /Users/nick/code/template-hono-spa/src/server/deployment-context.ts to distinguish staging-only protection from production and localhost/public behavior
+- [X] T004 Add or adjust unit coverage for deployment-context classification in /Users/nick/code/template-hono-spa/test/unit.spec.ts
+- [X] T005 Verify Worker request gating consumes the revised deployment context contract in /Users/nick/code/template-hono-spa/src/server/index.ts
 
 **Checkpoint**: Environment classification is stable and user-story behavior can be validated on top of it.
 
@@ -44,14 +44,14 @@
 
 ### Tests for User Story 1
 
-- [ ] T006 [US1] Add staging unauthorized and malformed-credential integration coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
-- [ ] T007 [US1] Add staging valid-credential integration coverage for HTML and API access in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T006 [US1] Add staging unauthorized and malformed-credential integration coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T007 [US1] Add staging valid-credential integration coverage for HTML and API access in /Users/nick/code/template-hono-spa/test/integration.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Update staging-only auth gate behavior in /Users/nick/code/template-hono-spa/src/server/index.ts
-- [ ] T009 [US1] Refine credential parsing and matching behavior for protected staging requests in /Users/nick/code/template-hono-spa/src/server/basic-auth.ts
-- [ ] T010 [US1] Verify unauthorized staging challenge response semantics in /Users/nick/code/template-hono-spa/src/server/access-response.ts
+- [X] T008 [US1] Update staging-only auth gate behavior in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T009 [US1] Refine credential parsing and matching behavior for protected staging requests in /Users/nick/code/template-hono-spa/src/server/basic-auth.ts
+- [X] T010 [US1] Verify unauthorized staging challenge response semantics in /Users/nick/code/template-hono-spa/src/server/access-response.ts
 
 **Checkpoint**: Staging requests are protected and independently testable without relying on production or localhost scenarios.
 
@@ -65,12 +65,12 @@
 
 ### Tests for User Story 2
 
-- [ ] T011 [US2] Add production public-access regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T011 [US2] Add production public-access regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Update production branch configuration expectations in /Users/nick/code/template-hono-spa/wrangler.jsonc
-- [ ] T013 [US2] Align production request-path behavior with the staging-only contract in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T012 [US2] Update production branch configuration expectations in /Users/nick/code/template-hono-spa/wrangler.jsonc
+- [X] T013 [US2] Align production request-path behavior with the staging-only contract in /Users/nick/code/template-hono-spa/src/server/index.ts
 
 **Checkpoint**: Production remains publicly accessible even when staging protection is enabled.
 
@@ -84,12 +84,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T014 [US3] Add localhost open-access regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
+- [X] T014 [US3] Add localhost open-access regression coverage in /Users/nick/code/template-hono-spa/test/integration.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Adjust local-development request handling to stay public in /Users/nick/code/template-hono-spa/src/server/index.ts
-- [ ] T016 [US3] Remove or update local debug assumptions tied to staging behavior in /Users/nick/code/template-hono-spa/src/client/index.ts
+- [X] T015 [US3] Adjust local-development request handling to stay public in /Users/nick/code/template-hono-spa/src/server/index.ts
+- [X] T016 [US3] Remove or update local debug assumptions tied to staging behavior in /Users/nick/code/template-hono-spa/src/client/index.ts
 
 **Checkpoint**: Local development remains open and independently testable alongside staging protection.
 
@@ -99,9 +99,9 @@
 
 **Purpose**: Final validation, documentation alignment, and cleanup across all stories.
 
-- [ ] T017 [P] Update the access-control contract details in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/contracts/access-control-contract.md
-- [ ] T018 [P] Update implementation notes and manual verification steps in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md
-- [ ] T019 Run full verification commands from /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md using /Users/nick/code/template-hono-spa/package.json scripts
+- [X] T017 [P] Update the access-control contract details in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/contracts/access-control-contract.md
+- [X] T018 [P] Update implementation notes and manual verification steps in /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md
+- [X] T019 Run full verification commands from /Users/nick/code/template-hono-spa/specs/013-staging-basic-auth/quickstart.md using /Users/nick/code/template-hono-spa/package.json scripts
 
 ---
 

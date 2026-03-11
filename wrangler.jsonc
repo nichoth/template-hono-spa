@@ -35,6 +35,7 @@
 	"vars": {
 		"NODE_ENV": "production",
 		"DOMAIN": "template-hono-spa.nichoth.workers.dev",
+		// The default deploy is the public production environment.
 		"MAIN_BRANCH": "main",
 		"DEPLOY_BRANCH": "main",
 		"BASIC_AUTH_REALM": "Staging",
@@ -60,6 +61,7 @@
 			"vars": {
 				"NODE_ENV": "production",
 				"MAIN_BRANCH": "main",
+				// Only the staging branch deploy is password protected.
 				"DEPLOY_BRANCH": "staging",
 				"BASIC_AUTH_REALM": "Staging",
 			}

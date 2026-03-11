@@ -99,6 +99,7 @@ export default app
 
 function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     if (!(c.env?.ASSETS)) {
+        console.log('**NOT ASSETS**')
         return c.notFound()
     }
 

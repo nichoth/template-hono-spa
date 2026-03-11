@@ -20,8 +20,10 @@
 ## Manual Verification Checklist
 1. Verify success response:
    - `curl -i http://127.0.0.1:8888/api/foobar`
+   - Expect: `HTTP/1.1 200` with JSON body containing `ok`, `route`, and `message`.
 2. Verify unsupported method handling:
    - `curl -i -X POST http://127.0.0.1:8888/api/foobar`
+   - Expect: non-2xx response with JSON error body.
 3. Verify non-regression for health endpoint:
    - `curl -i http://127.0.0.1:8888/api/health`
 

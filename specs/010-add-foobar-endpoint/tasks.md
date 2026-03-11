@@ -17,8 +17,8 @@
 
 **Purpose**: Prepare baseline route and verification context for the new endpoint.
 
-- [ ] T001 Confirm current API routing touchpoints and endpoint placement in `src/server/index.ts`
-- [ ] T002 Confirm existing integration test structure and baseline coverage in `test/integration.spec.ts`
+- [X] T001 Confirm current API routing touchpoints and endpoint placement in `src/server/index.ts`
+- [X] T002 Confirm existing integration test structure and baseline coverage in `test/integration.spec.ts`
 
 ---
 
@@ -28,9 +28,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 [P] Define stable `/api/foobar` success payload shape constants in `src/server/index.ts`
-- [ ] T004 [P] Ensure shared API response conventions (JSON content type and safe error shape) are aligned in `src/server/index.ts`
-- [ ] T005 Add foundational `/api/foobar` route skeleton for GET-only handling in `src/server/index.ts`
+- [X] T003 [P] Define stable `/api/foobar` success payload shape constants in `src/server/index.ts`
+- [X] T004 [P] Ensure shared API response conventions (JSON content type and safe error shape) are aligned in `src/server/index.ts`
+- [X] T005 Add foundational `/api/foobar` route skeleton for GET-only handling in `src/server/index.ts`
 
 **Checkpoint**: Foundation ready; user story implementation can begin.
 
@@ -44,13 +44,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T006 [US1] Add integration test for `GET /api/foobar` success status and JSON parseability in `test/integration.spec.ts`
-- [ ] T007 [US1] Add integration test for `/api/foobar` JSON content type header in `test/integration.spec.ts`
+- [X] T006 [US1] Add integration test for `GET /api/foobar` success status and JSON parseability in `test/integration.spec.ts`
+- [X] T007 [US1] Add integration test for `/api/foobar` JSON content type header in `test/integration.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Implement finalized `GET /api/foobar` JSON response in `src/server/index.ts`
-- [ ] T009 [US1] Ensure top-level response fields remain stable for client contract use in `src/server/index.ts`
+- [X] T008 [US1] Implement finalized `GET /api/foobar` JSON response in `src/server/index.ts`
+- [X] T009 [US1] Ensure top-level response fields remain stable for client contract use in `src/server/index.ts`
 
 **Checkpoint**: User Story 1 is independently functional and testable.
 
@@ -64,13 +64,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T010 [US2] Add integration test for unsupported method non-2xx behavior on `/api/foobar` in `test/integration.spec.ts`
-- [ ] T011 [US2] Add integration test that `/api/health` behavior remains unchanged after endpoint addition in `test/integration.spec.ts`
+- [X] T010 [US2] Add integration test for unsupported method non-2xx behavior on `/api/foobar` in `test/integration.spec.ts`
+- [X] T011 [US2] Add integration test that `/api/health` behavior remains unchanged after endpoint addition in `test/integration.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Implement explicit unsupported-method handling path for `/api/foobar` in `src/server/index.ts`
-- [ ] T013 [US2] Ensure unsupported-method responses do not expose sensitive internals in `src/server/index.ts`
+- [X] T012 [US2] Implement explicit unsupported-method handling path for `/api/foobar` in `src/server/index.ts`
+- [X] T013 [US2] Ensure unsupported-method responses do not expose sensitive internals in `src/server/index.ts`
 
 **Checkpoint**: User Stories 1 and 2 are independently functional.
 
@@ -80,8 +80,8 @@
 
 **Purpose**: Final verification and documentation alignment.
 
-- [ ] T014 [P] Update endpoint verification guidance in `specs/010-add-foobar-endpoint/quickstart.md`
-- [ ] T015 Run repository validation commands from `/Users/nick/code/template-hono-spa` using `npm run lint` and `HOME=/tmp npm test`
+- [X] T014 [P] Update endpoint verification guidance in `specs/010-add-foobar-endpoint/quickstart.md`
+- [X] T015 Run repository validation commands from `/Users/nick/code/template-hono-spa` using `npm run lint` and `HOME=/tmp npm test`
 
 ---
 

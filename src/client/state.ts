@@ -46,7 +46,7 @@ export function State ():AppState {
     return state
 }
 
-State.fetch = async function (state:AppState) {
+State.fetch = async function (_state:AppState) {
     const res = await ky.get('/api/foobar').json()
     debug('fetch response', res)
 }

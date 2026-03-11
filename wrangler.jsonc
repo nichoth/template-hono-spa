@@ -25,9 +25,16 @@
 		"binding": "ASSETS",
 		"run_worker_first": true  // try route matching on the server first
 	},
+
+	/**
+	 * Environment Variables
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 * Note: Use secrets to store sensitive data.
+	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 */
 	"vars": {
 		"NODE_ENV": "production",
-		"DOMAIN": "template-hono-preact.nichoth.workers.dev",
+		"DOMAIN": "template-hono-spa.nichoth.workers.dev",
 		"MAIN_BRANCH": "main",
 		"DEPLOY_BRANCH": "main",
 		"BASIC_AUTH_REALM": "Staging",
@@ -72,14 +79,6 @@
 	 * AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
-
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
 
 	/**
 	 * Service Bindings (communicate between multiple Workers)

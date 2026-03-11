@@ -1,8 +1,18 @@
-import { SELF } from 'cloudflare:test'
+import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 
 function basicAuthHeader (username:string, password:string):string {
     return `Basic ${btoa(`${username}:${password}`)}`
+}
+
+function testCredential (
+    key:'STAGING_BASIC_AUTH_USERNAME'|'STAGING_PW',
+    fallback:string,
+):string {
+    const value = (env as Record<string, unknown>)[key]
+    return typeof value === 'string' && value.length > 0 ?
+        value :
+        fallback
 }
 
 describe('Integration tests', () => {
@@ -25,8 +35,11 @@ describe('Integration tests', () => {
                     headers: {
                         'x-deploy-branch': 'staging',
                         authorization: basicAuthHeader(
-                            'staging-user',
-                            'staging-pass',
+                            testCredential(
+                                'STAGING_BASIC_AUTH_USERNAME',
+                                'staging-user',
+                            ),
+                            testCredential('STAGING_PW', 'staging-pass'),
                         ),
                     },
                 },

@@ -1,30 +1,19 @@
 .route.home {
     width: 100%;
+    min-width: 0;
 
     & .cards-grid {
         display: grid;
-        gap: var(--layout-grid-gap-mobile);
-        grid-template-columns: minmax(0, 1fr);
-        grid-auto-rows: minmax(8rem, auto);
+        gap: var(--layout-grid-gap);
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--layout-card-min-width)), 1fr));
+        grid-auto-rows: minmax(var(--layout-card-row-min-height), auto);
         align-items: start;
+        min-width: 0;
     }
 
     & .card {
         margin: 0;
         max-width: none;
-    }
-}
-
-@media (min-width: 32rem) {
-    .route.home .cards-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: var(--layout-grid-gap);
-    }
-}
-
-@media (min-width: 70rem) {
-    .route.home .cards-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: var(--layout-grid-gap-wide);
+        min-width: 0;
     }
 }

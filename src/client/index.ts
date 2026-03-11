@@ -60,9 +60,7 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
             </div>
         </header>
 
-        <main class="main">
-            <${ChildNode} state=${state} />
-        </main>
+        <${ChildNode} state=${state} />
     `
 }
 

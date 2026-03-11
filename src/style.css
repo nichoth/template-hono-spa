@@ -9,10 +9,11 @@
     --color-text: black;
     --color-text-muted: black;  /* no muted color */
     --color-white: white;
+    --color-light: #e1e0e040;
     --color-primary: #2563eb;
     --color-primary-dark: #1d4ed8;
     --color-heading: black;
-    --color-border: #ddd;
+    --color-border: #9b9b9b;
     --color-shadow: rgb(0 0 0 / 10%);
     --color-success: #059669;
     --color-success-bg: #ecfdf5;
@@ -20,7 +21,7 @@
     --color-warning-light: #fef3c7;
     --color-warning: #fde68a;
     --color-warning-border: #f59e0b;
-    --layout-main-max-width: min(96vw, 76rem);
+    --layout-main-max-width: min(96vw, 40rem);
     --layout-main-padding-inline: clamp(0.75rem, 3vw, 1.25rem);
     --layout-main-padding-block: clamp(0.5rem, 1.5vw, 1rem);
     --layout-grid-gap: clamp(0.75rem, 1.4vw, 1.5rem);
@@ -29,12 +30,11 @@
     --layout-measure: 70ch;
 }
 
-main {
+.route {
     max-width: var(--layout-main-max-width);
     margin: 0 auto;
     padding-inline: var(--layout-main-padding-inline);
     padding-block: var(--layout-main-padding-block);
-    box-sizing: border-box;
     width: 100%;
     min-width: 0;
 }

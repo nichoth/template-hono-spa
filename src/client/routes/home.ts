@@ -24,12 +24,12 @@ export const HomeRoute:FunctionComponent<{
         isSpinning.value = false
     }, [])
 
-    return html`<div class="route home home-layout">
+    return html`<div class="route home">
         <div class="cards cards-grid" aria-label="Home content grid">
             <${Counter} count=${state.count} />
             <${Card}>${TEXT}<//>
             <${Card} class="fetcher">
-                More cards${ELLIPSIS}
+                <span>More cards${ELLIPSIS}</span>
                 <p>
                     This calls our API server.
                 </p>
@@ -39,6 +39,10 @@ export const HomeRoute:FunctionComponent<{
                         onClick=${httpFetch}
                     >Fetch<//>
                 </div>
+
+                <pre>
+                    ${JSON.stringify(state.response.value, null, 2)}
+                </pre>
             <//>
         </div>
     </section>`

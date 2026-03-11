@@ -7,6 +7,7 @@ const debug = Debug('template:state')
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
+    response:Signal<{ message:string }|null>;
     _setRoute?:(path:string) => void;
 }
 
@@ -18,6 +19,7 @@ export type AppState = {
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
+        response: signal(null),
         count: signal<number>(0),
     }
 
@@ -46,10 +48,11 @@ export function State ():AppState {
     return state
 }
 
-State.fetch = async function (_state:AppState) {
+State.fetch = async function (state:AppState) {
     await sleep(3000)  // resolve for 3 seconds
-    const res = await ky.get('/api/foobar').json()
+    const res = await ky.get('/api/foobar').json<{ message:string }>()
     debug('fetch response', res)
+    state.response.value = res
     return res
 }
 

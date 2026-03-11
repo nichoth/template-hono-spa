@@ -1,6 +1,7 @@
 .route.home {
     width: 100%;
     min-width: 0;
+    max-width: min(70rem, 90vw);
 
     & .cards-grid {
         display: grid;
@@ -11,9 +12,22 @@
         min-width: 0;
     }
 
+    & pre {
+        padding: 1rem;
+        background-color: var(--color-light);
+        border: 1px solid var(--color-border);
+    }
+
     & .card {
         margin: 0;
         max-width: none;
         min-width: 0;
+
+        &.fetcher {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            justify-content: space-between;
+        }
     }
 }

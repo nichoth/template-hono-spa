@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "listFiles": false,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "types": [
+      "vite/client",
+      "@cloudflare/workers-types",
+      "@cloudflare/vitest-pool-workers"
+    ]
+  },
+  "include": [
+    "test/**/*.ts",
+    "lib.es5.d.ts"
+  ]
+}

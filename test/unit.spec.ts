@@ -3,6 +3,7 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from 'cloudflare:test'
+import { signal } from '@preact/signals'
 import { describe, it, expect, vi } from 'vitest'
 import worker from '../src/server/index.js'
 import {
@@ -12,6 +13,7 @@ import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+import type { AppState } from '../src/client/state.js'
 
 vi.mock('@substrate-system/button', () => ({
     SubstrateButton: {
@@ -25,6 +27,13 @@ const sourceFiles = import.meta.glob('/src/**/*.ts', {
     import: 'default',
     eager: true,
 }) as Record<string, string>
+
+function createTestState ():AppState {
+    return {
+        route: signal('/'),
+        count: signal(0),
+    }
+}
 
 describe('Hono worker', () => {
     describe('App shell routes', () => {
@@ -145,7 +154,7 @@ describe('Hono worker', () => {
         })
 
         it('maps known routes and rejects unknown ones', () => {
-            const router = createRouter()
+            const router = createRouter(createTestState())
             expect(router.match('/')).toBeTruthy()
             expect(router.match('/about')).toBeTruthy()
             expect(router.match('/missing')).toBeFalsy()

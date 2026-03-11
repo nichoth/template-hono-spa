@@ -105,3 +105,11 @@ the server depends on it when we run the build process.
   }
 }
 ```
+
+## Notes
+
+### Create a Random String (eg a password)
+
+```sh
+openssl rand -base64 32
+```

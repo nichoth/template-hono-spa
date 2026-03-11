@@ -19,8 +19,7 @@
     }
 
     & .card {
-        margin: 0;
-        max-width: none;
+        min-height: 26rem;
         min-width: 0;
 
         &.fetcher {

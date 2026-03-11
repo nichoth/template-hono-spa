@@ -1,5 +1,8 @@
 import { type Signal, signal } from '@preact/signals'
+import ky from 'ky'
 import Route from 'route-event'
+import Debug from '@substrate-system/debug'
+const debug = Debug('template:state')
 
 export type AppState = {
     route:Signal<string>;
@@ -43,10 +46,23 @@ export function State ():AppState {
     return state
 }
 
+State.fetch = async function (_state:AppState) {
+    await sleep(3000)  // resolve for 3 seconds
+    const res = await ky.get('/api/foobar').json()
+    debug('fetch response', res)
+    return res
+}
+
 State.Increase = function (state:AppState) {
     state.count.value++
 }
 
 State.Decrease = function (state:AppState) {
     state.count.value--
+}
+
+function sleep (ms:number):Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms)
+    })
 }

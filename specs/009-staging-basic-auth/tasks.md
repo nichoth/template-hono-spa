@@ -17,9 +17,9 @@
 
 **Purpose**: Prepare configuration surfaces and environment bindings for branch-aware access control.
 
-- [ ] T001 Add deploy-context and auth realm runtime variable placeholders in `wrangler.jsonc`
-- [ ] T002 Add test runtime variables for main/staging auth scenarios in `wrangler.test.jsonc`
-- [ ] T003 Add access-control environment binding types in `src/server/index.ts` and `worker-configuration.d.ts`
+- [X] T001 Add deploy-context and auth realm runtime variable placeholders in `wrangler.jsonc`
+- [X] T002 Add test runtime variables for main/staging auth scenarios in `wrangler.test.jsonc`
+- [X] T003 Add access-control environment binding types in `src/server/index.ts` and `worker-configuration.d.ts`
 
 ---
 
@@ -29,10 +29,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 [P] Create deployment environment classification utility in `src/server/deployment-context.ts`
-- [ ] T005 [P] Create HTTP basic-auth parsing and credential validation utility in `src/server/basic-auth.ts`
-- [ ] T006 Create unauthorized challenge response helper in `src/server/access-response.ts`
-- [ ] T007 Integrate foundational auth middleware wiring points in `src/server/index.ts`
+- [X] T004 [P] Create deployment environment classification utility in `src/server/deployment-context.ts`
+- [X] T005 [P] Create HTTP basic-auth parsing and credential validation utility in `src/server/basic-auth.ts`
+- [X] T006 Create unauthorized challenge response helper in `src/server/access-response.ts`
+- [X] T007 Integrate foundational auth middleware wiring points in `src/server/index.ts`
 
 **Checkpoint**: Foundation ready; user story implementation can begin.
 
@@ -46,15 +46,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T008 [US1] Add integration test for staging unauthenticated challenge in `test/integration.spec.ts`
-- [ ] T009 [US1] Add integration test for staging valid credentials access in `test/integration.spec.ts`
-- [ ] T010 [US1] Add integration test for malformed/invalid staging authorization handling in `test/integration.spec.ts`
+- [X] T008 [US1] Add integration test for staging unauthenticated challenge in `test/integration.spec.ts`
+- [X] T009 [US1] Add integration test for staging valid credentials access in `test/integration.spec.ts`
+- [X] T010 [US1] Add integration test for malformed/invalid staging authorization handling in `test/integration.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement staging/preview auth gate decision flow in `src/server/index.ts`
-- [ ] T012 [US1] Enforce challenge response on missing or invalid staging credentials in `src/server/index.ts`
-- [ ] T013 [US1] Apply staging auth gate consistently across shell, API, and asset-serving request paths in `src/server/index.ts`
+- [X] T011 [US1] Implement staging/preview auth gate decision flow in `src/server/index.ts`
+- [X] T012 [US1] Enforce challenge response on missing or invalid staging credentials in `src/server/index.ts`
+- [X] T013 [US1] Apply staging auth gate consistently across shell, API, and asset-serving request paths in `src/server/index.ts`
 
 **Checkpoint**: User Story 1 is independently functional and testable.
 
@@ -68,13 +68,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T014 [US2] Add integration test for main deployment no-auth behavior in `test/integration.spec.ts`
-- [ ] T015 [US2] Add integration test confirming main-open/staging-protected behavior matrix in `test/integration.spec.ts`
+- [X] T014 [US2] Add integration test for main deployment no-auth behavior in `test/integration.spec.ts`
+- [X] T015 [US2] Add integration test confirming main-open/staging-protected behavior matrix in `test/integration.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Implement explicit main-branch auth bypass in `src/server/index.ts`
-- [ ] T017 [US2] Implement missing/ambiguous branch fallback to protected mode in `src/server/deployment-context.ts`
+- [X] T016 [US2] Implement explicit main-branch auth bypass in `src/server/index.ts`
+- [X] T017 [US2] Implement missing/ambiguous branch fallback to protected mode in `src/server/deployment-context.ts`
 
 **Checkpoint**: User Stories 1 and 2 are independently functional.
 
@@ -84,8 +84,8 @@
 
 **Purpose**: Final documentation, validation, and release readiness checks.
 
-- [ ] T018 [P] Update manual verification commands for auth scenarios in `specs/009-staging-basic-auth/quickstart.md`
-- [ ] T019 Run full validation scripts in `package.json` (`npm run lint` and `HOME=/tmp npm test`)
+- [X] T018 [P] Update manual verification commands for auth scenarios in `specs/009-staging-basic-auth/quickstart.md`
+- [X] T019 Run full validation scripts in `package.json` (`npm run lint` and `HOME=/tmp npm test`)
 
 ---
 

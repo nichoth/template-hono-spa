@@ -19,11 +19,13 @@
   "dependencies": {
     "@preact/signals": "^2.7.0",
     "@substrate-system/a11y": "^0.0.17",
+    "@substrate-system/blur-hash": "^0.0.35",
     "@substrate-system/button": "^0.0.35",
     "@substrate-system/css-normalize": "^0.0.13",
     "@substrate-system/routes": "^5.0.5",
     "hono": "^4.11.3",
     "htm": "^3.1.1",
+    "ky": "^1.14.3",
     "preact": "^10.28.3",
     "route-event": "^7.4.0"
   },

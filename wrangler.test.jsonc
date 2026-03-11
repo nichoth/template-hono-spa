@@ -18,6 +18,6 @@
     "DEPLOY_BRANCH": "main",
     "BASIC_AUTH_REALM": "Staging",
     "STAGING_BASIC_AUTH_USERNAME": "staging-user",
-    "STAGING_BASIC_AUTH_PASSWORD": "staging-pass"
+    "STAGING_PW": "staging-pass"
   }
 }

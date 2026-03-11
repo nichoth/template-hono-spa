@@ -15,13 +15,18 @@ type Bindings = {
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_BASIC_AUTH_USERNAME?:string
-    STAGING_BASIC_AUTH_PASSWORD?:string
+    STAGING_PW?:string
     BASIC_AUTH_REALM?:string
 }
 
 let cachedAssets:AssetPaths|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
+const FOOBAR_RESPONSE = {
+    ok: true,
+    route: '/api/foobar',
+    message: 'foobar',
+} as const
 
 app.use('*', async (c, next) => {
     const context = resolveDeploymentContext(
@@ -42,7 +47,7 @@ app.use('*', async (c, next) => {
         credentialsMatch(
             credential,
             c.env?.STAGING_BASIC_AUTH_USERNAME,
-            c.env?.STAGING_BASIC_AUTH_PASSWORD,
+            c.env?.STAGING_PW,
         )
     ) {
         await next()
@@ -59,6 +64,17 @@ app.get('/api/health', (c) => {
         status: 'ok',
         service: 'template-hono-preact',
     })
+})
+
+app.get('/api/foobar', (c) => {
+    return c.json(FOOBAR_RESPONSE, 200)
+})
+
+app.all('/api/foobar', (c) => {
+    return c.json(
+        { error: 'method_not_allowed' },
+        405,
+    )
 })
 
 app.get('/health', c => {

@@ -141,6 +141,41 @@ describe('Integration tests', () => {
     })
 
     describe('API endpoints', () => {
+        it('foobar endpoint returns stable JSON payload', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/foobar'
+            )
+            expect(response.status).toBe(200)
+            expect(response.headers.get('content-type'))
+                .toContain('application/json')
+
+            const data = await response.json() as {
+                ok:boolean;
+                route:string;
+                message:string
+            }
+            expect(data).toEqual({
+                ok: true,
+                route: '/api/foobar',
+                message: 'foobar',
+            })
+        })
+
+        it('foobar endpoint rejects unsupported methods', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/foobar',
+                { method: 'POST' }
+            )
+            expect(response.status).toBe(405)
+            expect(response.headers.get('content-type'))
+                .toContain('application/json')
+
+            const data = await response.json() as {
+                error:string
+            }
+            expect(data.error).toBe('method_not_allowed')
+        })
+
         it('health check returns ok', async () => {
             const response = await SELF.fetch(
                 'http://localhost/api/health'
@@ -168,6 +203,24 @@ describe('Integration tests', () => {
             }
             expect(data).toEqual({ status: 'ok' })
         })
+
+        it('health endpoint behavior is unchanged after foobar route',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/api/health'
+                )
+                expect(response.status).toBe(200)
+
+                const data = await response.json() as {
+                    status:string;
+                    service:string
+                }
+                expect(data).toEqual({
+                    status: 'ok',
+                    service: 'template-hono-preact',
+                })
+            }
+        )
     })
 
     describe('CORS configuration', () => {

@@ -9,7 +9,7 @@ function testCredential (
     key:'STAGING_BASIC_AUTH_USERNAME'|'STAGING_PW',
     fallback:string,
 ):string {
-    const value = (env as Record<string, unknown>)[key]
+    const value = env[key]
     return typeof value === 'string' && value.length > 0 ?
         value :
         fallback

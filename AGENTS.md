@@ -14,6 +14,7 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite build/runtime tooling (009-staging-basic-auth)
 - TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite tooling (010-add-foobar-endpoint)
 - TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite, `@substrate-system/*` style packages (011-remove-media-queries)
+- TypeScript ES2022 in strict mode + Vitest 3.2, `@cloudflare/vitest-pool-workers`, `@cloudflare/workers-types`, Vite 7, Hono, Preac (012-fix-test-types)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -33,9 +34,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 012-fix-test-types: Added TypeScript ES2022 in strict mode + Vitest 3.2, `@cloudflare/vitest-pool-workers`, `@cloudflare/workers-types`, Vite 7, Hono, Preac
 - 011-remove-media-queries: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite, `@substrate-system/*` style packages
 - 010-add-foobar-endpoint: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite tooling
-- 009-staging-basic-auth: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite build/runtime tooling
 
 
 <!-- MANUAL ADDITIONS START -->

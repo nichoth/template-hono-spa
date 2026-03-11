@@ -19,9 +19,10 @@ export interface StartupAssetResult {
 }
 
 const DEFAULT_ASSETS:AssetPaths = {
-    css: '/assets/index.css',
-    js: '/assets/index.js',
+    css: '/client/index.css',
+    js: '/client/index.js',
 }
+const MANIFEST_PATH = 'client/vite-manifest.json'
 
 function parseManifest (raw:string):ViteManifest|null {
     try {
@@ -56,14 +57,14 @@ export async function resolveStartupAssets (
 
     try {
         const response = await fetcher.fetch(
-            'http://assets/client/vite-manifest.json'
+            `http://assets/${MANIFEST_PATH}`
         )
         if (!response.ok) {
             return {
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest was not found. '
+                    `Vite manifest was not found at ${MANIFEST_PATH}. `
                     + 'Using default asset paths.',
             }
         }
@@ -75,7 +76,7 @@ export async function resolveStartupAssets (
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest is invalid JSON. '
+                    `Vite manifest at ${MANIFEST_PATH} is invalid JSON. `
                     + 'Using default asset paths.',
             }
         }
@@ -86,7 +87,7 @@ export async function resolveStartupAssets (
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest is missing index.html entry. '
+                    `Vite manifest at ${MANIFEST_PATH} is missing index.html entry. `
                     + 'Using default asset paths.',
             }
         }
@@ -100,7 +101,7 @@ export async function resolveStartupAssets (
             assets: DEFAULT_ASSETS,
             recovered: true,
             warning:
-                'Could not load Vite manifest. '
+                `Could not load Vite manifest at ${MANIFEST_PATH}. `
                 + 'Using default asset paths.',
         }
     }

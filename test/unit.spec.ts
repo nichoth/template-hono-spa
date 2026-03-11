@@ -280,6 +280,22 @@ describe('Hono worker', () => {
             }
         )
 
+        it('requests the client manifest path from the asset binding',
+            async () => {
+                let requestedUrl = ''
+                const fetcher = {
+                    fetch: async (input:RequestInfo | URL) => {
+                        requestedUrl = String(input)
+                        return new Response('', { status: 404 })
+                    }
+                } as unknown as Fetcher
+
+                await resolveStartupAssets(fetcher)
+                expect(requestedUrl)
+                    .toBe('http://assets/client/vite-manifest.json')
+            }
+        )
+
         it('reads manifest asset paths from asset binding',
             async () => {
                 const fetcher = {

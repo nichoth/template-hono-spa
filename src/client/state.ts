@@ -54,27 +54,29 @@ export function State ():AppState {
     return state
 }
 
-State.fetch = async function (state:AppState) {
-    try {
-        start(state.response)
-        const res = await ky.get('/api/foobar').json<{ message:string }>()
-        await sleep(3000)  // resolve for 3 seconds
-        debug('fetch response', res)
-        set(state.response, res)
-        return res
-    } catch (_err) {
-        const err = _err as HTTPError
-        error(state.response, err)
-    }
-}
+State.fetch = Object.assign(
+    async function (state:AppState) {
+        try {
+            start(state.response)
+            const res = await ky.get('/api/foobar').json<{ message:string }>()
+            await sleep(3000)  // resolve for 3 seconds
+            debug('fetch response', res)
+            set(state.response, res)
+            return res
+        } catch (_err) {
+            const err = _err as HTTPError
+            error(state.response, err)
+        }
+    },
 
-Object.assign(State.fetch, {
-    error: async (state:AppState) => {
-        start(state.response)
-        await sleep(2000)
-        error(state.response, new Error('testing errors'))
+    {
+        error: async function (state:AppState) {
+            start(state.response)
+            await sleep(2000)
+            error(state.response, new Error('testing errors'))
+        }
     }
-})
+)
 
 State.Increase = function (state:AppState) {
     state.count.value++

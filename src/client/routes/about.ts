@@ -1,9 +1,6 @@
 import { type FunctionComponent } from 'preact'
-import htm from 'htm'
-import { h } from 'preact'
+import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
-
-const html = htm.bind(h)
 
 export const AboutRoute:FunctionComponent<{ state:AppState }> = function () {
     return html`<div class="route about">

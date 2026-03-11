@@ -147,6 +147,10 @@ async function getAssetPaths (
 ):Promise<AssetPaths> {
     if (cachedAssets) return cachedAssets
 
+    console.log(
+        '[getAssetPaths] ASSETS binding:',
+        c.env?.ASSETS ? 'present' : 'missing'
+    )
     const result = await resolveStartupAssets(c.env?.ASSETS)
     if (result.warning) {
         console.warn(

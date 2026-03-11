@@ -19,10 +19,10 @@ export interface StartupAssetResult {
 }
 
 const DEFAULT_ASSETS:AssetPaths = {
-    css: '/client/index.css',
-    js: '/client/index.js',
+    css: '/assets/index.css',
+    js: '/assets/index.js',
 }
-const MANIFEST_PATH = 'client/vite-manifest.json'
+const MANIFEST_PATH = 'vite-manifest.json'
 
 function parseManifest (raw:string):ViteManifest|null {
     try {
@@ -56,8 +56,12 @@ export async function resolveStartupAssets (
     }
 
     try {
-        const response = await fetcher.fetch(
-            `http://assets/${MANIFEST_PATH}`
+        const url = `http://assets/${MANIFEST_PATH}`
+        console.log('[startup-assets] fetching manifest:', url)
+        const response = await fetcher.fetch(url)
+        console.log(
+            '[startup-assets] manifest response:',
+            response.status
         )
         if (!response.ok) {
             return {
@@ -82,6 +86,10 @@ export async function resolveStartupAssets (
         }
 
         const assets = fromManifest(manifest)
+        console.log(
+            '[startup-assets] resolved assets:',
+            JSON.stringify(assets)
+        )
         if (!assets) {
             return {
                 assets: DEFAULT_ASSETS,

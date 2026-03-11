@@ -47,8 +47,10 @@ export function State ():AppState {
 }
 
 State.fetch = async function (_state:AppState) {
+    await sleep(3000)  // resolve for 3 seconds
     const res = await ky.get('/api/foobar').json()
     debug('fetch response', res)
+    return res
 }
 
 State.Increase = function (state:AppState) {
@@ -57,4 +59,10 @@ State.Increase = function (state:AppState) {
 
 State.Decrease = function (state:AppState) {
     state.count.value--
+}
+
+function sleep (ms:number):Promise<void> {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms)
+    })
 }

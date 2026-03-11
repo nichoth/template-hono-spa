@@ -89,6 +89,16 @@ describe('Integration tests', () => {
             expect(mainResponse.status).toBe(200)
             expect(stagingResponse.status).toBe(401)
         })
+
+        it('keeps default localhost requests public', async () => {
+            const [shellResponse, apiResponse] = await Promise.all([
+                SELF.fetch('http://localhost/'),
+                SELF.fetch('http://localhost/api/health'),
+            ])
+
+            expect(shellResponse.status).toBe(200)
+            expect(apiResponse.status).toBe(200)
+        })
     })
 
     describe('App shell', () => {

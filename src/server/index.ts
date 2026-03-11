@@ -111,7 +111,16 @@ function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefine
         if (overrideBranch) return overrideBranch
     }
 
+    if (isLocalhostRequest(c.req.url)) {
+        return c.env?.MAIN_BRANCH || 'main'
+    }
+
     return c.env?.DEPLOY_BRANCH
+}
+
+function isLocalhostRequest (requestUrl:string):boolean {
+    const hostname = new URL(requestUrl).hostname
+    return hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
 function shouldServeShell (pathname:string):boolean {

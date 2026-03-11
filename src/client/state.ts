@@ -1,15 +1,21 @@
 import { type Signal, signal } from '@preact/signals'
-import ky from 'ky'
+import ky, { type HTTPError } from 'ky'
 import Route from 'route-event'
+import {
+    type RequestFor,
+    RequestState
+} from '@substrate-system/state'
 import Debug from '@substrate-system/debug'
 const debug = Debug('template:state')
 
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    response:Signal<{ message:string }|null>;
+    response:Signal<RequestFor<{ message }, HTTPError|Error>>;
     _setRoute?:(path:string) => void;
 }
+
+const { start, set, error } = RequestState
 
 /**
  * Setup application state.
@@ -19,7 +25,7 @@ export type AppState = {
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
-        response: signal(null),
+        response: signal<RequestFor<{ message }, HTTPError>>(RequestState()),
         count: signal<number>(0),
     }
 
@@ -49,12 +55,26 @@ export function State ():AppState {
 }
 
 State.fetch = async function (state:AppState) {
-    await sleep(3000)  // resolve for 3 seconds
-    const res = await ky.get('/api/foobar').json<{ message:string }>()
-    debug('fetch response', res)
-    state.response.value = res
-    return res
+    try {
+        start(state.response)
+        const res = await ky.get('/api/foobar').json<{ message:string }>()
+        await sleep(3000)  // resolve for 3 seconds
+        debug('fetch response', res)
+        set(state.response, res)
+        return res
+    } catch (_err) {
+        const err = _err as HTTPError
+        error(state.response, err)
+    }
 }
+
+Object.assign(State.fetch, {
+    error: async (state:AppState) => {
+        start(state.response)
+        await sleep(2000)
+        error(state.response, new Error('testing errors'))
+    }
+})
 
 State.Increase = function (state:AppState) {
     state.count.value++

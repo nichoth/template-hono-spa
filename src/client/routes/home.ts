@@ -1,5 +1,5 @@
 import { type FunctionComponent } from 'preact'
-import { useSignal } from '@preact/signals'
+import { useComputed } from '@preact/signals'
 import { html } from 'htm/preact'
 import { useCallback } from 'preact/hooks'
 import { SubstrateButton } from '@substrate-system/button'
@@ -16,12 +16,17 @@ const TEXT = 'This page is rendered on the client with Preact.'
 export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
-    const isSpinning = useSignal(false)
+    // const isSpinning = useSignal(false)
+    const isSpinning = useComputed<boolean>(() => {
+        return state.response.value.pending
+    })
+
     const httpFetch = useCallback(async () => {
-        isSpinning.value = true
         const res = await State.fetch(state)
-        debug('response...', res)
-        isSpinning.value = false
+        debug('response in the view...', res)
+    }, [])
+
+    const errorFetch = useCallback(() => {
     }, [])
 
     return html`<div class="route home">
@@ -38,6 +43,11 @@ export const HomeRoute:FunctionComponent<{
                         spinning=${isSpinning.value}
                         onClick=${httpFetch}
                     >Fetch<//>
+
+                    <${SubstrateButton.TAG}
+                        spinning=${isSpinning.value}
+                        onClick=${errorFetch}
+                    >Error<//>
                 </div>
 
                 <pre>

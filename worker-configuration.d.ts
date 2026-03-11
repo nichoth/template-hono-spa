@@ -12,7 +12,7 @@ declare namespace Cloudflare {
 		DEPLOY_BRANCH: "main";
 		BASIC_AUTH_REALM: "Staging";
 		STAGING_BASIC_AUTH_USERNAME: "staging-user";
-		STAGING_BASIC_AUTH_PASSWORD: "staging-pass";
+		STAGING_PW: "staging-pass";
 		ASSETS: Fetcher;
 	}
 }
@@ -21,7 +21,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DOMAIN" | "MAIN_BRANCH" | "DEPLOY_BRANCH" | "BASIC_AUTH_REALM" | "STAGING_BASIC_AUTH_USERNAME" | "STAGING_BASIC_AUTH_PASSWORD">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "NODE_ENV" | "DOMAIN" | "MAIN_BRANCH" | "DEPLOY_BRANCH" | "BASIC_AUTH_REALM" | "STAGING_BASIC_AUTH_USERNAME" | "STAGING_PW">> {}
 }
 
 // Begin runtime types

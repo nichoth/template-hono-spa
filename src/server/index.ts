@@ -15,7 +15,7 @@ type Bindings = {
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_BASIC_AUTH_USERNAME?:string
-    STAGING_BASIC_AUTH_PASSWORD?:string
+    STAGING_PW?:string
     BASIC_AUTH_REALM?:string
 }
 
@@ -47,7 +47,7 @@ app.use('*', async (c, next) => {
         credentialsMatch(
             credential,
             c.env?.STAGING_BASIC_AUTH_USERNAME,
-            c.env?.STAGING_BASIC_AUTH_PASSWORD,
+            c.env?.STAGING_PW,
         )
     ) {
         await next()

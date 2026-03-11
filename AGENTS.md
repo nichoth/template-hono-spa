@@ -35,9 +35,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 014-fix-staging-assets: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite 7, Vitest 3
 - 013-staging-basic-auth: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite 7, Vitest 3
 - 012-fix-test-types: Added TypeScript ES2022 in strict mode + Vitest 3.2, `@cloudflare/vitest-pool-workers`, `@cloudflare/workers-types`, Vite 7, Hono, Preac
-- 011-remove-media-queries: Added TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite, `@substrate-system/*` style packages
 
 
 <!-- MANUAL ADDITIONS START -->

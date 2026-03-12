@@ -19,6 +19,7 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, `route-event`, Hono, `@substrate-system/routes`, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input` (015-login-route)
 - TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite, `@substrate-system/routes`, `@substrate-system/hamburger-two` (001-mobile-nav)
 - Markdown documentation in a TypeScript/Node.js repository + README.md, existing Wrangler staging environment configuration, existing staging auth secret naming (002-staging-password-docs)
+- TypeScript (ES2022, strict mode) and CSS + Preact, Hono, Vite 7, `route-event`, `@substrate-system/*` UI packages, Lightning CSS custom-media suppor (016-css-color-vars)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -38,9 +39,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 016-css-color-vars: Added TypeScript (ES2022, strict mode) and CSS + Preact, Hono, Vite 7, `route-event`, `@substrate-system/*` UI packages, Lightning CSS custom-media suppor
 - 002-staging-password-docs: Added Markdown documentation in a TypeScript/Node.js repository + README.md, existing Wrangler staging environment configuration, existing staging auth secret naming
 - 001-mobile-nav: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite, `@substrate-system/routes`, `@substrate-system/hamburger-two`
-- 015-login-route: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, `route-event`, Hono, `@substrate-system/routes`, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`
 
 
 <!-- MANUAL ADDITIONS START -->

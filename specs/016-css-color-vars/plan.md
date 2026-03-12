@@ -1,98 +1,77 @@
-# Implementation Plan: [FEATURE]
+# Implementation Plan: Shared Color Variables
 
-**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `016-css-color-vars` | **Date**: 2026-03-12 | **Spec**: [/Users/nick/code/template-hono-spa/specs/016-css-color-vars/spec.md](/Users/nick/code/template-hono-spa/specs/016-css-color-vars/spec.md)
+**Input**: Feature specification from `/specs/016-css-color-vars/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
-[Extract from feature spec: primary requirement + technical approach from research]
+Standardize all maintained UI colors behind shared CSS variables so the SPA uses one semantic color source across global styles, route styles, and shared components. The implementation will extend the existing root color token set, replace remaining hard-coded color literals in maintained CSS, and add focused regression coverage that protects the no-literals rule and existing visual semantics.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript (ES2022, strict mode) and CSS  
+**Primary Dependencies**: Preact, Hono, Vite 7, `route-event`, `@substrate-system/*` UI packages, Lightning CSS custom-media support  
+**Storage**: N/A  
+**Testing**: Vitest 3, TypeScript typecheck, ESLint  
+**Target Platform**: Browser-based SPA served by Vite locally and Cloudflare Worker infrastructure for app delivery  
+**Project Type**: web application  
+**Performance Goals**: Preserve current route rendering speed and keep color-token lookups limited to the existing CSS variable mechanism with no additional runtime interaction cost  
+**Constraints**: Keep current visual intent substantially unchanged, confine work to maintained repository styles, avoid introducing page-specific color naming, preserve existing route and shell behavior  
+**Scale/Scope**: Shared root stylesheet, shared navigation/card styles, route-level styles that still use literals, and focused regression checks in the existing test suite
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- The current [constitution.md](/Users/nick/code/template-hono-spa/.specify/memory/constitution.md) is an unfilled template with placeholder sections and no ratified repository-specific rules.
+- Planning gate status: PASS by default because there are no enforceable constitutional requirements defined yet.
+- Operational repository gates still apply for implementation:
+  - Keep the change scoped to shared color tokenization and related regression coverage.
+  - Preserve current user-visible meaning for navigation, content, warning, success, and error styling.
+  - Validate implementation with `npm run lint` and `HOME=/tmp npm test`.
+- Post-design re-check: PASS. The Phase 0 and Phase 1 artifacts remain within the requested scope and do not introduce new architectural or workflow concerns.
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/[###-feature]/
-├── plan.md              # This file (/speckit.plan command output)
-├── research.md          # Phase 0 output (/speckit.plan command)
-├── data-model.md        # Phase 1 output (/speckit.plan command)
-├── quickstart.md        # Phase 1 output (/speckit.plan command)
-├── contracts/           # Phase 1 output (/speckit.plan command)
-└── tasks.md             # Phase 2 output (/speckit.tasks command - NOT created by /speckit.plan)
+specs/016-css-color-vars/
+├── plan.md
+├── research.md
+├── data-model.md
+├── quickstart.md
+├── contracts/
+│   └── color-token-contract.md
+└── tasks.md
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
 src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
+├── _variables.css
+├── style.css
+├── client/
 │   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+│   │   ├── card.css
+│   │   └── nav.css
+│   └── routes/
+│       ├── home.css
+│       ├── login.css
+│       └── profile.css
+└── server/
+    └── [no expected changes]
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+test/
+├── integration.spec.ts
+├── migration-rendering.spec.ts
+└── unit.spec.ts
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**: Keep the existing single-project web app structure. This feature is entirely a styling-system cleanup plus regression coverage, so the work stays in shared CSS files and the existing test entry points.
 
 ## Complexity Tracking
 
@@ -100,5 +79,4 @@ directories captured above]
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+| None | N/A | N/A |

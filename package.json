@@ -26,6 +26,7 @@
     "@substrate-system/hamburger-two": "^0.0.13",
     "@substrate-system/input": "^0.0.22",
     "@substrate-system/password-input": "^0.0.4",
+    "@substrate-system/radio-input": "^0.0.10",
     "@substrate-system/routes": "^5.0.5",
     "@substrate-system/state": "^0.1.0",
     "hono": "^4.11.3",

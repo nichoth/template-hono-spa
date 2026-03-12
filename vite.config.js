@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
         css: {
             transformer: 'lightningcss',
             lightningcss: {
+                drafts: {
+                    customMedia: true  // see ./src/_variables.css
+                },
                 targets: browserslistToTargets(browserslist('>= 0.25%')),
             },
         },

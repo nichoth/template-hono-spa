@@ -22,6 +22,8 @@ the browser by Preact.
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
+- [Deploy](#deploy)
+  * [Staging Password Protection](#staging-password-protection)
 - [Rendering](#rendering)
 - [Notes](#notes)
 
@@ -81,6 +83,48 @@ prevent local startup.
 If startup prerequisites fail, the server now returns an actionable message
 that includes a concrete next step.
 
+## Deploy
+
+### Staging Password Protection
+
+The Cloudflare `staging` environment is protected with HTTP basic auth. This
+only applies to the staging deploy flow:
+
+```sh
+wrangler deploy --env staging
+```
+
+Set the staging secrets in Cloudflare with these exact names:
+
+```sh
+wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging
+wrangler secret put STAGING_PW --env staging
+```
+
+Generate a strong random password from the CLI before setting `STAGING_PW`. One
+simple option is:
+
+```sh
+openssl rand -base64 32
+```
+
+Copy the generated value and use it when `wrangler secret put STAGING_PW --env staging`
+prompts for the secret.
+
+Recommended setup flow:
+
+1. Choose the staging username you want to use.
+2. Run `wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging`.
+3. Generate a fresh password with `openssl rand -base64 32`.
+4. Run `wrangler secret put STAGING_PW --env staging` and paste the generated password.
+5. Deploy staging with `wrangler deploy --env staging`.
+
+To rotate staging access later, generate a new password and update
+`STAGING_PW` in the `staging` environment again. You only need to change
+`STAGING_BASIC_AUTH_USERNAME` if you also want to rotate the username.
+
+Do not reuse the checked-in example values from local files as real deployment
+credentials.
 
 ## Rendering
 

@@ -141,6 +141,26 @@ describe('Integration tests', () => {
             }
         )
 
+        it('keeps the shared client shell bootstrapped across primary routes',
+            async () => {
+                const responses = await Promise.all([
+                    SELF.fetch('http://localhost/'),
+                    SELF.fetch('http://localhost/about'),
+                    SELF.fetch('http://localhost/login'),
+                ])
+
+                const htmlByRoute = await Promise.all(responses.map(async response => {
+                    expect(response.status).toBe(200)
+                    return response.text()
+                }))
+
+                for (const html of htmlByRoute) {
+                    expect(html).toContain('<div id="root"></div>')
+                    expect(html).toContain('/src/client/index.ts')
+                }
+            }
+        )
+
         it('serves shell for unknown client paths',
             async () => {
                 const response = await SELF.fetch(

@@ -1,10 +1,12 @@
+@import url("./_variables.css");
 @import url("@substrate-system/css-normalize");
 @import url("@substrate-system/a11y");
 @import url("@substrate-system/button/css");
+@import url("@substrate-system/hamburger-two/css");
 @import url("@substrate-system/input/css");
 @import url("@substrate-system/password-input/css");
-@import url("./client/components/card.css");
 @import url("@substrate-system/blur-hash/css");
+@import url("./client/components/card.css");
 
 :root {
     --color-bg: #fafafa;
@@ -106,6 +108,10 @@ body {
     color: var(--color-text);
     line-height: 1.6;
     margin-bottom: 20vh;
+
+    &.reduce-fouce {
+        opacity: 0;
+    }
 
     & p {
         margin-bottom: 1rem;

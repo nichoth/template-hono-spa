@@ -18,7 +18,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@preact/signals": "^2.7.0",
+    "@preact/signals": "^2.8.2",
     "@substrate-system/a11y": "^0.0.17",
     "@substrate-system/blur-hash": "^0.0.35",
     "@substrate-system/button": "^0.0.35",

@@ -1,6 +1,7 @@
 import { render, type FunctionComponent } from 'preact'
 import { useComputed } from '@preact/signals'
 import { BlurHash } from '@substrate-system/blur-hash'
+import { HamburgerTwo } from '@substrate-system/hamburger-two'
 import '@substrate-system/input'
 import '@substrate-system/password-input'
 import { html } from 'htm/preact'
@@ -21,6 +22,9 @@ const router = createRouter(state)
 
 if (typeof document !== 'undefined') {
     SubstrateButton.define()
+    if (!customElements.get(HamburgerTwo.TAG)) {
+        HamburgerTwo.define()
+    }
 }
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {

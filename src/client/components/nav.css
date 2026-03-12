@@ -1,16 +1,58 @@
 nav.app-nav {
-    width: 50%;
+    margin-left: auto;
+    position: relative;
+
+    & .desktop-nav,
+    & .mobile-nav-shell {
+        min-width: 0;
+    }
 
     & ul.nav-links {
-        width: 100%;
         list-style: none;
+        padding: 0;
+        margin: 0;
+        min-width: 0;
+    }
+
+    & .nav-links-inline {
+        width: 100%;
         display: flex;
         gap: 1rem;
         justify-content: space-around;
-        padding: 0;
-        margin: 0;
         flex-wrap: wrap;
-        min-width: 0;
+    }
+
+    & .mobile-nav-shell {
+        display: none;
+        align-items: center;
+        justify-content: flex-end;
+        width: auto;
+    }
+
+    & .mobile-nav-trigger {
+        display: none;
+    }
+
+    & .mobile-nav-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: calc(100% + 0.75rem);
+        min-width: min(80vw, 18rem);
+        background: var(--color-white);
+        border: 1px solid var(--color-border);
+        box-shadow: 0 0.75rem 2rem var(--color-shadow);
+        padding: 1rem;
+        z-index: 20;
+
+        &.open {
+            display: block;
+        }
+    }
+
+    & .nav-links-mobile {
+        display: grid;
+        gap: 0.75rem;
     }
 
     & a {
@@ -19,6 +61,34 @@ nav.app-nav {
         &.active {
             text-underline-offset: 3px;
             text-decoration-thickness: 3px;
+        }
+    }
+}
+
+@media (width < 680px) {
+    header > nav.app-nav {
+        order: 2;
+        margin-left: auto;
+    }
+
+    header > .avatar {
+        order: 3;
+        margin-left: 0;
+    }
+
+    nav.app-nav {
+        width: auto;
+
+        & .desktop-nav {
+            display: none;
+        }
+
+        & .mobile-nav-shell {
+            display: flex;
+        }
+
+        & hamburger-two.mobile-nav-trigger {
+            display: block;
         }
     }
 }

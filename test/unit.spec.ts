@@ -230,6 +230,45 @@ describe('Hono worker', () => {
             expect(isKnownClientRoute('/login')).toBe(true)
             expect(isKnownClientRoute('/missing')).toBe(false)
         })
+
+        it('keeps shared nav structure aligned with centralized routes', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('desktop-nav')
+            expect(navSource).toContain('mobile-nav-shell')
+            expect(navSource).toContain('routes.map')
+        })
+
+        it('wires the hamburger trigger to mobile menu open and close events', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('HamburgerTwo.TAG')
+            expect(navSource).toContain("HamburgerTwo.event('open')")
+            expect(navSource).toContain("HamburgerTwo.event('close')")
+            expect(navSource).toContain('mobile-nav-trigger')
+            expect(navSource).toContain('mobile-nav-menu')
+        })
+
+        it('renders the shared route links inside the mobile menu container', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('nav-links-mobile')
+            expect(navSource).toContain('renderNavItems(currentPath)')
+            expect(navSource).toContain("props.currentPath === props.href ? 'active' : ''")
+            expect(navSource).toContain("isMenuOpen ? 'open' : ''")
+            expect(navSource).toContain('hidden=${')
+            expect(navSource).toContain('!isMenuOpen')
+        })
+
+        it('keeps desktop nav inline while closing the mobile menu on route and viewport changes', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain("window.matchMedia('(width >= 680px)')")
+            expect(navSource).toContain('hamburgerRef.current.isOpen = false')
+            expect(navSource).toContain('}, [currentPath])')
+            expect(navSource).toContain('desktop-nav')
+            expect(navSource).toContain('mobile-nav-shell')
+        })
     })
 
     describe('Login route', () => {

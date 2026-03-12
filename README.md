@@ -89,22 +89,3 @@ that includes a concrete next step.
 * Route state is sourced from the browser URL
 * Client route definitions live in `src/client/routes/index.ts`
 * Server keeps ownership of `/api/*` and `/health`
-
----
-
-## Notes
-
-I do not understand why we need to run `vite build` twice, but we do.
-
-The empty object in `public/client/vite-manifest.json` is necessary because
-the server depends on it when we run the build process.
-
-```js
-// package.json
-{
-  "scripts": {
-    "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build && vite build",
-  }
-}
-```
- 

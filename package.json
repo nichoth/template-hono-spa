@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:typecheck": "tsc -p tsconfig.test.json --pretty false",
     "test:open": "vitest --ui",
-    "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build && vite build",
+    "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build",
     "start": "vite",
     "toc": "markdown-toc --maxdepth 3 -i README.md",
     "preversion": "npm run lint",

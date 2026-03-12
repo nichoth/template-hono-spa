@@ -232,8 +232,8 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets()
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
                     'Static asset binding'
@@ -250,11 +250,11 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets(fetcher)
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
-                    'Vite manifest was not found at client/vite-manifest.json.'
+                    'Vite manifest was not found at vite-manifest.json.'
                 )
             }
         )
@@ -271,11 +271,11 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets(fetcher)
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
-                    'Vite manifest at client/vite-manifest.json is missing index.html entry.'
+                    'Vite manifest at vite-manifest.json is missing index.html entry.'
                 )
             }
         )
@@ -292,7 +292,7 @@ describe('Hono worker', () => {
 
                 await resolveStartupAssets(fetcher)
                 expect(requestedUrl)
-                    .toBe('http://assets/client/vite-manifest.json')
+                    .toBe('http://assets/vite-manifest.json')
             }
         )
 

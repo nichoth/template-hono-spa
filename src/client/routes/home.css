@@ -1,6 +1,5 @@
 .route.home {
     width: 100%;
-    min-width: 0;
     max-width: min(70rem, 90vw);
 
     & .cards-grid {
@@ -19,9 +18,6 @@
     }
 
     & .card {
-        min-height: 26rem;
-        min-width: 0;
-
         &.fetcher {
             display: flex;
             flex-direction: column;

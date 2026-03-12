@@ -92,7 +92,7 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
         submitMessage.value = result.message
     }
 
-    return html`<section class="route login-route">
+    return html`<div class="route login-route">
         <h2>Login</h2>
         <p>Enter your details to continue.</p>
         <form class="login-form" onSubmit=${handleSubmit} novalidate>
@@ -125,5 +125,5 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                 html`<p class="login-submit-message">${submitMessage.value}</p>` :
                 null}
         </form>
-    </section>`
+    </div>`
 }

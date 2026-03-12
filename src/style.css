@@ -109,6 +109,10 @@ body {
     line-height: 1.6;
     margin-bottom: 20vh;
 
+    &.reduce-fouce {
+        opacity: 0;
+    }
+
     & p {
         margin-bottom: 1rem;
         line-height: 1.4;

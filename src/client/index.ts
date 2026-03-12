@@ -10,7 +10,6 @@ import type { AppState } from './state.js'
 import { State } from './state.js'
 import { NotFound } from './not-found.js'
 import { Nav } from './components/nav.js'
-import { SubstrateButton } from '@substrate-system/button'
 import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
 const debug = Debug('template')
@@ -21,10 +20,7 @@ const state = State()
 const router = createRouter(state)
 
 if (typeof document !== 'undefined') {
-    SubstrateButton.define()
-    if (!customElements.get(HamburgerTwo.TAG)) {
-        HamburgerTwo.define()
-    }
+    HamburgerTwo.define()
 }
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {

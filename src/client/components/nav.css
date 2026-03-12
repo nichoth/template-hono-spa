@@ -14,32 +14,8 @@ nav.app-nav {
         flex-wrap: wrap;
     }
 
-    & .mobile-nav-shell {
-        display: none;
-        align-items: center;
-        justify-content: flex-end;
-        width: auto;
-    }
-
     & .mobile-nav-trigger {
         display: none;
-    }
-
-    & .mobile-nav-menu {
-        display: none;
-        position: absolute;
-        right: 0;
-        top: calc(100% + 0.75rem);
-        min-width: min(80vw, 18rem);
-        background: var(--color-white);
-        border: 1px solid var(--color-border);
-        box-shadow: 0 0.75rem 2rem var(--color-shadow);
-        padding: 1rem;
-        z-index: 20;
-
-        &.open {
-            display: block;
-        }
     }
 
     & .nav-links-mobile {
@@ -53,6 +29,94 @@ nav.app-nav {
         &.active {
             text-underline-offset: 3px;
             text-decoration-thickness: 3px;
+        }
+    }
+}
+
+hamburger-two {
+    & .hamburger-wrapper {
+        &.open {
+            & label.burger {
+                top: 4px;
+            }
+
+            & button {
+                position: relative;
+                top: 15px;
+                right: 1px;
+            }
+        }
+    }
+}
+
+@keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 0.8; }
+}
+
+@keyframes fade-out {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+.hamburger-wrapper {
+    top: 28px;
+}
+
+.mobile-nav-menu {
+    display: none;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    animation: fade-in var(--fade-in-time, 0.4s);
+
+   &.open {
+        display: flex;
+        z-index: 97;
+        opacity: 0.85;
+        position: fixed;
+        top: 0;
+        left: 0;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    & button {
+        background: none;
+        border: 1px solid white;
+        color: white;
+        padding: 0.5rem 1rem;
+    }
+
+    & ul {
+        list-style: none;
+        align-items: center;
+        padding: 0;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+
+        & a {
+            color: white;
+        }
+        
+        & li {
+            margin: 1.2rem 0;
+        }
+
+        &.controls {
+            color: white;
+
+            & button {
+                border: none;
+                fill: white;
+            }
+
+            & li {
+                display: flex;
+                align-items: center;
+            }
         }
     }
 }

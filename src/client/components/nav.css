@@ -1,23 +1,13 @@
 nav.app-nav {
-    margin-left: auto;
-    position: relative;
-
-    & .desktop-nav,
-    & .mobile-nav-shell {
-        min-width: 0;
-    }
-
     & ul.nav-links {
         list-style: none;
         padding: 0;
-        margin: 0;
-        min-width: 0;
     }
 
     & .nav-links-inline {
         width: 100%;
         display: flex;
-        gap: 1rem;
+        gap: 2rem;
         justify-content: space-around;
         flex-wrap: wrap;
     }

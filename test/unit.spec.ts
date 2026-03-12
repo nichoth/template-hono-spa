@@ -23,6 +23,8 @@ import {
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
 import {
     submitLoginValues,
+    startPasskeyLogin,
+    PASSKEY_UI_ONLY_LOGIN_MESSAGE,
 } from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
 
@@ -290,16 +292,32 @@ describe('Hono worker', () => {
     })
 
     describe('Login route', () => {
-        it('renders a login heading and required form controls', () => {
+        it('renders a login heading with a radio selector for passkey and password', () => {
             const loginSource = sourceFiles['/src/client/routes/login.ts']
+            const clientIndexSource = sourceFiles['/src/client/index.ts']
 
             expect(loginSource).toContain('<h2>Login</h2>')
-            expect(loginSource).toContain('substrate-input')
-            expect(loginSource).toContain('password-input')
-            expect(loginSource).toContain('substrate-button')
+            expect(loginSource).toContain('radio-input')
+            expect(loginSource).toContain('class="login-methods"')
+            expect(loginSource).toContain('login-method-option')
+            expect(loginSource).toContain('name="sign-in-method"')
+            expect(loginSource).toContain('label="Passkey"')
+            expect(loginSource).toContain('label="Password"')
+            expect(loginSource).toContain("const activeMethod = useSignal<SignInMethod>('passkey')")
+            expect(clientIndexSource).toContain('@substrate-system/radio-input')
         })
 
-        it('returns missing-field errors without clearing valid values', () => {
+        it('keeps passkey as the default selected path in the radio selector', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('checked=')
+            expect(loginSource).toContain("activeMethod.value === 'passkey'")
+            expect(loginSource).toContain('Continue with passkey')
+            expect(loginSource)
+                .toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
+        })
+
+        it('returns missing-field errors without clearing valid values for password sign-in', () => {
             const result = submitLoginValues({
                 identifier: 'nick@example.com',
                 password: '',
@@ -315,7 +333,7 @@ describe('Hono worker', () => {
             expect(result.message).toBe('')
         })
 
-        it('returns the UI-only submit message when values are complete', () => {
+        it('returns the UI-only password message when values are complete', () => {
             const result = submitLoginValues({
                 identifier: 'nick@example.com',
                 password: 'secret',
@@ -328,6 +346,32 @@ describe('Hono worker', () => {
             expect(result.errors).toEqual({})
             expect(result.message)
                 .toBe('Login is not connected yet. No sign-in was performed.')
+        })
+
+        it('starts a passkey login attempt without requiring a password', () => {
+            const result = startPasskeyLogin()
+
+            expect(result.method).toBe('passkey')
+            expect(result.message).toBe(PASSKEY_UI_ONLY_LOGIN_MESSAGE)
+        })
+
+        it('renders password fields only for the password path', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain("activeMethod.value === 'password'")
+            expect(loginSource).toContain('password-input')
+            expect(loginSource).toContain('Username or Email')
+            expect(loginSource).toContain('Log in with password')
+        })
+
+        it('keeps the password option available as fallback from the same selector', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('value="password"')
+            expect(loginSource).toContain('value="passkey"')
+            expect(loginSource).toContain('Choose how you want to sign in.')
+            expect(loginSource).toContain('Use your username or email and password.')
+            expect(loginSource).toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
         })
     })
 

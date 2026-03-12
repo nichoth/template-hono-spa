@@ -141,6 +141,19 @@ describe('Integration tests', () => {
             }
         )
 
+        it('keeps the login route deep link shell stable for the radio-selector login UX',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/login'
+                )
+                const html = await response.text()
+
+                expect(response.status).toBe(200)
+                expect(html).toContain('<div id="root"></div>')
+                expect(html).toContain('/src/client/index.ts')
+            }
+        )
+
         it('keeps the shared client shell bootstrapped across primary routes',
             async () => {
                 const responses = await Promise.all([

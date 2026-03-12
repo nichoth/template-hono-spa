@@ -5,6 +5,7 @@
 @import url("@substrate-system/hamburger-two/css");
 @import url("@substrate-system/input/css");
 @import url("@substrate-system/password-input/css");
+@import url("@substrate-system/radio-input/css");
 @import url("@substrate-system/blur-hash/css");
 @import url("./client/components/card.css");
 

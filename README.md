@@ -12,10 +12,6 @@ At request time, when the Worker handles app-page requests, it returns a shell
 document with an empty `#root` plus client script tags. The app is rendered in
 the browser by Preact.
 
-```sh
-export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
-```
-
 <details><summary><h2>Contents</h2></summary>
 
 <!-- toc -->

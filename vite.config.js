@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
             minify: mode === 'production',
             outDir: './public',
             emptyOutDir: true,
-            sourcemap: 'inline',
+            sourcemap: true,
             manifest: 'vite-manifest.json',
         }
     }

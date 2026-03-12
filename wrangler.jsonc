@@ -58,6 +58,7 @@
 	 */
 	"env": {
 		"staging": {
+			"name": "staging-template-hono-spa",
 			"vars": {
 				"NODE_ENV": "production",
 				"MAIN_BRANCH": "main",

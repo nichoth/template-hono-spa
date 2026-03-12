@@ -56,14 +56,8 @@ nav.app-nav {
 }
 
 @media (width < 680px) {
-    header > nav.app-nav {
-        order: 2;
-        margin-left: auto;
-    }
-
     header > .avatar {
-        order: 3;
-        margin-left: 0;
+        display: none;
     }
 
     nav.app-nav {
@@ -83,7 +77,7 @@ nav.app-nav {
     }
 }
 
-a.btn {
+/* a.btn {
     text-decoration: none;
     background: none;
     font-size: 1rem;
@@ -107,4 +101,4 @@ a.btn {
     &:active {
         transform: translateY(2px);
     }
-}
+} */

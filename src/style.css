@@ -1,11 +1,12 @@
+@import url("./_variables.css");
 @import url("@substrate-system/css-normalize");
 @import url("@substrate-system/a11y");
 @import url("@substrate-system/button/css");
 @import url("@substrate-system/hamburger-two/css");
 @import url("@substrate-system/input/css");
 @import url("@substrate-system/password-input/css");
-@import url("./client/components/card.css");
 @import url("@substrate-system/blur-hash/css");
+@import url("./client/components/card.css");
 
 :root {
     --color-bg: #fafafa;
@@ -32,13 +33,6 @@
     --layout-card-row-min-height: 28rem;
     --layout-measure: 70ch;
 }
-
-/*
-    see https://lightningcss.dev/transpilation.html#custom-media-queries
-    This is enabled by default in the plugin
-    https://github.com/5t3ph/eleventy-plugin-lightningcss?tab=readme-ov-file#features
-*/
-@custom-media --small (max-device-width: 680px);
 
 .route {
     max-width: var(--layout-main-max-width);

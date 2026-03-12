@@ -72,10 +72,7 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
                 ref=${hamburgerRef}
                 class="mobile-nav-trigger"
             ></${HamburgerTwo.TAG}>
-            <div
-                class=${menuClasses}
-                hidden=${!isMenuOpen}
-            >
+            <div class=${menuClasses} hidden=${!isMenuOpen}>
                 <ul class="nav-links nav-links-mobile">
                     ${renderNavItems(currentPath)}
                 </ul>

@@ -1,0 +1,8 @@
+/*
+    src/styles/variables.css
+    see https://lightningcss.dev/transpilation.html#custom-media-queries
+*/
+@custom-media --small (width <= 680px);
+@custom-media --tablet (width <= 1024px);
+@custom-media --desktop (width > 1024px);
+

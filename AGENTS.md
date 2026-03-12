@@ -16,6 +16,7 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ES2022, strict mode), CSS + Preact, route-event, Hono, Vite, `@substrate-system/*` style packages (011-remove-media-queries)
 - TypeScript ES2022 in strict mode + Vitest 3.2, `@cloudflare/vitest-pool-workers`, `@cloudflare/workers-types`, Vite 7, Hono, Preac (012-fix-test-types)
 - TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite 7, Vitest 3 (013-staging-basic-auth)
+- TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, `route-event`, Hono, `@substrate-system/routes`, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input` (015-login-route)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -35,9 +36,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 015-login-route: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, `route-event`, Hono, `@substrate-system/routes`, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`
 - 014-fix-staging-assets: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite 7, Vitest 3
 - 013-staging-basic-auth: Added TypeScript (ES2022, strict mode) + Hono, Cloudflare Workers runtime bindings, Vite 7, Vitest 3
-- 012-fix-test-types: Added TypeScript ES2022 in strict mode + Vitest 3.2, `@cloudflare/vitest-pool-workers`, `@cloudflare/workers-types`, Vite 7, Hono, Preac
 
 
 <!-- MANUAL ADDITIONS START -->

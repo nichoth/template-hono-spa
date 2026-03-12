@@ -39,6 +39,12 @@ const sourceFiles = import.meta.glob('/src/**/*.ts', {
     eager: true,
 }) as Record<string, string>
 
+const cssSourceFiles = import.meta.glob('/src/**/*.css', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+}) as Record<string, string>
+
 function createTestState ():AppState {
     return {
         route: signal('/'),
@@ -47,6 +53,17 @@ function createTestState ():AppState {
             RequestState()
         ),
     }
+}
+
+function findBlockedColorLines (source:string):string[] {
+    const blockedColorPattern = /#[0-9a-fA-F]{3,8}\b|rgb[a]?\(|hsl[a]?\(|\b(?:black|white|transparent)\b/
+
+    return source
+        .split('\n')
+        .map(line => line.replace(/\/\*.*?\*\//g, '').trim())
+        .filter(line => line.length > 0)
+        .filter(line => !line.startsWith('--'))
+        .filter(line => blockedColorPattern.test(line))
 }
 
 describe('Hono worker', () => {
@@ -311,6 +328,28 @@ describe('Hono worker', () => {
             expect(result.errors).toEqual({})
             expect(result.message)
                 .toBe('Login is not connected yet. No sign-in was performed.')
+        })
+    })
+
+    describe('Shared color tokens', () => {
+        it('keeps maintained stylesheets free of direct color literals', () => {
+            const maintainedStyles = [
+                '/src/style.css',
+                '/src/client/components/card.css',
+                '/src/client/components/nav.css',
+                '/src/client/routes/home.css',
+                '/src/client/routes/login.css',
+                '/src/client/routes/profile.css',
+            ]
+
+            const offenders = maintainedStyles.flatMap(path => {
+                const source = cssSourceFiles[path]
+                const blockedLines = findBlockedColorLines(source)
+
+                return blockedLines.map(line => `${path}: ${line}`)
+            })
+
+            expect(offenders).toEqual([])
         })
     })
 

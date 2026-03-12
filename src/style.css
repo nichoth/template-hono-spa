@@ -9,22 +9,27 @@
 @import url("./client/components/card.css");
 
 :root {
-    --color-bg: #fafafa;
-    --color-text: black;
-    --color-text-muted: black;  /* no muted color */
-    --color-white: white;
-    --color-light: #e1e0e040;
-    --color-primary: #2563eb;
-    --color-primary-dark: #1d4ed8;
-    --color-heading: black;
-    --color-border: #9b9b9b;
-    --color-shadow: rgb(0 0 0 / 10%);
-    --color-success: #059669;
-    --color-success-bg: #ecfdf5;
-    --color-neutral-bg: #f3f4f6;
-    --color-warning-light: #fef3c7;
-    --color-warning: #fde68a;
-    --color-warning-border: #f59e0b;
+    --color-surface-canvas: #fafafa;
+    --color-surface-card: #ffffff;
+    --color-surface-subtle: #e1e0e040;
+    --color-surface-neutral: #f3f4f6;
+    --color-surface-success: #ecfdf5;
+    --color-surface-warning: #fef3c7;
+    --color-surface-inverse: #000000;
+    --color-text-base: #000000;
+    --color-text-muted: #000000;
+    --color-text-heading: #000000;
+    --color-text-inverse: #ffffff;
+    --color-action-primary: #2563eb;
+    --color-action-primary-strong: #1d4ed8;
+    --color-border-default: #9b9b9b;
+    --color-border-inverse: #ffffff;
+    --color-shadow-soft: rgb(0 0 0 / 10%);
+    --color-status-success: #059669;
+    --color-status-warning: #fde68a;
+    --color-border-warning: #f59e0b;
+    --color-status-error: #b42318;
+    --color-transparent: transparent;
     --layout-main-max-width: min(96vw, 40rem);
     --layout-main-padding-inline: clamp(0.75rem, 3vw, 1.25rem);
     --layout-main-padding-block: clamp(0.5rem, 1.5vw, 1rem);
@@ -71,7 +76,7 @@ header {
 
         & a {
             text-decoration: none;
-            color: black;
+            color: var(--color-text-heading);
         }
     }
 
@@ -80,8 +85,8 @@ header {
         width: 4rem;
         height: 4rem;
         border-radius: 50%;
-        border: 1px solid black;
-        outline: 2px solid transparent;
+        border: 1px solid var(--color-text-base);
+        outline: 2px solid var(--color-transparent);
     }
 
     & .avatar {
@@ -94,8 +99,8 @@ header {
 
             &:hover {
                 & blur-hash {
-                    outline-color: var(--color-primary);
-                    border-color: var(--color-primary);
+                    outline-color: var(--color-action-primary);
+                    border-color: var(--color-action-primary);
                 }
             }
         }
@@ -104,8 +109,8 @@ header {
 
 body {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-    background: var(--color-bg);
-    color: var(--color-text);
+    background: var(--color-surface-canvas);
+    color: var(--color-text-base);
     line-height: 1.6;
     margin-bottom: 20vh;
 

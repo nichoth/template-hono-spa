@@ -11,20 +11,20 @@
 
 :root {
     --color-surface-canvas: #fafafa;
-    --color-surface-card: #ffffff;
+    --color-surface-card: #fff;
     --color-surface-subtle: #e1e0e040;
     --color-surface-neutral: #f3f4f6;
     --color-surface-success: #ecfdf5;
     --color-surface-warning: #fef3c7;
-    --color-surface-inverse: #000000;
-    --color-text-base: #000000;
-    --color-text-muted: #000000;
-    --color-text-heading: #000000;
-    --color-text-inverse: #ffffff;
+    --color-surface-inverse: #000;
+    --color-text-base: #000;
+    --color-text-muted: #000;
+    --color-text-heading: #000;
+    --color-text-inverse: #fff;
     --color-action-primary: #2563eb;
     --color-action-primary-strong: #1d4ed8;
     --color-border-default: #9b9b9b;
-    --color-border-inverse: #ffffff;
+    --color-border-inverse: #fff;
     --color-shadow-soft: rgb(0 0 0 / 10%);
     --color-status-success: #059669;
     --color-status-warning: #fde68a;

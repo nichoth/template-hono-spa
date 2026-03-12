@@ -24,8 +24,9 @@
 }
 
 .login-method-option radio-input {
-    display: block;
     --form-control-color: var(--color-action-primary);
+
+    display: block;
 }
 
 .login-method-option .radio-input {

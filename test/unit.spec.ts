@@ -25,6 +25,8 @@ import {
     submitLoginValues,
     startPasskeyLogin,
     PASSKEY_UI_ONLY_LOGIN_MESSAGE,
+    getRadioCheckedAttr,
+    resolveSelectedMethod,
 } from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
 
@@ -372,6 +374,30 @@ describe('Hono worker', () => {
             expect(loginSource).toContain('Choose how you want to sign in.')
             expect(loginSource).toContain('Use your username or email and password.')
             expect(loginSource).toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
+        })
+
+        it('resolves the selected method from nested radio-input change events', () => {
+            const event = {
+                target: null,
+                composedPath: () => [
+                    { tagName: 'LABEL' },
+                    {
+                        tagName: 'RADIO-INPUT',
+                        getAttribute: (name:string) => name === 'value' ?
+                            'password' :
+                            name === 'name' ?
+                                'sign-in-method' :
+                                null,
+                    },
+                ],
+            } as unknown as Event
+
+            expect(resolveSelectedMethod(event)).toBe('password')
+        })
+
+        it('uses presence-style checked attributes for custom radio-input elements', () => {
+            expect(getRadioCheckedAttr('passkey', 'passkey')).toBe('checked')
+            expect(getRadioCheckedAttr('passkey', 'password')).toBe(null)
         })
     })
 

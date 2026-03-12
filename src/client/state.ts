@@ -11,6 +11,7 @@ const debug = Debug('template:state')
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
+    user:Signal<RequestFor<{ data }, HTTPError>>
     response:Signal<RequestFor<{ message }, HTTPError|Error>>;
     _setRoute?:(path:string) => void;
 }
@@ -54,6 +55,18 @@ export function State ():AppState {
     return state
 }
 
+State.login = async function (state:AppState, credentials) {
+    start(state.user)
+    try {
+        const user = await ky.post('/api/login').json<{ data }>()
+        debug('login response...', user)
+        set(state.user, user)
+    } catch (_err) {
+        const err = _err as HTTPError
+        error(state.user, err)
+    }
+}
+
 State.fetch = Object.assign(
     async function (state:AppState) {
         try {
@@ -77,14 +90,6 @@ State.fetch = Object.assign(
         }
     }
 )
-
-State.Increase = function (state:AppState) {
-    state.count.value++
-}
-
-State.Decrease = function (state:AppState) {
-    state.count.value--
-}
 
 function sleep (ms:number):Promise<void> {
     return new Promise(resolve => {

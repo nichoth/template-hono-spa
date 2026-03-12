@@ -4,40 +4,28 @@ import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
 import './login.css'
 
-export type SignInMethod = 'passkey' | 'password'
+type SignInMethod = 'passkey'|'password'
 
-export type LoginFormValues = {
+type LoginFormValues = {
     identifier:string;
     password:string;
 }
 
-export type LoginValidationErrors = Partial<Record<keyof LoginFormValues, string>>
+type LoginValidationErrors = Partial<Record<keyof LoginFormValues, string>>
 
-export type LoginSubmitResult = {
+type LoginSubmitResult = {
     values:LoginFormValues;
     errors:LoginValidationErrors;
     message:string;
 }
 
-export type PasskeyLoginResult = {
+type PasskeyLoginResult = {
     method:SignInMethod;
     message:string;
 }
 
-export function validateLoginValues (
-    values:LoginFormValues
-):LoginValidationErrors {
-    const errors:LoginValidationErrors = {}
-
-    if (!values.identifier.trim()) {
-        errors.identifier = 'Enter your username or email.'
-    }
-
-    if (!values.password.trim()) {
-        errors.password = 'Enter your password.'
-    }
-
-    return errors
+type SignInMethodTarget = Pick<HTMLInputElement, 'name'|'value'> | {
+    getAttribute:(name:string) => string | null;
 }
 
 export const UI_ONLY_LOGIN_MESSAGE =
@@ -53,18 +41,58 @@ export function startPasskeyLogin ():PasskeyLoginResult {
     }
 }
 
-export function submitLoginValues (
-    values:LoginFormValues
-):LoginSubmitResult {
-    const errors = validateLoginValues(values)
+export function getRadioCheckedAttr (
+    activeMethod:SignInMethod,
+    method:SignInMethod
+):'checked' | null {
+    return activeMethod === method ? 'checked' : null
+}
+
+function isMethodTarget (value:unknown):value is SignInMethodTarget {
+    if (!value || typeof value !== 'object') return false
+
+    if ('name' in value && 'value' in value) {
+        return true
+    }
+
+    return 'getAttribute' in value && typeof value.getAttribute === 'function'
+}
+
+function readMethodTarget (target:SignInMethodTarget):{
+    name:string | null;
+    value:string | null;
+} {
+    if ('getAttribute' in target) {
+        return {
+            name: target.getAttribute('name'),
+            value: target.getAttribute('value'),
+        }
+    }
 
     return {
-        values,
-        errors,
-        message: Object.keys(errors).length === 0 ?
-            UI_ONLY_LOGIN_MESSAGE :
-            '',
+        name: target.name,
+        value: target.value,
     }
+}
+
+export function resolveSelectedMethod (
+    event:Event
+):SignInMethod | null {
+    const candidates = [
+        event.target,
+        ...(typeof event.composedPath === 'function' ? event.composedPath() : []),
+    ]
+
+    for (const candidate of candidates) {
+        if (!isMethodTarget(candidate)) continue
+        const { name, value } = readMethodTarget(candidate)
+        if (name !== 'sign-in-method') continue
+        if (value === 'passkey' || value === 'password') {
+            return value
+        }
+    }
+
+    return null
 }
 
 export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
@@ -106,12 +134,10 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
     }
 
     const handleMethodChange = (event:Event) => {
-        const target = event.target as HTMLInputElement | null
-        if (!target || target.name !== 'sign-in-method') return
-        if (target.value === 'passkey' || target.value === 'password') {
-            setActiveMethod(target.value)
-            passkeyStatus.value = 'idle'
-        }
+        const method = resolveSelectedMethod(event)
+        if (!method) return
+        setActiveMethod(method)
+        passkeyStatus.value = 'idle'
     }
 
     const handleSubmit = (event:Event) => {
@@ -148,7 +174,7 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     name="sign-in-method"
                     value="passkey"
                     label="Passkey"
-                    checked=${activeMethod.value === 'passkey'}
+                    checked=${getRadioCheckedAttr(activeMethod.value, 'passkey')}
                 ></radio-input>
             </div>
             <div class=${`login-method-option ${activeMethod.value === 'password' ? 'active' : ''}`}>
@@ -156,7 +182,7 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     name="sign-in-method"
                     value="password"
                     label="Password"
-                    checked=${activeMethod.value === 'password'}
+                    checked=${getRadioCheckedAttr(activeMethod.value, 'password')}
                 ></radio-input>
             </div>
         </div>
@@ -206,4 +232,32 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     null}
             </div>`}
     </div>`
+}
+
+function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
+    const errors:LoginValidationErrors = {}
+
+    if (!values.identifier.trim()) {
+        errors.identifier = 'Enter your username or email.'
+    }
+
+    if (!values.password.trim()) {
+        errors.password = 'Enter your password.'
+    }
+
+    return errors
+}
+
+function submitLoginValues (
+    values:LoginFormValues
+):LoginSubmitResult {
+    const errors = validateLoginValues(values)
+
+    return {
+        values,
+        errors,
+        message: Object.keys(errors).length === 0 ?
+            UI_ONLY_LOGIN_MESSAGE :
+            '',
+    }
 }

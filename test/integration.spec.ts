@@ -141,7 +141,7 @@ describe('Integration tests', () => {
             }
         )
 
-        it('keeps the login route deep link shell stable for the radio-selector login UX',
+        it('keeps the login route deep link shell stable for the single-click radio-selection UX',
             async () => {
                 const response = await SELF.fetch(
                     'http://localhost/login'

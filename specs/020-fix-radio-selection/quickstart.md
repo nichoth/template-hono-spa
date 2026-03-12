@@ -48,5 +48,6 @@ cd /Users/nick/code/template-hono-spa && npm start
 ## Validation Log
 
 - 2026-03-12: Planning artifacts prepared for the radio-selection synchronization fix.
+- 2026-03-12: Login selector updated so single-click radio-input changes and visible selection state stay synchronized.
 - 2026-03-12: Manual browser validation was not executed in this terminal session.
-- 2026-03-12: Implementation verification remains pending until code changes are made.
+- 2026-03-12: Automated verification completed with `npm run lint` and `HOME=/tmp npm test`.

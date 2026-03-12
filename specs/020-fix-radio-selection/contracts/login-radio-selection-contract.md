@@ -27,3 +27,4 @@ Define the expected user-facing behavior of the `/login` route when passkey and 
 - Automated tests should verify the selector is present, the shared radio-input control remains in use, and method selection updates visibly after one click.
 - Manual review should confirm that no second click is needed to see the selected radio option change.
 - Automated and manual review should confirm the selected method and the visible login content remain synchronized after interaction and feedback states.
+- The route should resolve selection from the actual radio-input event path and reflect checked state using custom-element-compatible attribute presence semantics.

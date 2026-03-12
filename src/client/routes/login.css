@@ -1,6 +1,14 @@
 .login-route {
     display: grid;
     gap: 1rem;
+
+    & substrate-input {
+        & .substrate.input {
+            & input {
+                width: calc(100% - 2.2rem);
+            }
+        }
+    }
 }
 
 .login-form {

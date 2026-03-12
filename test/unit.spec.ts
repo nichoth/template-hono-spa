@@ -235,7 +235,7 @@ describe('Hono worker', () => {
             const navSource = sourceFiles['/src/client/components/nav.ts']
 
             expect(navSource).toContain('desktop-nav')
-            expect(navSource).toContain('mobile-nav-shell')
+            expect(navSource).toContain('mobile-nav-menu')
             expect(navSource).toContain('routes.map')
         })
 
@@ -255,7 +255,7 @@ describe('Hono worker', () => {
             expect(navSource).toContain('nav-links-mobile')
             expect(navSource).toContain('renderNavItems(currentPath)')
             expect(navSource).toContain("props.currentPath === props.href ? 'active' : ''")
-            expect(navSource).toContain("isMenuOpen ? 'open' : ''")
+            expect(navSource).toContain("isMenuOpen.value ? 'open' : ''")
             expect(navSource).toContain('hidden=${')
             expect(navSource).toContain('!isMenuOpen')
         })
@@ -263,11 +263,12 @@ describe('Hono worker', () => {
         it('keeps desktop nav inline while closing the mobile menu on route and viewport changes', () => {
             const navSource = sourceFiles['/src/client/components/nav.ts']
 
-            expect(navSource).toContain("window.matchMedia('(width >= 680px)')")
+            expect(navSource).toContain("const MEDIA_QUERY = '(width >= 680px)'")
+            expect(navSource).toContain('window.matchMedia(MEDIA_QUERY)')
             expect(navSource).toContain('hamburgerRef.current.isOpen = false')
             expect(navSource).toContain('}, [currentPath])')
             expect(navSource).toContain('desktop-nav')
-            expect(navSource).toContain('mobile-nav-shell')
+            expect(navSource).toContain('mobile-nav-menu')
         })
     })
 

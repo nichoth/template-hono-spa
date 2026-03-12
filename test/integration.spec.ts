@@ -128,6 +128,19 @@ describe('Integration tests', () => {
             }
         )
 
+        it('serves shell for the login route deep link',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/login'
+                )
+                const html = await response.text()
+
+                expect(response.status).toBe(200)
+                expect(html).toContain('<div id="root"></div>')
+                expect(html).not.toContain('Page not found.')
+            }
+        )
+
         it('serves shell for unknown client paths',
             async () => {
                 const response = await SELF.fetch(

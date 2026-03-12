@@ -11,6 +11,7 @@ const clientRenderFileKeys = [
     '/src/client/not-found.ts',
     '/src/client/routes/about.ts',
     '/src/client/routes/home.ts',
+    '/src/client/routes/login.ts',
     '/src/app.ts',
     '/src/client/components/card.ts',
     '/src/client/components/counter.ts',

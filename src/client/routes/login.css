@@ -1,0 +1,16 @@
+.login-route {
+    display: grid;
+    gap: 1rem;
+}
+
+.login-form {
+    display: grid;
+    gap: 1rem;
+    max-width: 28rem;
+}
+
+.login-field-error {
+    margin: -0.5rem 0 0;
+    color: #b42318;
+    font-weight: 600;
+}

@@ -1,6 +1,8 @@
 import { render, type FunctionComponent } from 'preact'
 import { useComputed } from '@preact/signals'
 import { BlurHash } from '@substrate-system/blur-hash'
+import '@substrate-system/input'
+import '@substrate-system/password-input'
 import { html } from 'htm/preact'
 import { createRouter } from './routes/index.js'
 import type { AppState } from './state.js'

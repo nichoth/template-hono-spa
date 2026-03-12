@@ -21,6 +21,9 @@ import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+import {
+    submitLoginValues,
+} from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
 
 vi.mock('@substrate-system/button', () => ({
@@ -213,6 +216,7 @@ describe('Hono worker', () => {
             expect(routes).toEqual([
                 { href: '/', text: 'Home' },
                 { href: '/about', text: 'About' },
+                { href: '/login', text: 'Login' },
             ])
         })
 
@@ -220,9 +224,53 @@ describe('Hono worker', () => {
             const router = createRouter(createTestState())
             expect(router.match('/')).toBeTruthy()
             expect(router.match('/about')).toBeTruthy()
+            expect(router.match('/login')).toBeTruthy()
             expect(router.match('/missing')).toBeFalsy()
             expect(isKnownClientRoute('/about')).toBe(true)
+            expect(isKnownClientRoute('/login')).toBe(true)
             expect(isKnownClientRoute('/missing')).toBe(false)
+        })
+    })
+
+    describe('Login route', () => {
+        it('renders a login heading and required form controls', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('<h2>Login</h2>')
+            expect(loginSource).toContain('substrate-input')
+            expect(loginSource).toContain('password-input')
+            expect(loginSource).toContain('substrate-button')
+        })
+
+        it('returns missing-field errors without clearing valid values', () => {
+            const result = submitLoginValues({
+                identifier: 'nick@example.com',
+                password: '',
+            })
+
+            expect(result.values).toEqual({
+                identifier: 'nick@example.com',
+                password: '',
+            })
+            expect(result.errors).toEqual({
+                password: 'Enter your password.',
+            })
+            expect(result.message).toBe('')
+        })
+
+        it('returns the UI-only submit message when values are complete', () => {
+            const result = submitLoginValues({
+                identifier: 'nick@example.com',
+                password: 'secret',
+            })
+
+            expect(result.values).toEqual({
+                identifier: 'nick@example.com',
+                password: 'secret',
+            })
+            expect(result.errors).toEqual({})
+            expect(result.message)
+                .toBe('Login is not connected yet. No sign-in was performed.')
         })
     })
 

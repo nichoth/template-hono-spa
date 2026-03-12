@@ -12,25 +12,20 @@ export function resolveDeploymentContext (
 ):DeploymentContext {
     const mainBranch = normalizeBranch(mainBranchRaw || 'main')
     const branchName = normalizeBranch(branchNameRaw)
-
-    if (branchName === mainBranch) {
-        return {
-            branchName,
-            environmentType: 'main',
-            requiresAuth: false,
-        }
-    }
-
-    const environmentType = classifyNonMainBranch(branchName)
+    const environmentType = resolveEnvironmentType(branchName, mainBranch)
 
     return {
         branchName,
         environmentType,
-        requiresAuth: true,
+        requiresAuth: environmentType === 'staging',
     }
 }
 
-function classifyNonMainBranch (branchName:string):EnvironmentType {
+function resolveEnvironmentType (
+    branchName:string,
+    mainBranch:string,
+):EnvironmentType {
+    if (branchName === mainBranch) return 'main'
     if (branchName.includes('preview')) return 'preview'
     if (branchName === 'unknown') return 'unknown'
     return 'staging'

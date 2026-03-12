@@ -1,4 +1,11 @@
 declare module 'cloudflare:test' {
-    // ProvidedEnv controls the type of `import("cloudflare:test").env`
-    interface ProvidedEnv extends Env {}  // eslint-disable-line
+    interface ProvidedEnv {
+        ASSETS?:Fetcher
+        NODE_ENV?:string
+        DEPLOY_BRANCH?:string
+        MAIN_BRANCH?:string
+        STAGING_BASIC_AUTH_USERNAME?:string
+        STAGING_PW?:string
+        BASIC_AUTH_REALM?:string
+    }
 }

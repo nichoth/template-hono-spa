@@ -99,6 +99,7 @@ export default app
 
 function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     if (!(c.env?.ASSETS)) {
+        console.log('**NOT ASSETS**')
         return c.notFound()
     }
 
@@ -111,7 +112,16 @@ function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefine
         if (overrideBranch) return overrideBranch
     }
 
+    if (isLocalhostRequest(c.req.url)) {
+        return c.env?.MAIN_BRANCH || 'main'
+    }
+
     return c.env?.DEPLOY_BRANCH
+}
+
+function isLocalhostRequest (requestUrl:string):boolean {
+    const hostname = new URL(requestUrl).hostname
+    return hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
 function shouldServeShell (pathname:string):boolean {
@@ -137,6 +147,10 @@ async function getAssetPaths (
 ):Promise<AssetPaths> {
     if (cachedAssets) return cachedAssets
 
+    console.log(
+        '[getAssetPaths] ASSETS binding:',
+        c.env?.ASSETS ? 'present' : 'missing'
+    )
     const result = await resolveStartupAssets(c.env?.ASSETS)
     if (result.warning) {
         console.warn(
@@ -144,7 +158,7 @@ async function getAssetPaths (
                 cause: result.warning,
                 remediation:
                     'Run `npm start` for local dev or '
-                    + '`npm run build` before production deploys.'
+                    + '`npm run build` and verify `public/client/` assets are deployed.'
             })
         )
     }
@@ -173,11 +187,11 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
             '<meta charset="UTF-8" />',
             '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
             '<title>Hono + Preact</title>',
-            `<link rel="stylesheet" href="${assets.css || '/assets/index.css'}" />`,
+            `<link rel="stylesheet" href="${assets.css || '/client/index.css'}" />`,
             '</head>',
             '<body>',
             '<div id="root"></div>',
-            `<script type="module" src="${assets.js || '/assets/index.js'}"></script>`,
+            `<script type="module" src="${assets.js || '/client/index.js'}"></script>`,
             '</body>',
             '</html>',
         ].join('')

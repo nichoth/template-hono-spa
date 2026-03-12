@@ -22,6 +22,7 @@ const DEFAULT_ASSETS:AssetPaths = {
     css: '/assets/index.css',
     js: '/assets/index.js',
 }
+const MANIFEST_PATH = 'vite-manifest.json'
 
 function parseManifest (raw:string):ViteManifest|null {
     try {
@@ -55,15 +56,19 @@ export async function resolveStartupAssets (
     }
 
     try {
-        const response = await fetcher.fetch(
-            'http://assets/client/vite-manifest.json'
+        const url = `http://assets/${MANIFEST_PATH}`
+        console.log('[startup-assets] fetching manifest:', url)
+        const response = await fetcher.fetch(url)
+        console.log(
+            '[startup-assets] manifest response:',
+            response.status
         )
         if (!response.ok) {
             return {
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest was not found. '
+                    `Vite manifest was not found at ${MANIFEST_PATH}. `
                     + 'Using default asset paths.',
             }
         }
@@ -75,18 +80,22 @@ export async function resolveStartupAssets (
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest is invalid JSON. '
+                    `Vite manifest at ${MANIFEST_PATH} is invalid JSON. `
                     + 'Using default asset paths.',
             }
         }
 
         const assets = fromManifest(manifest)
+        console.log(
+            '[startup-assets] resolved assets:',
+            JSON.stringify(assets)
+        )
         if (!assets) {
             return {
                 assets: DEFAULT_ASSETS,
                 recovered: true,
                 warning:
-                    'Vite manifest is missing index.html entry. '
+                    `Vite manifest at ${MANIFEST_PATH} is missing index.html entry. `
                     + 'Using default asset paths.',
             }
         }
@@ -100,7 +109,7 @@ export async function resolveStartupAssets (
             assets: DEFAULT_ASSETS,
             recovered: true,
             warning:
-                'Could not load Vite manifest. '
+                `Could not load Vite manifest at ${MANIFEST_PATH}. `
                 + 'Using default asset paths.',
         }
     }

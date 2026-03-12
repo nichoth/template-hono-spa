@@ -23,6 +23,8 @@ if (typeof document !== 'undefined') {
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
     localStorage.setItem('DEBUG', 'template,template:*')
+    // @ts-expect-error dev
+    window.state = state
 } else {
     localStorage.removeItem('DEBUG')
 }
@@ -60,9 +62,7 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
             </div>
         </header>
 
-        <main class="main">
-            <${ChildNode} state=${state} />
-        </main>
+        <${ChildNode} state=${state} />
     `
 }
 

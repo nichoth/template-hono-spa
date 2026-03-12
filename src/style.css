@@ -9,10 +9,11 @@
     --color-text: black;
     --color-text-muted: black;  /* no muted color */
     --color-white: white;
+    --color-light: #e1e0e040;
     --color-primary: #2563eb;
     --color-primary-dark: #1d4ed8;
     --color-heading: black;
-    --color-border: #ddd;
+    --color-border: #9b9b9b;
     --color-shadow: rgb(0 0 0 / 10%);
     --color-success: #059669;
     --color-success-bg: #ecfdf5;
@@ -20,21 +21,22 @@
     --color-warning-light: #fef3c7;
     --color-warning: #fde68a;
     --color-warning-border: #f59e0b;
-    --layout-main-max-width: 76rem;
-    --layout-main-padding-inline: clamp(0.75rem, 4vw, 1rem);
-    --layout-main-padding-block: clamp(0.25rem, 2vw, 0.5rem);
-    --layout-grid-gap-mobile: 0.75rem;
-    --layout-grid-gap: 1rem;
-    --layout-grid-gap-wide: 1.5rem;
-    --layout-card-min-width: 17rem;
+    --layout-main-max-width: min(96vw, 40rem);
+    --layout-main-padding-inline: clamp(0.75rem, 3vw, 1.25rem);
+    --layout-main-padding-block: clamp(0.5rem, 1.5vw, 1rem);
+    --layout-grid-gap: clamp(0.75rem, 1.4vw, 1.5rem);
+    --layout-card-min-width: clamp(14rem, 28vw, 18rem);
+    --layout-card-row-min-height: 8rem;
+    --layout-measure: 70ch;
 }
 
-main {
+.route {
     max-width: var(--layout-main-max-width);
     margin: 0 auto;
     padding-inline: var(--layout-main-padding-inline);
     padding-block: var(--layout-main-padding-block);
-    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
 }
 
 a {
@@ -57,6 +59,7 @@ header {
     margin-bottom: 1rem;
     box-sizing: border-box;
     gap: 1rem;
+    flex-wrap: wrap;
 
     & h1 {
         font-size: clamp(1.5rem, 6vw, 2rem);
@@ -105,6 +108,8 @@ body {
     & p {
         margin-bottom: 1rem;
         line-height: 1.4;
+        max-width: var(--layout-measure);
+        overflow-wrap: anywhere;
     }
 }
 
@@ -114,7 +119,9 @@ h2 {
 
 .cards {
     display: grid;
-    gap: var(--layout-grid-gap-mobile);
+    gap: var(--layout-grid-gap);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--layout-card-min-width)), 1fr));
+    min-width: 0;
 }
 
 input, .btn {

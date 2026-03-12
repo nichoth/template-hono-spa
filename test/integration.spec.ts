@@ -1,8 +1,18 @@
-import { SELF } from 'cloudflare:test'
+import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 
 function basicAuthHeader (username:string, password:string):string {
     return `Basic ${btoa(`${username}:${password}`)}`
+}
+
+function testCredential (
+    key:'STAGING_BASIC_AUTH_USERNAME'|'STAGING_PW',
+    fallback:string,
+):string {
+    const value = env[key]
+    return typeof value === 'string' && value.length > 0 ?
+        value :
+        fallback
 }
 
 describe('Integration tests', () => {
@@ -25,8 +35,11 @@ describe('Integration tests', () => {
                     headers: {
                         'x-deploy-branch': 'staging',
                         authorization: basicAuthHeader(
-                            'staging-user',
-                            'staging-pass',
+                            testCredential(
+                                'STAGING_BASIC_AUTH_USERNAME',
+                                'staging-user',
+                            ),
+                            testCredential('STAGING_PW', 'staging-pass'),
                         ),
                     },
                 },
@@ -75,6 +88,16 @@ describe('Integration tests', () => {
 
             expect(mainResponse.status).toBe(200)
             expect(stagingResponse.status).toBe(401)
+        })
+
+        it('keeps default localhost requests public', async () => {
+            const [shellResponse, apiResponse] = await Promise.all([
+                SELF.fetch('http://localhost/'),
+                SELF.fetch('http://localhost/api/health'),
+            ])
+
+            expect(shellResponse.status).toBe(200)
+            expect(apiResponse.status).toBe(200)
         })
     })
 
@@ -129,8 +152,35 @@ describe('Integration tests', () => {
             expect(html).toContain(
                 '<link rel="stylesheet"'
             )
+            expect(html).not.toContain('/assets/index.js')
+            expect(html).not.toContain('/assets/index.css')
             expect(html).not.toContain('.tsx')
         })
+
+        it('staging shell uses deploy-valid fallback asset paths',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/',
+                    {
+                        headers: {
+                            'x-deploy-branch': 'staging',
+                            authorization: basicAuthHeader(
+                                testCredential(
+                                    'STAGING_BASIC_AUTH_USERNAME',
+                                    'staging-user',
+                                ),
+                                testCredential('STAGING_PW', 'staging-pass'),
+                            ),
+                        },
+                    },
+                )
+                const html = await response.text()
+
+                expect(response.status).toBe(200)
+                expect(html).not.toContain('/assets/index.js')
+                expect(html).not.toContain('/assets/index.css')
+            }
+        )
 
         it('returns asset-like misses as not found', async () => {
             const response = await SELF.fetch(

@@ -1,5 +1,5 @@
 import { type FunctionComponent } from 'preact'
-import { useSignal } from '@preact/signals'
+import { batch, useComputed, useSignal, useSignalEffect } from '@preact/signals'
 import { html } from 'htm/preact'
 import { useCallback } from 'preact/hooks'
 import { SubstrateButton } from '@substrate-system/button'
@@ -16,30 +16,72 @@ const TEXT = 'This page is rendered on the client with Preact.'
 export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
-    const isSpinning = useSignal(false)
+    // const isSpinning = useSignal(false)
+    const isPending = useComputed<boolean>(() => {
+        return state.response.value.pending
+    })
+
+    // this is just b/c the UI feels weird if both buttons spin at the same time
+    const errClick = useSignal(false)
+    const fetchClick = useSignal(false)
+
     const httpFetch = useCallback(async () => {
-        isSpinning.value = true
+        fetchClick.value = true
         const res = await State.fetch(state)
-        debug('response...', res)
-        isSpinning.value = false
+        debug('response in the view...', res)
     }, [])
 
-    return html`<div class="route home home-layout">
+    const errorFetch = useCallback(async () => {
+        errClick.value = true
+        await State.fetch.error(state)
+    }, [])
+
+    // unset the button clicks when the request resolves
+    useSignalEffect(() => {
+        if (!isPending.value) {
+            debug('not pending')
+            batch(() => {
+                errClick.value = false
+                fetchClick.value = false
+            })
+        }
+    })
+
+    return html`<div class="route home">
         <div class="cards cards-grid" aria-label="Home content grid">
             <${Counter} count=${state.count} />
             <${Card}>${TEXT}<//>
             <${Card} class="fetcher">
-                More cards${ELLIPSIS}
+                <span>More cards${ELLIPSIS}</span>
                 <p>
                     This calls our API server.
                 </p>
                 <div>
                     <${SubstrateButton.TAG}
-                        spinning=${isSpinning.value}
+                        spinning=${isPending.value && fetchClick.value}
                         onClick=${httpFetch}
                     >Fetch<//>
+
+                    <${SubstrateButton.TAG}
+                        spinning=${isPending.value && errClick.value}
+                        onClick=${errorFetch}
+                    >Error<//>
                 </div>
+
+                <pre>
+                    ${JSON.stringify(state.response.value, errorReplacer, 2)}
+                </pre>
             <//>
         </div>
     </section>`
 }
+
+function errorReplacer (_key, value) {
+    if (value instanceof Error) {
+        return {
+            name: value.name,
+            message: value.message,
+        }
+    }
+    return value
+};

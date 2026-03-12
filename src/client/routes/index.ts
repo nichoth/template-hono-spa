@@ -1,6 +1,7 @@
 import Router from '@substrate-system/routes'
 import { HomeRoute } from './home.js'
 import { AboutRoute } from './about.js'
+import { ProfileRoute } from './profile.js'
 import { type AppState } from '../state.js'
 
 export type AppRoute = {
@@ -22,6 +23,10 @@ export function createRouter (_state:AppState):InstanceType<typeof Router> {
 
     router.addRoute('/about', () => {
         return AboutRoute
+    })
+
+    router.addRoute('/profile', () => {
+        return ProfileRoute
     })
 
     return router

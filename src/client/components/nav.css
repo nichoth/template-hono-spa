@@ -1,3 +1,5 @@
+@import url("../../_variables.css");
+
 nav.app-nav {
     & ul.nav-links {
         list-style: none;
@@ -55,7 +57,10 @@ nav.app-nav {
     }
 }
 
-@media (width < 680px) {
+/* 
+    For the hamburger
+*/
+@media (--small) {
     header > .avatar {
         display: none;
     }
@@ -76,29 +81,3 @@ nav.app-nav {
         }
     }
 }
-
-/* a.btn {
-    text-decoration: none;
-    background: none;
-    font-size: 1rem;
-    color: black;
-    border: 1px solid;
-    outline: 1px solid transparent;
-    padding: 0.5rem 2rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    transform: translateY(1px);
-
-    &:focus {
-        outline: 1px solid;
-    }
-
-    &:hover {
-        outline: 1px solid;
-        transform: translateY(0);
-    }
-
-    &:active {
-        transform: translateY(2px);
-    }
-} */

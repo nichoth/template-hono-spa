@@ -42,7 +42,7 @@ hamburger-two {
 
             & button {
                 position: relative;
-                top: 15px;
+                top: 12px;
                 right: 1px;
             }
         }
@@ -60,7 +60,7 @@ hamburger-two {
 }
 
 .hamburger-wrapper {
-    top: 28px;
+    top: 20px;
 }
 
 .mobile-nav-menu {
@@ -125,8 +125,12 @@ hamburger-two {
     For the hamburger
 */
 @media (--small) {
-    header > .avatar {
-        display: none;
+    header {
+        min-height: 4rem;
+
+        & > .avatar {
+            display: none;
+        }
     }
 
     nav.app-nav {

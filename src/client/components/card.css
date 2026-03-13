@@ -1,7 +1,7 @@
 .card {
-    background: var(--color-white);
+    background: var(--color-surface-card);
     padding: 2rem 1rem;
-    box-shadow: 0 1px 3px var(--color-shadow);
+    box-shadow: 0 1px 3px var(--color-shadow-soft);
     box-sizing: border-box;
     height: 100%;
     overflow-wrap: anywhere;
@@ -11,7 +11,7 @@
 
     & h2 {
         margin-top: 0;
-        color: var(--color-heading);
+        color: var(--color-text-heading);
         font-size: 1.1rem;
     }
 

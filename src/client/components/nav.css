@@ -1,16 +1,26 @@
-nav.app-nav {
-    width: 50%;
+@import url("../../_variables.css");
 
+nav.app-nav {
     & ul.nav-links {
-        width: 100%;
         list-style: none;
-        display: flex;
-        gap: 1rem;
-        justify-content: space-around;
         padding: 0;
-        margin: 0;
+    }
+
+    & .nav-links-inline {
+        width: 100%;
+        display: flex;
+        gap: 2rem;
+        justify-content: space-around;
         flex-wrap: wrap;
-        min-width: 0;
+    }
+
+    & .mobile-nav-trigger {
+        display: none;
+    }
+
+    & .nav-links-mobile {
+        display: grid;
+        gap: 0.75rem;
     }
 
     & a {
@@ -23,28 +33,119 @@ nav.app-nav {
     }
 }
 
-a.btn {
-    text-decoration: none;
-    background: none;
-    font-size: 1rem;
-    color: black;
-    border: 1px solid;
-    outline: 1px solid transparent;
-    padding: 0.5rem 2rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    transform: translateY(1px);
+hamburger-two {
+    & .hamburger-wrapper {
+        &.open {
+            & label.burger {
+                top: 4px;
+            }
 
-    &:focus {
-        outline: 1px solid;
+            & button {
+                position: relative;
+                top: 12px;
+                right: 1px;
+            }
+        }
+    }
+}
+
+@keyframes fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 0.8; }
+}
+
+@keyframes fade-out {
+    0% { opacity: 0.8; }
+    100% { opacity: 0; }
+}
+
+.hamburger-wrapper {
+    top: 20px;
+}
+
+.mobile-nav-menu {
+    display: none;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--color-surface-inverse);
+    animation: fade-in var(--fade-in-time, 0.4s);
+
+   &.open {
+        display: flex;
+        z-index: 97;
+        opacity: 0.85;
+        position: fixed;
+        top: 0;
+        left: 0;
+        flex-direction: column;
+        justify-content: space-around;
     }
 
-    &:hover {
-        outline: 1px solid;
-        transform: translateY(0);
+    & button {
+        background: none;
+        border: 1px solid var(--color-border-inverse);
+        color: var(--color-text-inverse);
+        padding: 0.5rem 1rem;
     }
 
-    &:active {
-        transform: translateY(2px);
+    & ul {
+        list-style: none;
+        align-items: center;
+        padding: 0;
+        justify-content: center;
+        display: flex;
+        flex-direction: column;
+
+        & a {
+            color: var(--color-text-inverse);
+        }
+        
+        & li {
+            margin: 1.2rem 0;
+        }
+
+        &.controls {
+            color: var(--color-text-inverse);
+
+            & button {
+                border: none;
+                fill: var(--color-text-inverse);
+            }
+
+            & li {
+                display: flex;
+                align-items: center;
+            }
+        }
+    }
+}
+
+/* 
+    For the hamburger
+*/
+@media (--small) {
+    header {
+        min-height: 4rem;
+
+        & > .avatar {
+            display: none;
+        }
+    }
+
+    nav.app-nav {
+        width: auto;
+
+        & .desktop-nav {
+            display: none;
+        }
+
+        & .mobile-nav-shell {
+            display: flex;
+        }
+
+        & hamburger-two.mobile-nav-trigger {
+            display: block;
+        }
     }
 }

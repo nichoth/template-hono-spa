@@ -1,13 +1,16 @@
 import { render, type FunctionComponent } from 'preact'
 import { useComputed } from '@preact/signals'
 import { BlurHash } from '@substrate-system/blur-hash'
+import { HamburgerTwo } from '@substrate-system/hamburger-two'
+import '@substrate-system/input'
+import '@substrate-system/password-input'
+import '@substrate-system/radio-input'
 import { html } from 'htm/preact'
 import { createRouter } from './routes/index.js'
 import type { AppState } from './state.js'
 import { State } from './state.js'
 import { NotFound } from './not-found.js'
 import { Nav } from './components/nav.js'
-import { SubstrateButton } from '@substrate-system/button'
 import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
 const debug = Debug('template')
@@ -18,7 +21,7 @@ const state = State()
 const router = createRouter(state)
 
 if (typeof document !== 'undefined') {
-    SubstrateButton.define()
+    HamburgerTwo.define()
 }
 
 if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
@@ -30,12 +33,12 @@ if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
 }
 
 const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
+    debug('rendering...', state)
+
     const match = useComputed(() => {
         const path = state.route.value
         return router.match(path)
     })
-
-    debug('the match', match.value)
 
     if (!match.value || !match.value.action) {
         return html`<${NotFound} />`

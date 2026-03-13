@@ -1,24 +1,48 @@
-# a project
+# Project Name
 
-Description here.
+A template for web apps with [Hono](https://hono.dev/) and
+[Preact](https://preactjs.com/).
+
+This is a server for a client-rendered Preact app and API endpoints.
+At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
+1. A Cloudflare Worker bundle (the server)
+2. Client-side JS/CSS assets in `public/`
+
+At request time, when the Worker handles app-page requests, it returns a shell
+document with an empty `#root` plus client script tags. The app is rendered in
+the browser by Preact.
 
 <details><summary><h2>Contents</h2></summary>
 
 <!-- toc -->
 
+- [Use](#use)
+- [Test](#test)
+  * [Run tests](#run-tests)
+  * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
-- [Components](#components)
-  * [`page.tsx`](#pagetsx)
-- [The Datastar SSR pattern](#the-datastar-ssr-pattern)
+- [Rendering](#rendering)
+- [Notes](#notes)
+  * [Create a Random String (eg a password)](#create-a-random-string-eg-a-password)
 
 <!-- tocstop -->
 
 </details>
 
+## Use
+
+Use the template button in GitHub's UI, then start the docs:
+
+```sh
+mv ./README.example.md README.md
+```
+
 ## Test
 
 ### Run tests
+
+This runs both unit tests and integration tests.
 
 ```sh
 npm test
@@ -27,7 +51,7 @@ npm test
 ### Open a browser with visual test results
 
 ```sh
-npm run test:ui
+npm run test:open
 ```
 
 ## Develop
@@ -41,70 +65,21 @@ npm start
 ### Local Dev
 
 Locally we are using [Vite](https://vite.dev/) as server. In the
-[vite config](./vite.config.js) we use a plugin, `@cloudflare/vite-plugin`.
-It integrates the cloudflare worker (the Hono app) with the vite server.
-The `@cloudflare/vite-plugin` embeds a Cloudflare Worker runtime inside Vite's  
-dev server. 
+[vite config](./vite.config.js) we use the `@cloudflare/vite-plugin`.
+It integrates the Cloudflare Worker (the Hono app) with the Vite server.
+The plugin embeds a Cloudflare Worker runtime inside Vite's dev server.
 
-Vite gives us HMR and bundling. The Vite plugin runs the worker code, which
-is why the worker works locally.
+Vite gives us HMR and bundling. The Vite plugin runs the worker code.
 
 Vite builds to `public/`, but we do not use that folder during development.
 
+## Rendering
 
-## Components
-
-In the worker file (`./src/server/index.tsx`), it checks if we are in local dev
-or production. In dev, `ASSETS` doesn't exist; it returns `notFound()` and Vite
-handles it. In production, `ASSETS` does exist, so it serves the static asset.
-
-When you run npm start, the Cloudflare Vite plugin routes requests to your
-Hono server at `src/server/index.tsx:126`, which renders the Page component.
-This Page component uses the `.tsx` components (TimestampCard, GreetingCard,
-CounterCard, QuoteCard) which are server-side rendered.
-
-
-### `page.tsx`
-
-The `page.tsx` is a layout skeleton that accepts props.
-
-```ts
-export const Page:FC<PropsWithChildren<PageProps>> = ({
-    title,
-    signals = {},
-    children
-})
-```
-
-Any site pages should extend this template, and pass in content and signals.
-An example is [./src/components/home-page.tsx](./src/components/home-page.tsx).
-
----
-
-## The Datastar SSR pattern
-
-* Server renders the full HTML with components
-* `data-signals` initializes the reactive state
-* Datastar library (loaded via CDN) handles client-side reactivity
-* API endpoints return SSE responses that update signals
-
----
-
-## Notes
-
-I do not understand why we need to run `vite build` twice, but we do.
-
-The empty object in `public/client/vite-manifest.json` is necessary because
-the server depends on it when we run the build process.
-
-```js
-// package.json
-{
-  "scripts": {
-    "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build && vite build",
-  }
-}
-```
+* Server returns the HTML shell only
+* Client script loads and renders the app into `#root`
+* Route state is sourced from the browser URL
+* Client route definitions live in `src/client/routes/index.ts`
+* Server keeps ownership of `/api/*` and `/health`
 
 ## Notes
 

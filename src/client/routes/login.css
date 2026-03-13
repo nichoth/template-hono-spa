@@ -1,0 +1,57 @@
+.login-route {
+    display: grid;
+    gap: 1rem;
+
+    & substrate-input {
+        & .substrate.input {
+            & input {
+                width: calc(100% - 2.2rem);
+            }
+        }
+    }
+}
+
+.login-methods {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.login-method-option {
+    background: var(--color-transparent);
+    padding: 0;
+
+    & radio-input {
+        --form-control-color: var(--color-action-primary);
+
+        display: block;
+    }
+
+    & .radio-input {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-text-base);
+        cursor: pointer;
+        margin-right: 0;
+    }
+}
+
+
+.login-form {
+    display: grid;
+    gap: 1rem;
+    max-width: 28rem;
+}
+
+.login-method-description,
+.login-submit-message {
+    margin: 0;
+}
+
+.login-field-error {
+    margin: -0.5rem 0 0;
+    color: var(--color-status-error);
+    font-weight: 600;
+}

@@ -12,10 +12,6 @@ At request time, when the Worker handles app-page requests, it returns a shell
 document with an empty `#root` plus client script tags. The app is rendered in
 the browser by Preact.
 
-```sh
-export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
-```
-
 <details><summary><h2>Contents</h2></summary>
 
 <!-- toc -->
@@ -26,6 +22,8 @@ export CODEX_HOME=/Users/nick/code/template-hono-spa/.codex
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
+- [Deploy](#deploy)
+  * [Staging Password Protection](#staging-password-protection)
 - [Rendering](#rendering)
 - [Notes](#notes)
 
@@ -85,6 +83,48 @@ prevent local startup.
 If startup prerequisites fail, the server now returns an actionable message
 that includes a concrete next step.
 
+## Deploy
+
+### Staging Password Protection
+
+The Cloudflare `staging` environment is protected with HTTP basic auth. This
+only applies to the staging deploy flow:
+
+```sh
+wrangler deploy --env staging
+```
+
+Set the staging secrets in Cloudflare with these exact names:
+
+```sh
+wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging
+wrangler secret put STAGING_PW --env staging
+```
+
+Generate a strong random password from the CLI before setting `STAGING_PW`. One
+simple option is:
+
+```sh
+openssl rand -base64 32
+```
+
+Copy the generated value and use it when `wrangler secret put STAGING_PW --env staging`
+prompts for the secret.
+
+Recommended setup flow:
+
+1. Choose the staging username you want to use.
+2. Run `wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging`.
+3. Generate a fresh password with `openssl rand -base64 32`.
+4. Run `wrangler secret put STAGING_PW --env staging` and paste the generated password.
+5. Deploy staging with `wrangler deploy --env staging`.
+
+To rotate staging access later, generate a new password and update
+`STAGING_PW` in the `staging` environment again. You only need to change
+`STAGING_BASIC_AUTH_USERNAME` if you also want to rotate the username.
+
+Do not reuse the checked-in example values from local files as real deployment
+credentials.
 
 ## Rendering
 
@@ -93,22 +133,3 @@ that includes a concrete next step.
 * Route state is sourced from the browser URL
 * Client route definitions live in `src/client/routes/index.ts`
 * Server keeps ownership of `/api/*` and `/health`
-
----
-
-## Notes
-
-I do not understand why we need to run `vite build` twice, but we do.
-
-The empty object in `public/client/vite-manifest.json` is necessary because
-the server depends on it when we run the build process.
-
-```js
-// package.json
-{
-  "scripts": {
-    "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build && vite build",
-  }
-}
-```
- 

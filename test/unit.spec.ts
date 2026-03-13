@@ -21,7 +21,15 @@ import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+import {
+    submitLoginValues,
+    startPasskeyLogin,
+    PASSKEY_UI_ONLY_LOGIN_MESSAGE,
+    getRadioCheckedAttr,
+    resolveSelectedMethod,
+} from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
+import viteConfigSource from '../vite.config.js?raw'
 
 vi.mock('@substrate-system/button', () => ({
     SubstrateButton: {
@@ -30,7 +38,20 @@ vi.mock('@substrate-system/button', () => ({
     },
 }))
 
+vi.mock('@substrate-system/radio-input', () => ({
+    RadioInput: {
+        TAG: 'radio-input',
+        define: () => {},
+    },
+}))
+
 const sourceFiles = import.meta.glob('/src/**/*.ts', {
+    query: '?raw',
+    import: 'default',
+    eager: true,
+}) as Record<string, string>
+
+const cssSourceFiles = import.meta.glob('/src/**/*.css', {
     query: '?raw',
     import: 'default',
     eager: true,
@@ -44,6 +65,17 @@ function createTestState ():AppState {
             RequestState()
         ),
     }
+}
+
+function findBlockedColorLines (source:string):string[] {
+    const blockedColorPattern = /#[0-9a-fA-F]{3,8}\b|rgb[a]?\(|hsl[a]?\(|\b(?:black|white|transparent)\b/
+
+    return source
+        .split('\n')
+        .map(line => line.replace(/\/\*.*?\*\//g, '').trim())
+        .filter(line => line.length > 0)
+        .filter(line => !line.startsWith('--'))
+        .filter(line => blockedColorPattern.test(line))
 }
 
 describe('Hono worker', () => {
@@ -213,6 +245,7 @@ describe('Hono worker', () => {
             expect(routes).toEqual([
                 { href: '/', text: 'Home' },
                 { href: '/about', text: 'About' },
+                { href: '/login', text: 'Login' },
             ])
         })
 
@@ -220,9 +253,193 @@ describe('Hono worker', () => {
             const router = createRouter(createTestState())
             expect(router.match('/')).toBeTruthy()
             expect(router.match('/about')).toBeTruthy()
+            expect(router.match('/login')).toBeTruthy()
             expect(router.match('/missing')).toBeFalsy()
             expect(isKnownClientRoute('/about')).toBe(true)
+            expect(isKnownClientRoute('/login')).toBe(true)
             expect(isKnownClientRoute('/missing')).toBe(false)
+        })
+
+        it('keeps shared nav structure aligned with centralized routes', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('desktop-nav')
+            expect(navSource).toContain('mobile-nav-menu')
+            expect(navSource).toContain('routes.map')
+        })
+
+        it('wires the hamburger trigger to mobile menu open and close events', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('HamburgerTwo.TAG')
+            expect(navSource).toContain("HamburgerTwo.event('open')")
+            expect(navSource).toContain("HamburgerTwo.event('close')")
+            expect(navSource).toContain('mobile-nav-trigger')
+            expect(navSource).toContain('mobile-nav-menu')
+        })
+
+        it('renders the shared route links inside the mobile menu container', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain('nav-links-mobile')
+            expect(navSource).toContain('renderNavItems(currentPath)')
+            expect(navSource).toContain("props.currentPath === props.href ? 'active' : ''")
+            expect(navSource).toContain("isMenuOpen.value ? 'open' : ''")
+            expect(navSource).toContain('hidden=${')
+            expect(navSource).toContain('!isMenuOpen')
+        })
+
+        it('keeps desktop nav inline while closing the mobile menu on route and viewport changes', () => {
+            const navSource = sourceFiles['/src/client/components/nav.ts']
+
+            expect(navSource).toContain("const MEDIA_QUERY = '(width >= 680px)'")
+            expect(navSource).toContain('window.matchMedia(MEDIA_QUERY)')
+            expect(navSource).toContain('hamburgerRef.current.isOpen = false')
+            expect(navSource).toContain('}, [currentPath])')
+            expect(navSource).toContain('desktop-nav')
+            expect(navSource).toContain('mobile-nav-menu')
+        })
+    })
+
+    describe('Login route', () => {
+        it('renders a login heading with a radio selector for passkey and password', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+            const clientIndexSource = sourceFiles['/src/client/index.ts']
+
+            expect(loginSource).toContain('<h2>Login</h2>')
+            expect(loginSource).toContain('radio-input')
+            expect(loginSource).toContain('class="login-methods"')
+            expect(loginSource).toContain('login-method-option')
+            expect(loginSource).toContain('name="sign-in-method"')
+            expect(loginSource).toContain('label="Passkey"')
+            expect(loginSource).toContain('label="Password"')
+            expect(loginSource).toContain("const activeMethod = useSignal<SignInMethod>('passkey')")
+            expect(clientIndexSource).toContain('@substrate-system/radio-input')
+        })
+
+        it('keeps passkey as the default selected path in the radio selector', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('checked=')
+            expect(loginSource).toContain("activeMethod.value === 'passkey'")
+            expect(loginSource).toContain('Continue with passkey')
+            expect(loginSource)
+                .toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
+        })
+
+        it('returns missing-field errors without clearing valid values for password sign-in', () => {
+            const result = submitLoginValues({
+                identifier: 'nick@example.com',
+                password: '',
+            })
+
+            expect(result.values).toEqual({
+                identifier: 'nick@example.com',
+                password: '',
+            })
+            expect(result.errors).toEqual({
+                password: 'Enter your password.',
+            })
+            expect(result.message).toBe('')
+        })
+
+        it('returns the UI-only password message when values are complete', () => {
+            const result = submitLoginValues({
+                identifier: 'nick@example.com',
+                password: 'secret',
+            })
+
+            expect(result.values).toEqual({
+                identifier: 'nick@example.com',
+                password: 'secret',
+            })
+            expect(result.errors).toEqual({})
+            expect(result.message)
+                .toBe('Login is not connected yet. No sign-in was performed.')
+        })
+
+        it('starts a passkey login attempt without requiring a password', () => {
+            const result = startPasskeyLogin()
+
+            expect(result.method).toBe('passkey')
+            expect(result.message).toBe(PASSKEY_UI_ONLY_LOGIN_MESSAGE)
+        })
+
+        it('renders password fields only for the password path', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain("activeMethod.value === 'password'")
+            expect(loginSource).toContain('password-input')
+            expect(loginSource).toContain('Username or Email')
+            expect(loginSource).toContain('Log in with password')
+        })
+
+        it('keeps the password option available as fallback from the same selector', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('value="password"')
+            expect(loginSource).toContain('value="passkey"')
+            expect(loginSource).toContain('Choose how you want to sign in.')
+            expect(loginSource).toContain('Use your username or email and password.')
+            expect(loginSource).toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
+        })
+
+        it('resolves the selected method from nested radio-input change events', () => {
+            const event = {
+                target: null,
+                composedPath: () => [
+                    { tagName: 'LABEL' },
+                    {
+                        tagName: 'RADIO-INPUT',
+                        getAttribute: (name:string) => name === 'value' ?
+                            'password' :
+                            name === 'name' ?
+                                'sign-in-method' :
+                                null,
+                    },
+                ],
+            } as unknown as Event
+
+            expect(resolveSelectedMethod(event)).toBe('password')
+        })
+
+        it('uses presence-style checked attributes for custom radio-input elements', () => {
+            expect(getRadioCheckedAttr('passkey', 'passkey')).toBe('checked')
+            expect(getRadioCheckedAttr('passkey', 'password')).toBe(null)
+        })
+    })
+
+    describe('Shared color tokens', () => {
+        it('keeps maintained stylesheets free of direct color literals', () => {
+            const maintainedStyles = [
+                '/src/style.css',
+                '/src/client/components/card.css',
+                '/src/client/components/nav.css',
+                '/src/client/routes/home.css',
+                '/src/client/routes/login.css',
+                '/src/client/routes/profile.css',
+            ]
+
+            const offenders = maintainedStyles.flatMap(path => {
+                const source = cssSourceFiles[path]
+                const blockedLines = findBlockedColorLines(source)
+
+                return blockedLines.map(line => `${path}: ${line}`)
+            })
+
+            expect(offenders).toEqual([])
+        })
+    })
+
+    describe('Vite config compatibility', () => {
+        it('disables the Cloudflare inspector port in Vite config for local startup compatibility', () => {
+            expect(viteConfigSource)
+                .toContain('cloudflare({ inspectorPort: false })')
+        })
+
+        it('keeps the current build output contract explicit in Vite config', () => {
+            expect(viteConfigSource).toContain("outDir: './public'")
+            expect(viteConfigSource).toContain("manifest: 'vite-manifest.json'")
         })
     })
 
@@ -232,8 +449,8 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets()
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
                     'Static asset binding'
@@ -250,11 +467,11 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets(fetcher)
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
-                    'Vite manifest was not found at client/vite-manifest.json.'
+                    'Vite manifest was not found at vite-manifest.json.'
                 )
             }
         )
@@ -271,11 +488,11 @@ describe('Hono worker', () => {
                 const result = await resolveStartupAssets(fetcher)
                 expect(result.recovered).toBe(true)
                 expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
+                    css: '/assets/index.css',
+                    js: '/assets/index.js',
                 })
                 expect(result.warning).toContain(
-                    'Vite manifest at client/vite-manifest.json is missing index.html entry.'
+                    'Vite manifest at vite-manifest.json is missing index.html entry.'
                 )
             }
         )
@@ -292,7 +509,7 @@ describe('Hono worker', () => {
 
                 await resolveStartupAssets(fetcher)
                 expect(requestedUrl)
-                    .toBe('http://assets/client/vite-manifest.json')
+                    .toBe('http://assets/vite-manifest.json')
             }
         )
 

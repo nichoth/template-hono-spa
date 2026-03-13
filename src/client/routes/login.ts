@@ -1,6 +1,7 @@
 import { type FunctionComponent } from 'preact'
 import { useSignal } from '@preact/signals'
 import { RadioInput } from '@substrate-system/radio-input'
+import { useCallback } from 'preact/hooks'
 import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
 import './login.css'
@@ -37,74 +38,13 @@ export const UI_ONLY_LOGIN_MESSAGE =
 export const PASSKEY_UI_ONLY_LOGIN_MESSAGE =
     'Passkey sign-in is not connected yet. No sign-in was performed.'
 
-export function startPasskeyLogin ():PasskeyLoginResult {
-    return {
-        method: 'passkey',
-        message: PASSKEY_UI_ONLY_LOGIN_MESSAGE,
-    }
-}
-
-export function getRadioCheckedAttr (
-    activeMethod:SignInMethod,
-    method:SignInMethod
-):'checked' | null {
-    return activeMethod === method ? 'checked' : null
-}
-
-function isMethodTarget (value:unknown):value is SignInMethodTarget {
-    if (!value || typeof value !== 'object') return false
-
-    if ('name' in value && 'value' in value) {
-        return true
-    }
-
-    return 'getAttribute' in value && typeof value.getAttribute === 'function'
-}
-
-function readMethodTarget (target:SignInMethodTarget):{
-    name:string | null;
-    value:string | null;
-} {
-    if ('getAttribute' in target) {
-        return {
-            name: target.getAttribute('name'),
-            value: target.getAttribute('value'),
-        }
-    }
-
-    return {
-        name: target.name,
-        value: target.value,
-    }
-}
-
-export function resolveSelectedMethod (
-    event:Event
-):SignInMethod | null {
-    const candidates = [
-        event.target,
-        ...(typeof event.composedPath === 'function' ? event.composedPath() : []),
-    ]
-
-    for (const candidate of candidates) {
-        if (!isMethodTarget(candidate)) continue
-        const { name, value } = readMethodTarget(candidate)
-        if (name !== 'sign-in-method') continue
-        if (value === 'passkey' || value === 'password') {
-            return value
-        }
-    }
-
-    return null
-}
-
 export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
     const activeMethod = useSignal<SignInMethod>('passkey')
     const identifier = useSignal('')
     const password = useSignal('')
     const fieldErrors = useSignal<LoginValidationErrors>({})
     const submitMessage = useSignal('')
-    const passkeyStatus = useSignal<'idle' | 'started'>('idle')
+    const passkeyStatus = useSignal<'idle'|'started'>('idle')
 
     const setActiveMethod = (method:SignInMethod) => {
         activeMethod.value = method
@@ -127,23 +67,23 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
         }
     }
 
-    const handleInput = (event:Event) => {
-        const target = event.target as HTMLInputElement | null
+    const handleInput = useCallback((event:InputEvent) => {
+        const target = event.target as HTMLInputElement|null
         if (!target?.name) return
 
         if (target.name === 'identifier' || target.name === 'password') {
             setFieldValue(target.name, target.value)
         }
-    }
+    }, [])
 
-    const handleMethodChange = (event:Event) => {
+    const handleMethodChange = useCallback((event:Event) => {
         const method = resolveSelectedMethod(event)
         if (!method) return
         setActiveMethod(method)
         passkeyStatus.value = 'idle'
-    }
+    }, [])
 
-    const handleSubmit = (event:Event) => {
+    const handleSubmit = useCallback((event:Event) => {
         event.preventDefault()
 
         const result = submitLoginValues({
@@ -154,15 +94,15 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
         fieldErrors.value = result.errors
         submitMessage.value = result.message
         passkeyStatus.value = 'idle'
-    }
+    }, [])
 
-    const handlePasskeyStart = () => {
+    const handlePasskeyStart = useCallback(() => {
         const result = startPasskeyLogin()
         activeMethod.value = result.method
         submitMessage.value = result.message
         fieldErrors.value = {}
         passkeyStatus.value = 'started'
-    }
+    }, [])
 
     return html`<div class="route login-route">
         <h2>Login</h2>
@@ -239,8 +179,10 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     Continue with passkey
                 </substrate-button>
                 ${passkeyStatus.value === 'started' && submitMessage.value ?
-                    html`<p class="login-submit-message">${submitMessage.value}</p>` :
-                    null}
+                    html`<p class="login-submit-message">
+                    ${submitMessage.value}
+                </p>` :
+                null}
             </div>`}
     </div>`
 }
@@ -259,7 +201,7 @@ function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
     return errors
 }
 
-export function submitLoginValues (
+function submitLoginValues (
     values:LoginFormValues
 ):LoginSubmitResult {
     const errors = validateLoginValues(values)
@@ -271,4 +213,58 @@ export function submitLoginValues (
             UI_ONLY_LOGIN_MESSAGE :
             '',
     }
+}
+
+function startPasskeyLogin ():PasskeyLoginResult {
+    return {
+        method: 'passkey',
+        message: PASSKEY_UI_ONLY_LOGIN_MESSAGE,
+    }
+}
+
+function isMethodTarget (value:unknown):value is SignInMethodTarget {
+    if (!value || typeof value !== 'object') return false
+
+    if ('name' in value && 'value' in value) {
+        return true
+    }
+
+    return 'getAttribute' in value && typeof value.getAttribute === 'function'
+}
+
+function readMethodTarget (target:SignInMethodTarget):{
+    name:string | null;
+    value:string | null;
+} {
+    if ('getAttribute' in target) {
+        return {
+            name: target.getAttribute('name'),
+            value: target.getAttribute('value'),
+        }
+    }
+
+    return {
+        name: target.name,
+        value: target.value,
+    }
+}
+
+function resolveSelectedMethod (
+    event:Event
+):SignInMethod | null {
+    const candidates = [
+        event.target,
+        ...(typeof event.composedPath === 'function' ? event.composedPath() : []),
+    ]
+
+    for (const candidate of candidates) {
+        if (!isMethodTarget(candidate)) continue
+        const { name, value } = readMethodTarget(candidate)
+        if (name !== 'sign-in-method') continue
+        if (value === 'passkey' || value === 'password') {
+            return value
+        }
+    }
+
+    return null
 }

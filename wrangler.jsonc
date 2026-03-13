@@ -5,33 +5,30 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "template-hono-spa",
-	"main": "src/server/index.ts",  // hono entry
+	"main": "src/server/index.ts", // hono entry
 	// "placement": { "mode": "smart" },
 	"compatibility_date": "2025-12-17",
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
-	"kv_namespaces": [
-	],
+	"kv_namespaces": [],
 	"d1_databases": [
 		{
 			"binding": "AUTH_DB",
 			"database_name": "template-hono-spa-auth",
-			"database_id": "11111111-1111-1111-1111-111111111111",
-			"migrations_dir": "migrations"
-		}
+			"database_id": "5bbd01f8-edd4-41b3-9068-fd768d1d37dd"
+		},
 	],
 	/**
 	 * Static Assets
 	 * https://developers.cloudflare.com/workers/static-assets/binding/
 	 */
 	"assets": {
-		"directory": "./public/",  // SPA build output
+		"directory": "./public/", // SPA build output
 		"not_found_handling": "single-page-application",
 		"binding": "ASSETS",
-		"run_worker_first": true  // try route matching on the server first
+		"run_worker_first": true // try route matching on the server first
 	},
-
 	/**
 	 * Environment Variables
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
@@ -53,7 +50,6 @@
 	"dev": {
 		"port": 9999
 	},
-
 	/**
 	 * Environments
 	 * https://developers.cloudflare.com/workers/wrangler/environments/
@@ -68,11 +64,10 @@
 			"name": "staging-template-hono-spa",
 			"d1_databases": [
 				{
-					"binding": "AUTH_DB",
+					"binding": "staging_template_hono_spa_auth",
 					"database_name": "staging-template-hono-spa-auth",
-					"database_id": "22222222-2222-2222-2222-222222222222",
-					"migrations_dir": "migrations"
-				}
+					"database_id": "eeed6191-33f0-4656-9ce1-348baeb9027d"
+				},
 			],
 			"vars": {
 				"NODE_ENV": "production",
@@ -84,13 +79,11 @@
 			}
 		}
 	},
-
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
 	 */
 	// "placement": {  "mode": "smart" }
-
 	/**
 	 * Bindings
 	 * Bindings allow your Worker to interact with resources on the
@@ -98,7 +91,6 @@
 	 * AI inference, real-time communication and more.
 	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
 	 */
-
 	/**
 	 * Service Bindings (communicate between multiple Workers)
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings

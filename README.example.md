@@ -23,7 +23,7 @@ the browser by Preact.
 - [Develop](#develop)
   * [Local Dev](#local-dev)
 - [Deploy](#deploy)
-  * [Auth Backend Setup](#auth-backend-setup)
+  * [Backend Auth](#backend-auth)
   * [Passkey Login Test Flow](#passkey-login-test-flow)
 - [Rendering](#rendering)
 - [Notes](#notes)
@@ -78,7 +78,7 @@ Vite builds to `public/`, but we do not use that folder during development.
 
 ## Deploy
 
-### Auth Backend Setup
+### Backend Auth
 
 Passkey auth uses a Cloudflare D1 database bound as `AUTH_DB`.
 
@@ -125,12 +125,18 @@ npm start
 
 Cloudflare setup checklist:
 
-1. Create the default D1 database with `wrangler d1 create template-hono-spa-auth`.
-2. Create the staging D1 database with `wrangler d1 create staging-template-hono-spa-auth`.
-3. Replace the placeholder `database_id` values in [`wrangler.jsonc`](./wrangler.jsonc).
+1. Create the default D1 database with
+   `wrangler d1 create template-hono-spa-auth`.
+2. Create the staging D1 database with
+   `wrangler d1 create staging-template-hono-spa-auth`.
+3. Replace the placeholder `database_id` values in
+   [`wrangler.jsonc`](./wrangler.jsonc).
 4. Keep the binding name `AUTH_DB` in default and staging config.
-5. Apply the checked-in migration from [`migrations/0001_auth_schema.sql`](./migrations/0001_auth_schema.sql) to each database.
-6. Start local dev with `npm start` or deploy with `wrangler deploy` / `wrangler deploy --env staging`.
+5. Apply the checked-in migration from
+   [`migrations/0001_auth_schema.sql`](./migrations/0001_auth_schema.sql)
+   to each database.
+6. Start local dev with `npm start` or deploy with
+   `wrangler deploy` / `wrangler deploy --env staging`.
 
 For tests, [`wrangler.test.jsonc`](./wrangler.test.jsonc) provisions an
 isolated `AUTH_DB` binding and the test runner applies the same schema shape,
@@ -138,7 +144,8 @@ so no extra local test-only setup is required beyond installing dependencies.
 
 Current backend auth services:
 
-1. `AUTH_DB` D1 binding for users, credentials, challenges, sessions, and auth events
+1. `AUTH_DB` D1 binding for users, credentials, challenges, sessions,
+   and auth events
 2. Cookie-based session handling backed by D1
 3. Existing optional staging basic-auth secrets for the `staging` environment
 
@@ -146,8 +153,6 @@ No extra auth secret is currently required for session signing because sessions
 are stored server-side in D1 with opaque random tokens.
 
 ### Passkey Login Test Flow
-
-This project now has a real passkey frontend and backend:
 
 1. Frontend:
    - `/login` can create an account with a passkey
@@ -164,7 +169,8 @@ This project now has a real passkey frontend and backend:
 
 How to test passkey auth locally:
 
-1. Complete the Cloudflare auth backend setup above so `AUTH_DB` points at a real local/default D1 database.
+1. Complete the Cloudflare auth backend setup above so `AUTH_DB`
+   points at a real local/default D1 database.
 2. Run `npm start`.
 3. Open `http://localhost:8888/login`.
 4. Leave the selector on `Passkey`.
@@ -184,9 +190,12 @@ What to verify during testing:
 
 1. Registration creates a user, stored passkey credential, and session in D1.
 2. Login works with one valid passkey ceremony for an existing account.
-3. `GET /api/session` returns authenticated state after login and unauthenticated state after logout.
+3. `GET /api/session` returns authenticated state after login and
+   unauthenticated state after logout.
 4. `POST /api/logout` invalidates the previous session.
-5. The same `AUTH_DB` binding name is used in local, test, and staging environments.
+5. The same `AUTH_DB` binding name is used in local, test,
+   and staging environments.
+
 
 ## Rendering
 

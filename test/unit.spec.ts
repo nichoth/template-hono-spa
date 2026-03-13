@@ -322,9 +322,11 @@ describe('Hono worker', () => {
             expect(router.match('/')).toBeTruthy()
             expect(router.match('/about')).toBeTruthy()
             expect(router.match('/login')).toBeTruthy()
+            expect(router.match('/signup')).toBeTruthy()
             expect(router.match('/missing')).toBeFalsy()
             expect(isKnownClientRoute('/about')).toBe(true)
             expect(isKnownClientRoute('/login')).toBe(true)
+            expect(isKnownClientRoute('/signup')).toBe(true)
             expect(isKnownClientRoute('/missing')).toBe(false)
         })
 
@@ -370,6 +372,13 @@ describe('Hono worker', () => {
     })
 
     describe('Login route', () => {
+        it('keeps a visible route from login to signup', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('Create an account')
+            expect(loginSource).toContain('href="/signup"')
+        })
+
         it('builds a passkey login request body with assertion data and context separated', () => {
             const result = buildLoginRequestBody({
                 method: 'passkey',
@@ -457,7 +466,8 @@ describe('Hono worker', () => {
 
             expect(loginSource).not.toContain('Create passkey account')
             expect(loginSource).not.toContain('Display Name')
-            expect(stateSource).not.toContain('State.registerWithPasskey')
+            expect(loginSource).not.toContain('Create account')
+            expect(stateSource).toContain('State.registerWithPasskey')
         })
 
         it('returns missing-field errors without clearing valid values for password sign-in', () => {
@@ -542,6 +552,28 @@ describe('Hono worker', () => {
         })
     })
 
+    describe('Signup route', () => {
+        it('renders a dedicated create-account heading with the shared radio selector', () => {
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+
+            expect(signupSource).toContain('<h2>Create Account</h2>')
+            expect(signupSource).toContain('radio-input')
+            expect(signupSource).toContain('value="passkey"')
+            expect(signupSource).toContain('value="password"')
+        })
+
+        it('keeps signup submission on the registration path rather than the login path', () => {
+            const stateSource = sourceFiles['/src/client/state.ts']
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+
+            expect(stateSource).toContain('State.registerWithPasskey')
+            expect(stateSource).toContain('/api/auth/register/start')
+            expect(stateSource).toContain('/api/auth/register/finish')
+            expect(signupSource).toContain('Create account')
+            expect(signupSource).toContain('Back to sign in')
+        })
+    })
+
     describe('Shared color tokens', () => {
         it('keeps maintained stylesheets free of direct color literals', () => {
             const maintainedStyles = [
@@ -551,6 +583,7 @@ describe('Hono worker', () => {
                 '/src/client/routes/home.css',
                 '/src/client/routes/login.css',
                 '/src/client/routes/profile.css',
+                '/src/client/routes/signup.css',
             ]
 
             const offenders = maintainedStyles.flatMap(path => {

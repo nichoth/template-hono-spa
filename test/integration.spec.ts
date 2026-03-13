@@ -154,12 +154,25 @@ describe('Integration tests', () => {
             }
         )
 
+        it('serves shell for the signup route deep link', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/signup'
+            )
+            const html = await response.text()
+
+            expect(response.status).toBe(200)
+            expect(html).toContain('<div id="root"></div>')
+            expect(html).toContain('/src/client/index.ts')
+            expect(html).not.toContain('Page not found.')
+        })
+
         it('keeps the shared client shell bootstrapped across primary routes',
             async () => {
                 const responses = await Promise.all([
                     SELF.fetch('http://localhost/'),
                     SELF.fetch('http://localhost/about'),
                     SELF.fetch('http://localhost/login'),
+                    SELF.fetch('http://localhost/signup'),
                 ])
 
                 const htmlByRoute = await Promise.all(responses.map(async response => {

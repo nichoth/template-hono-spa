@@ -28,6 +28,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - N/A on the client; request/response contract only (022-passkey-login-payload)
 - TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs (023-passkey-auth-backend)
 - Cloudflare D1 for users, passkey credentials, auth challenges, sessions, and auth events (023-passkey-auth-backend)
+- TypeScript (ESM, ES2022 strict mode) + Preact, Hono, Vite 8, `route-event`, `ky`, `@substrate-system/radio-input`, `@substrate-system/input`, `@substrate-system/password-input`, `@simplewebauthn/browser`, `@simplewebauthn/server` (024-signup-route)
+- Cloudflare D1 auth persistence already used by the existing auth backend (024-signup-route)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -47,9 +49,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 024-signup-route: Added TypeScript (ESM, ES2022 strict mode) + Preact, Hono, Vite 8, `route-event`, `ky`, `@substrate-system/radio-input`, `@substrate-system/input`, `@substrate-system/password-input`, `@simplewebauthn/browser`, `@simplewebauthn/server`
 - 023-passkey-auth-backend: Added TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs
 - 023-passkey-auth-backend: Added TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs
-- 022-passkey-login-payload: Added TypeScript (ES2022 strict mode), browser WebAuthn/browser credential objects, JSON request/response payloads + Preact signals app state, `ky` for HTTP requests, current login route UI, Hono-backed API routes, existing request-state helpers
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -224,7 +224,7 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
                     null}
                 <substrate-button type="submit">
-                    Login with password
+                    Log in with password
                 </substrate-button>
 
                 ${submitMessage.value ?
@@ -259,7 +259,7 @@ function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
     return errors
 }
 
-function submitLoginValues (
+export function submitLoginValues (
     values:LoginFormValues
 ):LoginSubmitResult {
     const errors = validateLoginValues(values)

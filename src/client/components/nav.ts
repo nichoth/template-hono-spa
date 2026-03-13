@@ -6,8 +6,8 @@ import { html } from 'htm/preact'
 import { routes } from '../routes/index.js'
 import type { AppState } from '../state.js'
 import './nav.css'
-import Debug from '@substrate-system/debug'
-const debug = Debug('template:view')
+// import Debug from '@substrate-system/debug'
+// const debug = Debug('template:view')
 
 const MEDIA_QUERY = '(width >= 680px)'
 HamburgerTwo.define();

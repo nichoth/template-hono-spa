@@ -50,7 +50,7 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
 
     return html`
         <header>
-            <h1>
+            <h1 class="logo">
                 <a href="/">T</a>  ${/* <-- site logo here */null}
             </h1>
             <${Nav} state=${state} />

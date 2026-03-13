@@ -155,8 +155,7 @@ are stored server-side in D1 with opaque random tokens.
 ### Passkey Login Test Flow
 
 1. Frontend:
-   - `/login` can create an account with a passkey
-   - `/login` can sign in with an existing passkey
+   - `/login` signs in with an existing passkey
    - the client restores the current session on load
    - the authenticated view supports sign-out
 2. Backend:
@@ -171,29 +170,25 @@ How to test passkey auth locally:
 
 1. Complete the Cloudflare auth backend setup above so `AUTH_DB`
    points at a real local/default D1 database.
-2. Run `npm start`.
-3. Open `http://localhost:8888/login`.
-4. Leave the selector on `Passkey`.
-5. Enter a new email or username.
-6. Optionally enter a display name.
-7. Click `Create account with passkey`.
+2. Make sure you already have a registered passkey account in that database.
+3. Run `npm start`.
+4. Open `http://localhost:8888/login`.
+5. Leave the selector on `Passkey`.
+6. Enter the existing account email or username.
+7. Click `Continue with passkey`.
 8. Complete the browser/device passkey prompt.
 9. Confirm the page shows the authenticated state.
 10. Refresh the page and confirm the session is restored.
 11. Click `Sign out` and confirm the authenticated state disappears.
-12. Enter the same identifier again.
-13. Click `Continue with passkey`.
-14. Complete the browser/device passkey prompt.
-15. Confirm you are signed in again.
+12. Sign in again with the same identifier and confirm the passkey flow still works.
 
 What to verify during testing:
 
-1. Registration creates a user, stored passkey credential, and session in D1.
-2. Login works with one valid passkey ceremony for an existing account.
-3. `GET /api/session` returns authenticated state after login and
+1. Login works with one valid passkey ceremony for an existing account.
+2. `GET /api/session` returns authenticated state after login and
    unauthenticated state after logout.
-4. `POST /api/logout` invalidates the previous session.
-5. The same `AUTH_DB` binding name is used in local, test,
+3. `POST /api/logout` invalidates the previous session.
+4. The same `AUTH_DB` binding name is used in local, test,
    and staging environments.
 
 

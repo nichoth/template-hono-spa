@@ -41,7 +41,6 @@ export const PASSKEY_UI_ONLY_LOGIN_MESSAGE =
 export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
     const activeMethod = useSignal<SignInMethod>('passkey')
     const identifier = useSignal('')
-    const displayName = useSignal('')
     const password = useSignal('')
     const fieldErrors = useSignal<LoginValidationErrors>({})
     const submitMessage = useSignal('')
@@ -57,9 +56,8 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         fieldErrors.value = {}
     }
 
-    const setFieldValue = (field:'identifier'|'displayName'|'password', value:string) => {
+    const setFieldValue = (field:'identifier'|'password', value:string) => {
         if (field === 'identifier') identifier.value = value
-        else if (field === 'displayName') displayName.value = value
         else password.value = value
 
         if (field === 'identifier' || field === 'password') {
@@ -109,30 +107,6 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
             submitMessage.value = err instanceof Error ?
                 err.message :
                 'Passkey sign-in failed.'
-        } finally {
-            passkeyStatus.value = 'idle'
-        }
-    }
-
-    const handlePasskeyRegistration = async () => {
-        if (!identifier.value.trim()) {
-            submitMessage.value = 'Enter your email or username before creating an account.'
-            return
-        }
-
-        passkeyStatus.value = 'working'
-        submitMessage.value = ''
-
-        try {
-            await State.registerWithPasskey(state, {
-                identifier: identifier.value.trim(),
-                displayName: displayName.value.trim(),
-            })
-            submitMessage.value = 'Passkey account created.'
-        } catch (err) {
-            submitMessage.value = err instanceof Error ?
-                err.message :
-                'Passkey registration failed.'
         } finally {
             passkeyStatus.value = 'idle'
         }
@@ -255,15 +229,6 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
                             setFieldValue('identifier', target.value)
                         }}
                     ></substrate-input>
-                    <substrate-input
-                        label="Display Name"
-                        name="displayName"
-                        value=${displayName.value}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('displayName', target.value)
-                        }}
-                    ></substrate-input>
                     <div class="login-passkey-actions">
                         <substrate-button
                             type="button"
@@ -271,13 +236,6 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
                             spinning=${passkeyStatus.value === 'working'}
                         >
                             Continue with passkey
-                        </substrate-button>
-                        <substrate-button
-                            type="button"
-                            onClick=${handlePasskeyRegistration}
-                            spinning=${passkeyStatus.value === 'working'}
-                        >
-                            Create passkey account
                         </substrate-button>
                     </div>
                     ${submitMessage.value ?

@@ -8,11 +8,9 @@ import {
 import Debug from '@substrate-system/debug'
 import {
     startAuthentication as beginBrowserAuthentication,
-    startRegistration as beginBrowserRegistration,
 } from '@simplewebauthn/browser'
 import type {
     AuthenticationResponseJSON,
-    PublicKeyCredentialCreationOptionsJSON,
     PublicKeyCredentialRequestOptionsJSON,
 } from '@simplewebauthn/browser'
 
@@ -84,11 +82,6 @@ export type PasskeyLoginRequestBody = {
 
 export type LoginRequestBody = PasswordLoginRequestBody|PasskeyLoginRequestBody
 
-export type PasskeyRegistrationValues = {
-    identifier:string;
-    displayName?:string;
-}
-
 export type PasskeyLoginValues = {
     identifier:string;
 }
@@ -151,40 +144,6 @@ State.logout = async function (state:AppState) {
     } catch (_err) {
         const err = _err as HTTPError|Error
         error(state.user, err)
-    }
-}
-
-State.registerWithPasskey = async function (
-    state:AppState,
-    values:PasskeyRegistrationValues,
-) {
-    start(state.user)
-
-    try {
-        const startResponse = await ky.post('/api/auth/register/start', {
-            json: values,
-        }).json<{
-            challengeReference:string;
-            options:PublicKeyCredentialCreationOptionsJSON;
-        }>()
-
-        const credential = await beginBrowserRegistration({
-            optionsJSON: startResponse.options,
-        })
-
-        const user = await ky.post('/api/auth/register/finish', {
-            json: {
-                challengeReference: startResponse.challengeReference,
-                credential,
-            },
-        }).json<SessionResponse>()
-
-        set(state.user, user)
-        return user
-    } catch (_err) {
-        const err = _err as HTTPError|Error
-        error(state.user, err)
-        throw err
     }
 }
 

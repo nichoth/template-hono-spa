@@ -451,6 +451,15 @@ describe('Hono worker', () => {
                 .toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
         })
 
+        it('keeps the login screen focused on sign-in only for the passkey path', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+            const stateSource = sourceFiles['/src/client/state.ts']
+
+            expect(loginSource).not.toContain('Create passkey account')
+            expect(loginSource).not.toContain('Display Name')
+            expect(stateSource).not.toContain('State.registerWithPasskey')
+        })
+
         it('returns missing-field errors without clearing valid values for password sign-in', () => {
             const result = submitLoginValues({
                 identifier: 'nick@example.com',

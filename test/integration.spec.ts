@@ -6,7 +6,7 @@ function basicAuthHeader (username:string, password:string):string {
 }
 
 function testCredential (
-    key:'STAGING_BASIC_AUTH_USERNAME'|'STAGING_PW',
+    key:'STAGING_USERNAME'|'STAGING_PW',
     fallback:string,
 ):string {
     const value = env[key]
@@ -36,7 +36,7 @@ describe('Integration tests', () => {
                         'x-deploy-branch': 'staging',
                         authorization: basicAuthHeader(
                             testCredential(
-                                'STAGING_BASIC_AUTH_USERNAME',
+                                'STAGING_USERNAME',
                                 'staging-user',
                             ),
                             testCredential('STAGING_PW', 'staging-pass'),
@@ -225,7 +225,7 @@ describe('Integration tests', () => {
                             'x-deploy-branch': 'staging',
                             authorization: basicAuthHeader(
                                 testCredential(
-                                    'STAGING_BASIC_AUTH_USERNAME',
+                                    'STAGING_USERNAME',
                                     'staging-user',
                                 ),
                                 testCredential('STAGING_PW', 'staging-pass'),

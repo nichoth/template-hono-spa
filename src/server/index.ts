@@ -21,7 +21,7 @@ type Bindings = {
     NODE_ENV?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
-    STAGING_BASIC_AUTH_USERNAME?:string
+    STAGING_USERNAME?:string
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
     AUTH_SESSION_TTL_SECONDS?:string
@@ -55,7 +55,7 @@ app.use('*', async (c, next) => {
     if (
         credentialsMatch(
             credential,
-            c.env?.STAGING_BASIC_AUTH_USERNAME,
+            c.env?.STAGING_USERNAME,
             c.env?.STAGING_PW,
         )
     ) {

@@ -2,7 +2,7 @@
 
 ## Decision: Document the existing staging secret names exactly
 
-**Rationale**: The repository already defines staging protection around `STAGING_BASIC_AUTH_USERNAME` and `STAGING_PW`. The documentation should reflect the live contract instead of inventing clearer but incompatible names.
+**Rationale**: The repository already defines staging protection around `STAGING_USERNAME` and `STAGING_PW`. The documentation should reflect the live contract instead of inventing clearer but incompatible names.
 
 **Alternatives considered**:
 - Rename the secret names in documentation only: rejected because it would create broken setup steps.

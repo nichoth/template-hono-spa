@@ -56,7 +56,7 @@
 	 *
 	 * Deploy staging with: wrangler deploy --env staging
 	 * Set secrets with:
-	 *   wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging
+	 *   wrangler secret put STAGING_USERNAME --env staging
 	 *   wrangler secret put STAGING_PW --env staging
 	 */
 	"env": {

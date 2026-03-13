@@ -3,8 +3,9 @@
 A template for web apps with [Hono](https://hono.dev/) and
 [Preact](https://preactjs.com/).
 
-This is a server that serves a client-rendered Preact app shell.
+This is a Cloudflare worker that serves a client-rendered Preact app.
 At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
+
 1. A Cloudflare Worker bundle (the server)                                    
 2. Client-side JS/CSS assets in public/
 
@@ -63,6 +64,7 @@ Start a Vite server at `localhost:8888`.
 npm start
 ```
 
+
 ### Local Dev
 
 Locally we are using [Vite](https://vite.dev/) as server. In the
@@ -94,10 +96,10 @@ only applies to the staging deploy flow:
 wrangler deploy --env staging
 ```
 
-Set the staging secrets in Cloudflare with these exact names:
+Set the staging secrets in Cloudflare with these env variables:
 
 ```sh
-wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging
+wrangler secret put STAGING_USERNAME --env staging
 wrangler secret put STAGING_PW --env staging
 ```
 
@@ -114,14 +116,14 @@ prompts for the secret.
 Recommended setup flow:
 
 1. Choose the staging username you want to use.
-2. Run `wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging`.
+2. Run `wrangler secret put STAGING_USERNAME --env staging`.
 3. Generate a fresh password with `openssl rand -base64 32`.
 4. Run `wrangler secret put STAGING_PW --env staging` and paste the generated password.
 5. Deploy staging with `wrangler deploy --env staging`.
 
 To rotate staging access later, generate a new password and update
 `STAGING_PW` in the `staging` environment again. You only need to change
-`STAGING_BASIC_AUTH_USERNAME` if you also want to rotate the username.
+`STAGING_USERNAME` if you also want to rotate the username.
 
 Do not reuse the checked-in example values from local files as real deployment
 credentials.

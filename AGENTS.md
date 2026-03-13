@@ -22,6 +22,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ES2022, strict mode) and CSS + Preact, Hono, Vite 7, `route-event`, `@substrate-system/*` UI packages, Lightning CSS custom-media suppor (016-css-color-vars)
 - TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite 7, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`, existing route-management utilities (017-passkey-login-ux)
 - TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite 7, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`, `@substrate-system/radio-input`, existing route-management utilities (018-radio-passkey-control)
+- TypeScript (ESM, ES2022 strict mode), JavaScript config files, CSS + Vite 8, Vitest 3, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server`, Lightning CSS, Browserslis (021-vite8-config)
+- Filesystem build output only (`public/`, generated manifest) (021-vite8-config)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -41,9 +43,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 021-vite8-config: Added TypeScript (ESM, ES2022 strict mode), JavaScript config files, CSS + Vite 8, Vitest 3, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server`, Lightning CSS, Browserslis
 - 020-fix-radio-selection: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite 7, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`, `@substrate-system/radio-input`, existing route-management utilities
 - 019-login-radio-style: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite 7, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`, `@substrate-system/radio-input`, existing route-management utilities
-- 018-radio-passkey-control: Added TypeScript (ES2022, strict mode) and CSS + Preact, `htm/preact`, `@preact/signals`, Hono, Vite 7, `@substrate-system/button`, `@substrate-system/input`, `@substrate-system/password-input`, `@substrate-system/radio-input`, existing route-management utilities
 
 
 <!-- MANUAL ADDITIONS START -->

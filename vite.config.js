@@ -18,7 +18,9 @@ export default defineConfig(({ mode }) => {
             }
         },
         plugins: [
-            cloudflare(),
+            // Vite 8 still works with the Cloudflare plugin here, but disabling
+            // the inspector avoids environment-specific startup failures.
+            cloudflare({ inspectorPort: false }),
         ],
         // https://github.com/vitejs/vite/issues/8644#issuecomment-1159308803
         esbuild: {

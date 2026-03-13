@@ -29,10 +29,18 @@ import {
     resolveSelectedMethod,
 } from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
+import viteConfigSource from '../vite.config.js?raw'
 
 vi.mock('@substrate-system/button', () => ({
     SubstrateButton: {
         TAG: 'button',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/radio-input', () => ({
+    RadioInput: {
+        TAG: 'radio-input',
         define: () => {},
     },
 }))
@@ -420,6 +428,18 @@ describe('Hono worker', () => {
             })
 
             expect(offenders).toEqual([])
+        })
+    })
+
+    describe('Vite config compatibility', () => {
+        it('disables the Cloudflare inspector port in Vite config for local startup compatibility', () => {
+            expect(viteConfigSource)
+                .toContain('cloudflare({ inspectorPort: false })')
+        })
+
+        it('keeps the current build output contract explicit in Vite config', () => {
+            expect(viteConfigSource).toContain("outDir: './public'")
+            expect(viteConfigSource).toContain("manifest: 'vite-manifest.json'")
         })
     })
 

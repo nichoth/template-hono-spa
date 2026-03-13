@@ -41,7 +41,17 @@
 - **Deferring binding setup until implementation polish**: Rejected because the backend cannot be exercised reliably without named bindings.
 - **Using only production bindings without staging/local parity**: Rejected because the project already uses environment-specific Wrangler configuration and the auth system must work across those contexts.
 
-## Decision 5: Expose explicit auth endpoints for registration, login, session lookup, and logout
+## Decision 5: Document backend service setup in `README.md`
+
+**Decision**: Add a README section that explains how to provision and configure D1 and any other required backend auth services, including which bindings or secrets must exist before local development or deployment.
+
+**Rationale**: The user explicitly requested setup documentation in `README.md`. The main project README is the first place a developer will look after cloning the repo, so D1 and backend service setup must be discoverable there instead of being buried only in feature-specific planning docs.
+
+**Alternatives considered**:
+- **Document setup only in feature quickstart docs**: Rejected because those docs are feature-scoped and are easy to miss during initial project setup.
+- **Rely on inline comments in `wrangler.jsonc` only**: Rejected because comments alone do not provide a step-by-step setup flow.
+
+## Decision 6: Expose explicit auth endpoints for registration, login, session lookup, and logout
 
 **Decision**: Add backend endpoints for starting and completing passkey registration, starting and completing passkey login, fetching the current session user, and signing out.
 

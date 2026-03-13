@@ -9,6 +9,13 @@ Validate the real passkey authentication backend end to end, including persisted
 - Auth persistence binding is defined in `wrangler.jsonc`
 - Local auth database is created and available to the Worker runtime
 - Any required auth secrets or environment values are configured for local execution
+- `README.md` contains the canonical setup steps for provisioning D1 and configuring any additional backend auth services
+
+## Setup Reference
+
+1. Follow `README.md` to create or bind the local auth database.
+2. Follow `README.md` to configure any auth-related Worker bindings or secrets.
+3. Confirm local development and staging configuration use matching auth binding names before testing the flows below.
 
 ## Scenario 1: Register a new account with a passkey
 

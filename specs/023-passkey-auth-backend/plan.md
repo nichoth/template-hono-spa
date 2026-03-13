@@ -5,7 +5,7 @@
 
 ## Summary
 
-Add a real backend-backed passkey authentication system for sign-up, sign-in, session restoration, and sign-out. The implementation will add persistent auth storage with Cloudflare D1, server-managed challenge and session handling, backend auth endpoints, client integration for WebAuthn flows, and the required `wrangler.jsonc` bindings so local, staging, and production environments can access the auth database consistently.
+Add a real backend-backed passkey authentication system for sign-up, sign-in, session restoration, and sign-out. The implementation will add persistent auth storage with Cloudflare D1, server-managed challenge and session handling, backend auth endpoints, client integration for WebAuthn flows, the required `wrangler.jsonc` bindings, and README guidance that explains how to set up D1 and any additional backend services required for local and deployed environments.
 
 ## Technical Context
 
@@ -16,7 +16,7 @@ Add a real backend-backed passkey authentication system for sign-up, sign-in, se
 **Target Platform**: Cloudflare Workers backend with browser-based client flows  
 **Project Type**: Web application with Worker-hosted API and client SPA  
 **Performance Goals**: Passkey registration and sign-in round trips complete fast enough to keep the full user flow under 2 minutes; session lookup remains suitable for normal interactive navigation  
-**Constraints**: Backend must own trust decisions, support durable sessions across requests, preserve current app entry points, and include any required `wrangler.jsonc` bindings for local and deployed environments  
+**Constraints**: Backend must own trust decisions, support durable sessions across requests, preserve current app entry points, include any required `wrangler.jsonc` bindings for local and deployed environments, and document D1/backend service setup clearly in `README.md`  
 **Scale/Scope**: Initial production-ready auth for one web app with persisted users, multiple passkey credentials per user, and session lifecycle support
 
 ## Constitution Check
@@ -58,10 +58,11 @@ test/
 ├── integration.spec.ts
 └── unit.spec.ts
 
+README.md
 wrangler.jsonc
 ```
 
-**Structure Decision**: Keep the existing single-project layout. Add focused server-side auth and database modules under `src/server/`, extend the existing client state and login/signup flows, and wire Cloudflare resource bindings through `wrangler.jsonc` and generated Worker type definitions.
+**Structure Decision**: Keep the existing single-project layout. Add focused server-side auth and database modules under `src/server/`, extend the existing client state and login/signup flows, wire Cloudflare resource bindings through `wrangler.jsonc` and generated Worker type definitions, and document D1/backend setup in `README.md` so a clean checkout can be configured without reading feature-only docs first.
 
 ## Complexity Tracking
 

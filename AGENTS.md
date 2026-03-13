@@ -48,8 +48,8 @@ TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventio
 
 ## Recent Changes
 - 023-passkey-auth-backend: Added TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs
+- 023-passkey-auth-backend: Added TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs
 - 022-passkey-login-payload: Added TypeScript (ES2022 strict mode), browser WebAuthn/browser credential objects, JSON request/response payloads + Preact signals app state, `ky` for HTTP requests, current login route UI, Hono-backed API routes, existing request-state helpers
-- 021-vite8-config: Added TypeScript (ESM, ES2022 strict mode), JavaScript config files, CSS + Vite 8, Vitest 3, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server`, Lightning CSS, Browserslis
 
 
 <!-- MANUAL ADDITIONS START -->

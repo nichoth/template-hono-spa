@@ -9,6 +9,7 @@ Define the backend API boundary for passkey registration, passkey sign-in, sessi
 - The Worker runtime exposes an auth persistence binding through `wrangler.jsonc`.
 - The auth persistence binding is available in local development, default deployment, and staging configuration.
 - Session-related secrets or signing configuration, if required by the implementation, are exposed through Worker environment configuration rather than hard-coded values.
+- `README.md` documents the steps required to provision D1 and configure any required auth-related bindings or secrets.
 
 ## Endpoint Contract
 

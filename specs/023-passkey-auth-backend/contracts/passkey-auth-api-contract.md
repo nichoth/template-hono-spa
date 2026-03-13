@@ -7,7 +7,9 @@ Define the backend API boundary for passkey registration, passkey sign-in, sessi
 ## Environment Contract
 
 - The Worker runtime exposes an auth persistence binding through `wrangler.jsonc`.
+- The auth persistence binding name is `AUTH_DB` in default, staging, and test configuration.
 - The auth persistence binding is available in local development, default deployment, and staging configuration.
+- The D1 schema is applied from the checked-in migration in `migrations/0001_auth_schema.sql`.
 - Session-related secrets or signing configuration, if required by the implementation, are exposed through Worker environment configuration rather than hard-coded values.
 - `README.md` documents the steps required to provision D1 and configure any required auth-related bindings or secrets.
 

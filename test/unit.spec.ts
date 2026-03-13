@@ -28,6 +28,7 @@ import {
     submitLoginValues,
     startPasskeyLogin,
     PASSKEY_UI_ONLY_LOGIN_MESSAGE,
+    UI_ONLY_LOGIN_MESSAGE,
     getRadioCheckedAttr,
     resolveSelectedMethod,
 } from '../src/client/routes/login.js'
@@ -228,6 +229,67 @@ describe('Hono worker', () => {
             })
         })
 
+        it('POST /api/auth/register/start returns registration options and a challenge reference',
+            async () => {
+                const request = new Request(
+                    'http://example.com/api/auth/register/start',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            identifier: `person-${crypto.randomUUID()}@example.com`,
+                            displayName: 'Test Person',
+                        }),
+                    }
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request,
+                    env,
+                    ctx,
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(200)
+                const data = await response.json() as {
+                    challengeReference:string;
+                    options:{
+                        challenge:string;
+                        rp:{ id?:string; name:string };
+                        user:{ name:string; displayName:string; id:string };
+                    };
+                }
+
+                expect(data.challengeReference).toBeTruthy()
+                expect(data.options.challenge).toBeTruthy()
+                expect(data.options.rp.name).toBeTruthy()
+                expect(data.options.user.name).toContain('@example.com')
+                expect(data.options.user.displayName).toBe('Test Person')
+            }
+        )
+
+        it('GET /api/session returns an unauthenticated result when no session cookie is present',
+            async () => {
+                const request = new Request(
+                    'http://example.com/api/session'
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request,
+                    env,
+                    ctx,
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(200)
+                const data = await response.json() as {
+                    authenticated:boolean;
+                }
+
+                expect(data.authenticated).toBe(false)
+            }
+        )
+
         it('GET /health returns ok', async () => {
             const request = new Request(
                 'http://example.com/health'
@@ -417,7 +479,7 @@ describe('Hono worker', () => {
             })
             expect(result.errors).toEqual({})
             expect(result.message)
-                .toBe('Login is not connected yet. No sign-in was performed.')
+                .toBe(UI_ONLY_LOGIN_MESSAGE)
         })
 
         it('starts a passkey login attempt without requiring a password', () => {

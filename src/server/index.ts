@@ -1,5 +1,6 @@
 import { type Context, Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import {
     credentialsMatch,
     parseBasicAuthHeader,
@@ -8,20 +9,28 @@ import { resolveDeploymentContext } from './deployment-context.js'
 import { unauthorizedBasicAuthResponse } from './access-response.js'
 import { type AssetPaths, resolveStartupAssets } from './startup-assets.js'
 import { formatStartupFailure } from './startup-errors.js'
+import {
+    AUTH_SESSION_COOKIE,
+    AuthError,
+    createAuthService,
+} from './auth/index.js'
 
 type Bindings = {
     ASSETS?:Fetcher
+    AUTH_DB:D1Database
     NODE_ENV?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_BASIC_AUTH_USERNAME?:string
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
+    AUTH_SESSION_TTL_SECONDS?:string
 }
 
 let cachedAssets:AssetPaths|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
+const authService = createAuthService()
 const FOOBAR_RESPONSE = {
     ok: true,
     route: '/api/foobar',
@@ -70,6 +79,115 @@ app.get('/api/foobar', (c) => {
     return c.json(FOOBAR_RESPONSE, 200)
 })
 
+app.post('/api/auth/register/start', async (c) => {
+    try {
+        const body = await c.req.json<{
+            identifier:string;
+            displayName?:string;
+        }>()
+
+        const result = await authService.startRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/register/finish', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        setSessionCookie(c, result.sessionToken)
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/login/start', async (c) => {
+    try {
+        const body = await c.req.json<{
+            identifier:string;
+        }>()
+
+        const result = await authService.startAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/login/finish', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        setSessionCookie(c, result.sessionToken)
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.get('/api/session', async (c) => {
+    try {
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
+        const result = await authService.getCurrentSession(
+            c.env.AUTH_DB,
+            sessionToken,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/logout', async (c) => {
+    try {
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
+        const result = await authService.logout(
+            c.env.AUTH_DB,
+            sessionToken,
+        )
+
+        deleteCookie(c, AUTH_SESSION_COOKIE, {
+            path: '/',
+        })
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
 app.all('/api/foobar', (c) => {
     return c.json(
         { error: 'method_not_allowed' },
@@ -104,6 +222,42 @@ function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     }
 
     return c.env.ASSETS.fetch(c.req.raw)
+}
+
+function setSessionCookie (
+    c:Context<{ Bindings:Bindings }>,
+    sessionToken:string,
+) {
+    const ttlSeconds = Number(c.env.AUTH_SESSION_TTL_SECONDS || '2592000')
+
+    setCookie(c, AUTH_SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        path: '/',
+        secure: !isLocalhostRequest(c.req.url),
+        maxAge: ttlSeconds,
+    })
+}
+
+function authErrorResponse (
+    c:Context<{ Bindings:Bindings }>,
+    err:unknown,
+) {
+    if (err instanceof AuthError) {
+        return c.json({
+            error: err.code,
+            message: err.message,
+        }, err.status)
+    }
+
+    const message = err instanceof Error ?
+        err.message :
+        'Unknown authentication error.'
+
+    return c.json({
+        error: 'internal_error',
+        message,
+    }, 500)
 }
 
 function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefined {

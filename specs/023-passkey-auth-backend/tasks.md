@@ -11,9 +11,9 @@
 
 **Purpose**: Establish auth-specific project scaffolding and runtime configuration entry points.
 
-- [ ] T001 Create auth server module scaffolding in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
-- [ ] T002 [P] Create database module scaffolding in `/Users/nick/code/template-hono-spa/src/server/db/index.ts`
-- [ ] T003 [P] Add auth persistence binding placeholders and environment comments in `/Users/nick/code/template-hono-spa/wrangler.jsonc`
+- [X] T001 Create auth server module scaffolding in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
+- [X] T002 [P] Create database module scaffolding in `/Users/nick/code/template-hono-spa/src/server/db/index.ts`
+- [X] T003 [P] Add auth persistence binding placeholders and environment comments in `/Users/nick/code/template-hono-spa/wrangler.jsonc`
 
 ---
 
@@ -23,12 +23,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Create the D1 auth schema and migration bootstrap in `/Users/nick/code/template-hono-spa/src/server/db/schema.ts`
-- [ ] T005 [P] Define Worker auth binding and session typing in `/Users/nick/code/template-hono-spa/src/worker-configuration.d.ts`
-- [ ] T006 [P] Implement shared D1 repository helpers for users, credentials, challenges, sessions, and auth events in `/Users/nick/code/template-hono-spa/src/server/db/index.ts`
-- [ ] T007 [P] Implement shared WebAuthn challenge, verification, and session token utilities in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
-- [ ] T008 Wire auth bindings and shared middleware hooks into the Worker app in `/Users/nick/code/template-hono-spa/src/server/index.ts`
-- [ ] T009 Add foundational auth repository and binding regression coverage in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T004 Create the D1 auth schema and migration bootstrap in `/Users/nick/code/template-hono-spa/src/server/db/schema.ts`
+- [X] T005 [P] Define Worker auth binding and session typing in `/Users/nick/code/template-hono-spa/src/worker-configuration.d.ts`
+- [X] T006 [P] Implement shared D1 repository helpers for users, credentials, challenges, sessions, and auth events in `/Users/nick/code/template-hono-spa/src/server/db/index.ts`
+- [X] T007 [P] Implement shared WebAuthn challenge, verification, and session token utilities in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
+- [X] T008 Wire auth bindings and shared middleware hooks into the Worker app in `/Users/nick/code/template-hono-spa/src/server/index.ts`
+- [X] T009 Add foundational auth repository and binding regression coverage in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
 
 **Checkpoint**: Foundation ready for registration, login, and session lifecycle work.
 
@@ -42,15 +42,15 @@
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Add registration contract coverage for start and finish endpoints in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
-- [ ] T011 [P] [US1] Add end-to-end registration integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
+- [X] T010 [P] [US1] Add registration contract coverage for start and finish endpoints in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T011 [P] [US1] Add end-to-end registration integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Implement registration-start and registration-finish auth service logic in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
-- [ ] T013 [US1] Add `/api/auth/register/start` and `/api/auth/register/finish` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
-- [ ] T014 [US1] Implement client signup passkey ceremony request/response handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
-- [ ] T015 [US1] Connect the signup route to the real registration flow and success/error states in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T012 [P] [US1] Implement registration-start and registration-finish auth service logic in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
+- [X] T013 [US1] Add `/api/auth/register/start` and `/api/auth/register/finish` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
+- [X] T014 [US1] Implement client signup passkey ceremony request/response handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
+- [X] T015 [US1] Connect the signup route to the real registration flow and success/error states in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
 
 **Checkpoint**: New users can register a passkey-backed account and receive a session.
 
@@ -64,15 +64,15 @@
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] Add passkey login contract coverage for start and finish endpoints in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
-- [ ] T017 [P] [US2] Add returning-user passkey login integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
+- [X] T016 [P] [US2] Add passkey login contract coverage for start and finish endpoints in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T017 [P] [US2] Add returning-user passkey login integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [P] [US2] Implement login-start and login-finish auth service logic in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
-- [ ] T019 [US2] Add `/api/auth/login/start` and `/api/auth/login/finish` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
-- [ ] T020 [US2] Implement real passkey login ceremony handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
-- [ ] T021 [US2] Connect the login route to the real passkey login flow and failure states in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T018 [P] [US2] Implement login-start and login-finish auth service logic in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
+- [X] T019 [US2] Add `/api/auth/login/start` and `/api/auth/login/finish` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
+- [X] T020 [US2] Implement real passkey login ceremony handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
+- [X] T021 [US2] Connect the login route to the real passkey login flow and failure states in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
 
 **Checkpoint**: Existing users can sign in with a stored passkey and receive a fresh session.
 
@@ -86,15 +86,15 @@
 
 ### Tests for User Story 3
 
-- [ ] T022 [P] [US3] Add current-session and logout contract coverage in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
-- [ ] T023 [P] [US3] Add session restoration and sign-out integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
+- [X] T022 [P] [US3] Add current-session and logout contract coverage in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T023 [P] [US3] Add session restoration and sign-out integration coverage in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T024 [P] [US3] Implement current-session lookup, invalidation, and expiry handling in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
-- [ ] T025 [US3] Add `/api/session` and `/api/logout` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
-- [ ] T026 [US3] Implement session restoration and logout client state handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
-- [ ] T027 [US3] Render authenticated-session restoration and logout behavior in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T024 [P] [US3] Implement current-session lookup, invalidation, and expiry handling in `/Users/nick/code/template-hono-spa/src/server/auth/index.ts`
+- [X] T025 [US3] Add `/api/session` and `/api/logout` endpoints in `/Users/nick/code/template-hono-spa/src/server/index.ts`
+- [X] T026 [US3] Implement session restoration and logout client state handling in `/Users/nick/code/template-hono-spa/src/client/state.ts`
+- [X] T027 [US3] Render authenticated-session restoration and logout behavior in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
 
 **Checkpoint**: Session restoration and sign-out are fully enforced by the backend.
 
@@ -104,10 +104,11 @@
 
 **Purpose**: Finalize docs, config clarity, and complete full-feature verification.
 
-- [ ] T028 [P] Update auth binding, D1 setup, and local workflow documentation in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/quickstart.md`
-- [ ] T029 [P] Update the feature contract and implementation notes for final endpoint and binding names in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/contracts/passkey-auth-api-contract.md`
-- [ ] T030 Finalize `wrangler.jsonc` auth binding entries for default and staging environments in `/Users/nick/code/template-hono-spa/wrangler.jsonc`
-- [ ] T031 Run end-to-end verification updates and close the task checklist in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/tasks.md`
+- [X] T028 [P] Add D1 and backend service setup documentation to `/Users/nick/code/template-hono-spa/README.md`
+- [X] T029 [P] Update auth binding, D1 setup, and local workflow documentation in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/quickstart.md`
+- [X] T030 [P] Update the feature contract and implementation notes for final endpoint, binding, and setup documentation names in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/contracts/passkey-auth-api-contract.md`
+- [X] T031 Finalize `wrangler.jsonc` auth binding entries for default and staging environments in `/Users/nick/code/template-hono-spa/wrangler.jsonc`
+- [X] T032 Run end-to-end verification updates and close the task checklist in `/Users/nick/code/template-hono-spa/specs/023-passkey-auth-backend/tasks.md`
 
 ---
 
@@ -145,7 +146,7 @@
 - `T018` can proceed in parallel with `T016`/`T017`
 - `T022` and `T023`
 - `T024` can proceed in parallel with `T022`/`T023`
-- `T028` and `T029`
+- `T028`, `T029`, and `T030`
 
 ---
 

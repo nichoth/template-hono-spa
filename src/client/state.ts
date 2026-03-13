@@ -3,17 +3,35 @@ import ky, { type HTTPError } from 'ky'
 import Route from 'route-event'
 import {
     type RequestFor,
-    RequestState
+    RequestState,
 } from '@substrate-system/state'
 import Debug from '@substrate-system/debug'
+import {
+    startAuthentication as beginBrowserAuthentication,
+    startRegistration as beginBrowserRegistration,
+} from '@simplewebauthn/browser'
+import type {
+    AuthenticationResponseJSON,
+    PublicKeyCredentialCreationOptionsJSON,
+    PublicKeyCredentialRequestOptionsJSON,
+} from '@simplewebauthn/browser'
+
 const debug = Debug('template:state')
 
-export type LoginUser = {
-    [key:string]: unknown
+export type AuthUser = {
+    id:string;
+    identifier:string;
+    displayName:string | null;
 }
 
-export type LoginResponse = {
-    data:LoginUser
+export type SessionResponse = {
+    authenticated:false;
+} | {
+    authenticated:true;
+    user:AuthUser;
+    session:{
+        expiresAt:string;
+    };
 }
 
 export type PasswordLoginCredentials = {
@@ -66,64 +84,176 @@ export type PasskeyLoginRequestBody = {
 
 export type LoginRequestBody = PasswordLoginRequestBody|PasskeyLoginRequestBody
 
+export type PasskeyRegistrationValues = {
+    identifier:string;
+    displayName?:string;
+}
+
+export type PasskeyLoginValues = {
+    identifier:string;
+}
+
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    user:Signal<RequestFor<LoginResponse, HTTPError>>
-    response:Signal<RequestFor<{ message }, HTTPError|Error>>;
+    user:Signal<RequestFor<SessionResponse, HTTPError|Error>>;
+    response:Signal<RequestFor<{ message:string }, HTTPError|Error>>;
     _setRoute?:(path:string) => void;
 }
 
 const { start, set, error } = RequestState
 
-/**
- * Setup application state.
- *   - routes
- *   - count
- */
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
-        user: signal<RequestFor<LoginResponse, HTTPError>>(RequestState()),
-        response: signal<RequestFor<{ message }, HTTPError>>(RequestState()),
+        user: signal<RequestFor<SessionResponse, HTTPError|Error>>(RequestState()),
+        response: signal<RequestFor<{ message:string }, HTTPError|Error>>(RequestState()),
         count: signal<number>(0),
     }
 
-    // listen for route changes
     const onRoute = Route()
     state._setRoute = onRoute.setRoute.bind(onRoute)
 
-    /**
-     * Set the app state to match the browser URL.
-     */
     onRoute((path:string, data) => {
         state.route.value = path
-        // handle scroll state like a web browser
-        // (restore scroll position on back/forward)
         if (data.popstate) {
             return window.scrollTo(
                 data.scrollX,
                 data.scrollY
             )
         }
-        // if this was a link click (not back
-        // button), scroll to top
         window.scrollTo(0, 0)
     })
 
     return state
 }
 
+State.restoreSession = async function (state:AppState) {
+    start(state.user)
+
+    try {
+        const user = await ky.get('/api/session').json<SessionResponse>()
+        set(state.user, user)
+        return user
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.user, err)
+    }
+}
+
+State.logout = async function (state:AppState) {
+    start(state.user)
+
+    try {
+        const user = await ky.post('/api/logout').json<SessionResponse>()
+        set(state.user, user)
+        return user
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.user, err)
+    }
+}
+
+State.registerWithPasskey = async function (
+    state:AppState,
+    values:PasskeyRegistrationValues,
+) {
+    start(state.user)
+
+    try {
+        const startResponse = await ky.post('/api/auth/register/start', {
+            json: values,
+        }).json<{
+            challengeReference:string;
+            options:PublicKeyCredentialCreationOptionsJSON;
+        }>()
+
+        const credential = await beginBrowserRegistration({
+            optionsJSON: startResponse.options,
+        })
+
+        const user = await ky.post('/api/auth/register/finish', {
+            json: {
+                challengeReference: startResponse.challengeReference,
+                credential,
+            },
+        }).json<SessionResponse>()
+
+        set(state.user, user)
+        return user
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.user, err)
+        throw err
+    }
+}
+
+State.loginWithPasskey = async function (
+    state:AppState,
+    values:PasskeyLoginValues,
+) {
+    start(state.user)
+
+    try {
+        const startResponse = await ky.post('/api/auth/login/start', {
+            json: values,
+        }).json<{
+            challengeReference:string;
+            options:PublicKeyCredentialRequestOptionsJSON;
+        }>()
+
+        const credential = await beginBrowserAuthentication({
+            optionsJSON: startResponse.options,
+        })
+
+        const user = await ky.post('/api/auth/login/finish', {
+            json: {
+                challengeReference: startResponse.challengeReference,
+                credential,
+            },
+        }).json<SessionResponse>()
+
+        set(state.user, user)
+        return user
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.user, err)
+        throw err
+    }
+}
+
 State.login = async function (state:AppState, credentials:LoginCredentials) {
     start(state.user)
+
     try {
-        const user = await ky.post('/api/login', {
-            json: buildLoginRequestBody(credentials),
-        }).json<LoginResponse>()
-        debug('login response...', user)
-        set(state.user, user)
+        if (credentials.method === 'passkey') {
+            const user = await ky.post('/api/auth/login/finish', {
+                json: {
+                    challengeReference: credentials.context.challengeReference,
+                    credential: {
+                        id: credentials.assertion.credentialId,
+                        rawId: credentials.assertion.credentialId,
+                        response: {
+                            authenticatorData: credentials.assertion.authenticatorData,
+                            clientDataJSON: credentials.assertion.clientDataJSON,
+                            signature: credentials.assertion.signature,
+                            ...(credentials.assertion.userHandle ?
+                                { userHandle: credentials.assertion.userHandle } :
+                                {}),
+                        },
+                        type: 'public-key',
+                        clientExtensionResults: {},
+                    } satisfies AuthenticationResponseJSON,
+                },
+            }).json<SessionResponse>()
+
+            set(state.user, user)
+            return user
+        }
+
+        throw new Error('Password login is not implemented.')
     } catch (_err) {
-        const err = _err as HTTPError
+        const err = _err as HTTPError|Error
         error(state.user, err)
     }
 }
@@ -133,7 +263,7 @@ State.fetch = Object.assign(
         try {
             start(state.response)
             const res = await ky.get('/api/foobar').json<{ message:string }>()
-            await sleep(3000)  // resolve for 3 seconds
+            await sleep(3000)
             debug('fetch response', res)
             set(state.response, res)
             return res
@@ -158,9 +288,8 @@ function sleep (ms:number):Promise<void> {
     })
 }
 
-function buildLoginRequestBody (credentials:LoginCredentials):LoginRequestBody {
+export function buildLoginRequestBody (credentials:LoginCredentials):LoginRequestBody {
     if (credentials.method === 'password') {
-        // early return -- password
         return {
             method: 'password',
             identifier: credentials.identifier,
@@ -168,7 +297,6 @@ function buildLoginRequestBody (credentials:LoginCredentials):LoginRequestBody {
         }
     }
 
-    // passkey
     return {
         method: 'passkey',
         assertion: {

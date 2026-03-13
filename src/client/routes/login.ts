@@ -1,9 +1,9 @@
 import { type FunctionComponent } from 'preact'
 import { useSignal } from '@preact/signals'
 import { RadioInput } from '@substrate-system/radio-input'
-import { useCallback } from 'preact/hooks'
 import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
+import { State } from '../state.js'
 import './login.css'
 
 RadioInput.define()
@@ -33,18 +33,23 @@ type SignInMethodTarget = Pick<HTMLInputElement, 'name'|'value'> | {
 }
 
 export const UI_ONLY_LOGIN_MESSAGE =
-    'Login is not connected yet. No sign-in was performed.'
+    'Password sign-in is not implemented. Use a passkey account instead.'
 
 export const PASSKEY_UI_ONLY_LOGIN_MESSAGE =
-    'Passkey sign-in is not connected yet. No sign-in was performed.'
+    'Passkey sign-in is ready when you enter an identifier and continue.'
 
-export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
+export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
     const activeMethod = useSignal<SignInMethod>('passkey')
     const identifier = useSignal('')
+    const displayName = useSignal('')
     const password = useSignal('')
     const fieldErrors = useSignal<LoginValidationErrors>({})
     const submitMessage = useSignal('')
-    const passkeyStatus = useSignal<'idle'|'started'>('idle')
+    const passkeyStatus = useSignal<'idle'|'working'>('idle')
+
+    const authenticated = state.user.value.data?.authenticated === true ?
+        state.user.value.data :
+        null
 
     const setActiveMethod = (method:SignInMethod) => {
         activeMethod.value = method
@@ -52,38 +57,29 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
         fieldErrors.value = {}
     }
 
-    const setFieldValue = (field:keyof LoginFormValues, value:string) => {
-        if (field === 'identifier') {
-            identifier.value = value
-        } else {
-            password.value = value
-        }
+    const setFieldValue = (field:'identifier'|'displayName'|'password', value:string) => {
+        if (field === 'identifier') identifier.value = value
+        else if (field === 'displayName') displayName.value = value
+        else password.value = value
 
-        if (fieldErrors.value[field]) {
-            fieldErrors.value = {
-                ...fieldErrors.value,
-                [field]: undefined,
+        if (field === 'identifier' || field === 'password') {
+            if (fieldErrors.value[field]) {
+                fieldErrors.value = {
+                    ...fieldErrors.value,
+                    [field]: undefined,
+                }
             }
         }
     }
 
-    const handleInput = useCallback((event:InputEvent) => {
-        const target = event.target as HTMLInputElement|null
-        if (!target?.name) return
-
-        if (target.name === 'identifier' || target.name === 'password') {
-            setFieldValue(target.name, target.value)
-        }
-    }, [])
-
-    const handleMethodChange = useCallback((event:Event) => {
+    const handleMethodChange = (event:Event) => {
         const method = resolveSelectedMethod(event)
         if (!method) return
         setActiveMethod(method)
         passkeyStatus.value = 'idle'
-    }, [])
+    }
 
-    const handleSubmit = useCallback((event:Event) => {
+    const handlePasswordSubmit = async (event:Event) => {
         event.preventDefault()
 
         const result = submitLoginValues({
@@ -93,16 +89,70 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
 
         fieldErrors.value = result.errors
         submitMessage.value = result.message
-        passkeyStatus.value = 'idle'
-    }, [])
+    }
 
-    const handlePasskeyStart = useCallback(() => {
-        const result = startPasskeyLogin()
-        activeMethod.value = result.method
-        submitMessage.value = result.message
-        fieldErrors.value = {}
-        passkeyStatus.value = 'started'
-    }, [])
+    const handlePasskeyLogin = async () => {
+        if (!identifier.value.trim()) {
+            submitMessage.value = 'Enter your email or username before using a passkey.'
+            return
+        }
+
+        passkeyStatus.value = 'working'
+        submitMessage.value = ''
+
+        try {
+            await State.loginWithPasskey(state, {
+                identifier: identifier.value.trim(),
+            })
+            submitMessage.value = 'Signed in with passkey.'
+        } catch (err) {
+            submitMessage.value = err instanceof Error ?
+                err.message :
+                'Passkey sign-in failed.'
+        } finally {
+            passkeyStatus.value = 'idle'
+        }
+    }
+
+    const handlePasskeyRegistration = async () => {
+        if (!identifier.value.trim()) {
+            submitMessage.value = 'Enter your email or username before creating an account.'
+            return
+        }
+
+        passkeyStatus.value = 'working'
+        submitMessage.value = ''
+
+        try {
+            await State.registerWithPasskey(state, {
+                identifier: identifier.value.trim(),
+                displayName: displayName.value.trim(),
+            })
+            submitMessage.value = 'Passkey account created.'
+        } catch (err) {
+            submitMessage.value = err instanceof Error ?
+                err.message :
+                'Passkey registration failed.'
+        } finally {
+            passkeyStatus.value = 'idle'
+        }
+    }
+
+    const handleLogout = async () => {
+        passkeyStatus.value = 'working'
+        submitMessage.value = ''
+
+        try {
+            await State.logout(state)
+            submitMessage.value = 'Signed out.'
+        } catch (err) {
+            submitMessage.value = err instanceof Error ?
+                err.message :
+                'Sign-out failed.'
+        } finally {
+            passkeyStatus.value = 'idle'
+        }
+    }
 
     return html`<div class="route login-route">
         <h2>Login</h2>
@@ -118,72 +168,122 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                         name="sign-in-method"
                         value="passkey"
                         label="Passkey"
-                        checked=${activeMethod.value === 'passkey'}
+                        checked=${getRadioCheckedAttr(activeMethod.value, 'passkey')}
                     ><//>
                 </div>
-                <div class=${`login-method-option ${activeMethod.value === 'password' ?
-                        'active' : ''}`}>
+                <div class=${`login-method-option ${activeMethod.value === 'password' ? 'active' : ''}`}>
                     <${RadioInput.TAG}
                         name="sign-in-method"
                         value="password"
                         label="Password"
-                        checked=${activeMethod.value === 'password'}
+                        checked=${getRadioCheckedAttr(activeMethod.value, 'password')}
                     ><//>
                 </div>
             </div>
         </div>
 
-        ${activeMethod.value === 'password' ?
-            html`<form class="login-form" onSubmit=${handleSubmit} novalidate>
+        ${authenticated ?
+            html`<div class="login-form login-form-passkey">
                 <p class="login-method-description">
-                    Use your username or email and password.
+                    Signed in as ${authenticated.user.identifier}.
                 </p>
-                <substrate-input
-                    label="Username or Email"
-                    name="identifier"
-                    autocomplete="username"
-                    value=${identifier.value}
-                    required
-                    aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
-                    onInput=${handleInput}
-                ></substrate-input>
-                ${fieldErrors.value.identifier ?
-                    html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
-                    null}
-                <password-input
-                    label="Password"
-                    name="password"
-                    autocomplete="current-password"
-                    value=${password.value}
-                    required
-                    aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
-                    onInput=${handleInput}
-                ></password-input>
-
-                ${fieldErrors.value.password ?
-                    html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
-                    null}
-                <substrate-button type="submit">
-                    Log in with password
+                <substrate-button
+                    type="button"
+                    onClick=${handleLogout}
+                    spinning=${passkeyStatus.value === 'working'}
+                >
+                    Sign out
                 </substrate-button>
-
                 ${submitMessage.value ?
                     html`<p class="login-submit-message">${submitMessage.value}</p>` :
                     null}
-            </form>` :
-            html`<div class="login-form login-form-passkey">
-                <p class="login-method-description">
-                    Sign in using your device (Face ID, fingerprint, or Windows Hello).
-                </p>
-                <substrate-button type="button" onClick=${handlePasskeyStart}>
-                    Continue with passkey
-                </substrate-button>
-                ${passkeyStatus.value === 'started' && submitMessage.value ?
-                    html`<p class="login-submit-message">
-                    ${submitMessage.value}
-                </p>` :
-                null}
-            </div>`}
+            </div>` :
+            activeMethod.value === 'password' ?
+                html`<form class="login-form" onSubmit=${handlePasswordSubmit} novalidate>
+                    <p class="login-method-description">
+                        Use your username or email and password.
+                    </p>
+                    <substrate-input
+                        label="Username or Email"
+                        name="identifier"
+                        autocomplete="username webauthn"
+                        value=${identifier.value}
+                        required
+                        aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('identifier', target.value)
+                        }}
+                    ></substrate-input>
+                    ${fieldErrors.value.identifier ?
+                        html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
+                        null}
+                    <password-input
+                        label="Password"
+                        name="password"
+                        autocomplete="current-password"
+                        value=${password.value}
+                        required
+                        aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('password', target.value)
+                        }}
+                    ></password-input>
+                    ${fieldErrors.value.password ?
+                        html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
+                        null}
+                    <substrate-button type="submit">
+                        Log in with password
+                    </substrate-button>
+                    ${submitMessage.value ?
+                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
+                        null}
+                </form>` :
+                html`<div class="login-form login-form-passkey">
+                    <p class="login-method-description">
+                        Sign in using your device (Face ID, fingerprint, or Windows Hello).
+                    </p>
+                    <substrate-input
+                        label="Username or Email"
+                        name="identifier"
+                        autocomplete="username webauthn"
+                        value=${identifier.value}
+                        required
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('identifier', target.value)
+                        }}
+                    ></substrate-input>
+                    <substrate-input
+                        label="Display Name"
+                        name="displayName"
+                        value=${displayName.value}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('displayName', target.value)
+                        }}
+                    ></substrate-input>
+                    <div class="login-passkey-actions">
+                        <substrate-button
+                            type="button"
+                            onClick=${handlePasskeyLogin}
+                            spinning=${passkeyStatus.value === 'working'}
+                        >
+                            Continue with passkey
+                        </substrate-button>
+                        <substrate-button
+                            type="button"
+                            onClick=${handlePasskeyRegistration}
+                            spinning=${passkeyStatus.value === 'working'}
+                        >
+                            Create passkey account
+                        </substrate-button>
+                    </div>
+                    ${submitMessage.value ?
+                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
+                        null}
+                </div>`}
     </div>`
 }
 
@@ -201,7 +301,7 @@ function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
     return errors
 }
 
-function submitLoginValues (
+export function submitLoginValues (
     values:LoginFormValues
 ):LoginSubmitResult {
     const errors = validateLoginValues(values)
@@ -215,7 +315,7 @@ function submitLoginValues (
     }
 }
 
-function startPasskeyLogin ():PasskeyLoginResult {
+export function startPasskeyLogin ():PasskeyLoginResult {
     return {
         method: 'passkey',
         message: PASSKEY_UI_ONLY_LOGIN_MESSAGE,
@@ -249,7 +349,7 @@ function readMethodTarget (target:SignInMethodTarget):{
     }
 }
 
-function resolveSelectedMethod (
+export function resolveSelectedMethod (
     event:Event
 ):SignInMethod | null {
     const candidates = [
@@ -267,4 +367,13 @@ function resolveSelectedMethod (
     }
 
     return null
+}
+
+export function getRadioCheckedAttr (
+    activeMethod:SignInMethod,
+    option:SignInMethod,
+):'checked'|null {
+    return activeMethod === option ?
+        'checked' :
+        null
 }

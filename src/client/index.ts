@@ -20,6 +20,8 @@ BlurHash.define()
 const state = State()
 const router = createRouter(state)
 
+State.restoreSession(state)
+
 if (typeof document !== 'undefined') {
     HamburgerTwo.define()
 }

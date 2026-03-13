@@ -17,6 +17,15 @@ export default defineConfig(({ mode }) => {
                     '@substrate-system/debug'
             }
         },
+        ssr: {
+            noExternal: [
+                '@simplewebauthn/browser',
+                '@simplewebauthn/server',
+                '@peculiar/x509',
+                'tsyringe',
+                'tslib',
+            ],
+        },
         plugins: [
             // Vite 8 still works with the Cloudflare plugin here, but disabling
             // the inspector avoids environment-specific startup failures.

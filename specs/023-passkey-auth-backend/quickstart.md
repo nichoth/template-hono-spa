@@ -7,15 +7,17 @@ Validate the real passkey authentication backend end to end, including persisted
 ## Preconditions
 
 - Auth persistence binding is defined in `wrangler.jsonc`
-- Local auth database is created and available to the Worker runtime
+- Local and staging D1 databases are created and their real `database_id` values replace the placeholder IDs in `wrangler.jsonc`
+- The auth schema migration in `migrations/0001_auth_schema.sql` has been applied to each D1 database
 - Any required auth secrets or environment values are configured for local execution
 - `README.md` contains the canonical setup steps for provisioning D1 and configuring any additional backend auth services
 
 ## Setup Reference
 
-1. Follow `README.md` to create or bind the local auth database.
-2. Follow `README.md` to configure any auth-related Worker bindings or secrets.
-3. Confirm local development and staging configuration use matching auth binding names before testing the flows below.
+1. Follow `README.md` to create the default and staging D1 databases.
+2. Update `wrangler.jsonc` so both environments bind the real databases as `AUTH_DB`.
+3. Apply the checked-in D1 migration before running the app locally or deploying.
+4. Confirm local development, tests, and staging all use the same `AUTH_DB` binding name before testing the flows below.
 
 ## Scenario 1: Register a new account with a passkey
 

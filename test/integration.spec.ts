@@ -317,6 +317,35 @@ describe('Integration tests', () => {
                 })
             }
         )
+
+        it('returns unauthenticated session state before login', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/session'
+            )
+
+            expect(response.status).toBe(200)
+            const data = await response.json() as {
+                authenticated:boolean;
+            }
+            expect(data).toEqual({
+                authenticated: false,
+            })
+        })
+
+        it('allows logout without an existing session and returns unauthenticated state', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/logout',
+                { method: 'POST' }
+            )
+
+            expect(response.status).toBe(200)
+            const data = await response.json() as {
+                authenticated:boolean;
+            }
+            expect(data).toEqual({
+                authenticated: false,
+            })
+        })
     })
 
     describe('CORS configuration', () => {

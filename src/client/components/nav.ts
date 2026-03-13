@@ -30,7 +30,6 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
     const currentPath = state.route.value
     const hamburgerRef = useRef<HamburgerTwo>(null)
     const isMenuOpen = useSignal<boolean>(false)
-    debug('isMenuOpen????', isMenuOpen.value)
     const menuClasses = [
         'mobile-nav-menu',
         isMenuOpen.value ? 'open' : '',

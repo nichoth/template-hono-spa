@@ -1,8 +1,11 @@
 import { type FunctionComponent } from 'preact'
 import { useSignal } from '@preact/signals'
+import { RadioInput } from '@substrate-system/radio-input'
 import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
 import './login.css'
+
+RadioInput.define()
 
 type SignInMethod = 'passkey'|'password'
 
@@ -163,29 +166,33 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
 
     return html`<div class="route login-route">
         <h2>Login</h2>
-        <p>Choose how you want to sign in.</p>
-        <div
-            class="login-methods"
-            aria-label="Sign-in method"
-            onChange=${handleMethodChange}
-        >
-            <div class=${`login-method-option ${activeMethod.value === 'passkey' ? 'active' : ''}`}>
-                <radio-input
-                    name="sign-in-method"
-                    value="passkey"
-                    label="Passkey"
-                    checked=${getRadioCheckedAttr(activeMethod.value, 'passkey')}
-                ></radio-input>
-            </div>
-            <div class=${`login-method-option ${activeMethod.value === 'password' ? 'active' : ''}`}>
-                <radio-input
-                    name="sign-in-method"
-                    value="password"
-                    label="Password"
-                    checked=${getRadioCheckedAttr(activeMethod.value, 'password')}
-                ></radio-input>
+        <div>
+            <p>Choose how you want to sign in.</p>
+            <div
+                class="login-methods"
+                aria-label="Sign-in method"
+                onChange=${handleMethodChange}
+            >
+                <div class=${`login-method-option ${activeMethod.value === 'passkey' ? 'active' : ''}`}>
+                    <${RadioInput.TAG}
+                        name="sign-in-method"
+                        value="passkey"
+                        label="Passkey"
+                        checked=${activeMethod.value === 'passkey'}
+                    ><//>
+                </div>
+                <div class=${`login-method-option ${activeMethod.value === 'password' ?
+                        'active' : ''}`}>
+                    <${RadioInput.TAG}
+                        name="sign-in-method"
+                        value="password"
+                        label="Password"
+                        checked=${activeMethod.value === 'password'}
+                    ><//>
+                </div>
             </div>
         </div>
+
         ${activeMethod.value === 'password' ?
             html`<form class="login-form" onSubmit=${handleSubmit} novalidate>
                 <p class="login-method-description">
@@ -212,10 +219,14 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function () {
                     aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
                     onInput=${handleInput}
                 ></password-input>
+
                 ${fieldErrors.value.password ?
                     html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
                     null}
-                <substrate-button type="submit">Log in with password</substrate-button>
+                <substrate-button type="submit">
+                    Login with password
+                </substrate-button>
+
                 ${submitMessage.value ?
                     html`<p class="login-submit-message">${submitMessage.value}</p>` :
                     null}

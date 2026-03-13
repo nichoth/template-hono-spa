@@ -21,41 +21,28 @@
 .login-method-option {
     background: var(--color-transparent);
     padding: 0;
+
+    & radio-input {
+        --form-control-color: var(--color-action-primary);
+
+        display: block;
+    }
+
+    & .radio-input {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--color-text-base);
+        cursor: pointer;
+        margin-right: 0;
+    }
 }
 
-.login-method-option radio-input {
-    --form-control-color: var(--color-action-primary);
-
-    display: block;
-}
-
-.login-method-option .radio-input {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.55rem;
-    color: var(--color-text-base);
-    cursor: pointer;
-    font: inherit;
-    font-size: 1rem;
-    margin-right: 0;
-}
-
-.login-method-option input {
-    accent-color: var(--color-action-primary);
-}
 
 .login-form {
     display: grid;
     gap: 1rem;
     max-width: 28rem;
-}
-
-.login-form-passkey {
-    align-items: start;
-}
-
-.login-form-passkey .login-method-description {
-    max-width: 32ch;
 }
 
 .login-method-description,

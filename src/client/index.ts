@@ -33,12 +33,12 @@ if (import.meta.env.DEV || import.meta.env.MODE === 'staging') {
 }
 
 const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
+    debug('rendering...', state)
+
     const match = useComputed(() => {
         const path = state.route.value
         return router.match(path)
     })
-
-    debug('the match', match.value)
 
     if (!match.value || !match.value.action) {
         return html`<${NotFound} />`

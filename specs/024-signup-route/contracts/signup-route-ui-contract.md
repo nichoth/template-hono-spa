@@ -6,7 +6,7 @@
 
 - Presents existing-account sign-in only.
 - Exposes the shared radio-button method selector for sign-in methods.
-- Shows a visible link to `/signup` near the primary sign-in action.
+- Shows a visible link to `/signup` near the primary sign-in action for both sign-in methods.
 - Does not expose an inline create-account primary action.
 
 ### `/signup`
@@ -35,6 +35,7 @@
 - Displays password-oriented account-creation fields only when the password option is selected.
 - Does not show passkey-only explanatory copy while password is active.
 - If backend support is unavailable, the UI must still keep state separation clear and avoid implying a sign-in action.
+- The primary action and surrounding copy must still read as account creation, not login.
 
 ## Backend Boundary
 

@@ -4,45 +4,33 @@ import { RadioInput } from '@substrate-system/radio-input'
 import { html } from 'htm/preact'
 import type { AppState } from '../state.js'
 import { State } from '../state.js'
-import './login.css'
+import {
+    getRadioCheckedAttr,
+    resolveSelectedMethod,
+} from './login.js'
+import './signup.css'
 
 RadioInput.define()
 
-type SignInMethod = 'passkey'|'password'
+type SignupMethod = 'passkey'|'password'
 
-type LoginFormValues = {
+type SignupFormValues = {
     identifier:string;
+    displayName:string;
     password:string;
 }
 
-type LoginValidationErrors = Partial<Record<keyof LoginFormValues, string>>
+type SignupValidationErrors = Partial<Record<keyof SignupFormValues, string>>
 
-type LoginSubmitResult = {
-    values:LoginFormValues;
-    errors:LoginValidationErrors;
-    message:string;
-}
+const PASSWORD_SIGNUP_MESSAGE =
+    'Password account creation is not implemented. Use a passkey account instead.'
 
-type PasskeyLoginResult = {
-    method:SignInMethod;
-    message:string;
-}
-
-type SignInMethodTarget = Pick<HTMLInputElement, 'name'|'value'> | {
-    getAttribute:(name:string) => string | null;
-}
-
-export const UI_ONLY_LOGIN_MESSAGE =
-    'Password sign-in is not implemented. Use a passkey account instead.'
-
-export const PASSKEY_UI_ONLY_LOGIN_MESSAGE =
-    'Passkey sign-in is ready when you enter an identifier and continue.'
-
-export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
-    const activeMethod = useSignal<SignInMethod>('passkey')
+export const SignupRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
+    const activeMethod = useSignal<SignupMethod>('passkey')
     const identifier = useSignal('')
+    const displayName = useSignal('')
     const password = useSignal('')
-    const fieldErrors = useSignal<LoginValidationErrors>({})
+    const fieldErrors = useSignal<SignupValidationErrors>({})
     const submitMessage = useSignal('')
     const passkeyStatus = useSignal<'idle'|'working'>('idle')
 
@@ -50,22 +38,24 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         state.user.value.data :
         null
 
-    const setActiveMethod = (method:SignInMethod) => {
+    const setActiveMethod = (method:SignupMethod) => {
         activeMethod.value = method
         submitMessage.value = ''
         fieldErrors.value = {}
     }
 
-    const setFieldValue = (field:'identifier'|'password', value:string) => {
+    const setFieldValue = (
+        field:keyof SignupFormValues,
+        value:string,
+    ) => {
         if (field === 'identifier') identifier.value = value
+        else if (field === 'displayName') displayName.value = value
         else password.value = value
 
-        if (field === 'identifier' || field === 'password') {
-            if (fieldErrors.value[field]) {
-                fieldErrors.value = {
-                    ...fieldErrors.value,
-                    [field]: undefined,
-                }
+        if (fieldErrors.value[field]) {
+            fieldErrors.value = {
+                ...fieldErrors.value,
+                [field]: undefined,
             }
         }
     }
@@ -77,21 +67,29 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         passkeyStatus.value = 'idle'
     }
 
-    const handlePasswordSubmit = async (event:Event) => {
+    const handlePasswordSubmit = (event:Event) => {
         event.preventDefault()
 
-        const result = submitLoginValues({
+        const result = validatePasswordSignup({
             identifier: identifier.value,
+            displayName: displayName.value,
             password: password.value,
         })
 
-        fieldErrors.value = result.errors
-        submitMessage.value = result.message
+        fieldErrors.value = result
+        submitMessage.value = Object.keys(result).length === 0 ?
+            PASSWORD_SIGNUP_MESSAGE :
+            ''
     }
 
-    const handlePasskeyLogin = async () => {
-        if (!identifier.value.trim()) {
-            submitMessage.value = 'Enter your email or username before using a passkey.'
+    const handlePasskeySignup = async () => {
+        const identifierValue = identifier.value.trim()
+        if (!identifierValue) {
+            fieldErrors.value = {
+                ...fieldErrors.value,
+                identifier: 'Enter your email or username.',
+            }
+            submitMessage.value = ''
             return
         }
 
@@ -99,14 +97,15 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         submitMessage.value = ''
 
         try {
-            await State.loginWithPasskey(state, {
-                identifier: identifier.value.trim(),
+            await State.registerWithPasskey(state, {
+                identifier: identifierValue,
+                displayName: displayName.value.trim() || undefined,
             })
-            submitMessage.value = 'Signed in with passkey.'
+            submitMessage.value = 'Account created with passkey.'
         } catch (err) {
             submitMessage.value = err instanceof Error ?
                 err.message :
-                'Passkey sign-in failed.'
+                'Passkey account creation failed.'
         } finally {
             passkeyStatus.value = 'idle'
         }
@@ -128,13 +127,13 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         }
     }
 
-    return html`<div class="route login-route">
-        <h2>Login</h2>
+    return html`<div class="route signup-route">
+        <h2>Create Account</h2>
         <div>
-            <p>Choose how you want to sign in.</p>
+            <p>Choose how you want to create your account.</p>
             <div
                 class="login-methods"
-                aria-label="Sign-in method"
+                aria-label="Create-account method"
                 onChange=${handleMethodChange}
             >
                 <div class=${`login-method-option ${activeMethod.value === 'passkey' ? 'active' : ''}`}>
@@ -159,7 +158,10 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
         ${authenticated ?
             html`<div class="login-form login-form-passkey">
                 <p class="login-method-description">
-                    Signed in as ${authenticated.user.identifier}.
+                    Account created for ${authenticated.user.identifier}.
+                </p>
+                <p class="login-route-link">
+                    <a href="/login">Back to sign in</a>
                 </p>
                 <substrate-button
                     type="button"
@@ -175,10 +177,64 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
             activeMethod.value === 'password' ?
                 html`<form class="login-form" onSubmit=${handlePasswordSubmit} novalidate>
                     <p class="login-method-description">
-                        Use your username or email and password.
+                        Create an account with your email, display name, and password.
                     </p>
                     <substrate-input
-                        label="Username or Email"
+                        label="Email"
+                        name="identifier"
+                        autocomplete="username"
+                        value=${identifier.value}
+                        required
+                        aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('identifier', target.value)
+                        }}
+                    ></substrate-input>
+                    ${fieldErrors.value.identifier ?
+                        html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
+                        null}
+                    <substrate-input
+                        label="Display Name"
+                        name="display-name"
+                        autocomplete="nickname"
+                        value=${displayName.value}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('displayName', target.value)
+                        }}
+                    ></substrate-input>
+                    <password-input
+                        label="Password"
+                        name="password"
+                        autocomplete="new-password"
+                        value=${password.value}
+                        required
+                        aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
+                        onInput=${(event:InputEvent) => {
+                            const target = event.target as HTMLInputElement
+                            setFieldValue('password', target.value)
+                        }}
+                    ></password-input>
+                    ${fieldErrors.value.password ?
+                        html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
+                        null}
+                    <substrate-button type="submit">
+                        Create account
+                    </substrate-button>
+                    <p class="login-route-link">
+                        <a href="/login">Back to sign in</a>
+                    </p>
+                    ${submitMessage.value ?
+                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
+                        null}
+                </form>` :
+                html`<div class="login-form login-form-passkey">
+                    <p class="login-method-description">
+                        Create an account using your device (Face ID, fingerprint, or Windows Hello).
+                    </p>
+                    <substrate-input
+                        label="Email"
                         name="identifier"
                         autocomplete="username webauthn"
                         value=${identifier.value}
@@ -192,60 +248,31 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
                     ${fieldErrors.value.identifier ?
                         html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
                         null}
-                    <password-input
-                        label="Password"
-                        name="password"
-                        autocomplete="current-password"
-                        value=${password.value}
-                        required
-                        aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('password', target.value)
-                        }}
-                    ></password-input>
-                    ${fieldErrors.value.password ?
-                        html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
-                        null}
-                    <div class="login-passkey-actions">
-                        <substrate-button type="submit">
-                            Log in with password
-                        </substrate-button>
-                        <p class="login-route-link">
-                            Or <a href="/signup">Create an account</a>
-                        </p>
-                    </div>
-                    ${submitMessage.value ?
-                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
-                        null}
-                </form>` :
-                html`<div class="login-form login-form-passkey">
-                    <p class="login-method-description">
-                        Sign in using your device (Face ID, fingerprint, or Windows Hello).
-                    </p>
                     <substrate-input
-                        label="Username or Email"
-                        name="identifier"
-                        autocomplete="username webauthn"
-                        value=${identifier.value}
-                        required
+                        label="Display Name"
+                        name="display-name"
+                        autocomplete="nickname"
+                        value=${displayName.value}
                         onInput=${(event:InputEvent) => {
                             const target = event.target as HTMLInputElement
-                            setFieldValue('identifier', target.value)
+                            setFieldValue('displayName', target.value)
                         }}
                     ></substrate-input>
+                    <div class="signup-support-copy">
+                        The display name is used only for visual display in the app. Login uses your email address.
+                    </div>
                     <div class="login-passkey-actions">
                         <substrate-button
                             type="button"
-                            onClick=${handlePasskeyLogin}
+                            onClick=${handlePasskeySignup}
                             spinning=${passkeyStatus.value === 'working'}
                         >
-                            Continue with passkey
+                            Create account
                         </substrate-button>
+                        <p class="login-route-link">
+                            <a href="/login">Back to sign in</a>
+                        </p>
                     </div>
-                    <p class="login-route-link">
-                        Or <a href="/signup">Create an account</a>
-                    </p>
                     ${submitMessage.value ?
                         html`<p class="login-submit-message">${submitMessage.value}</p>` :
                         null}
@@ -253,11 +280,13 @@ export const LoginRoute:FunctionComponent<{ state:AppState }> = function ({ stat
     </div>`
 }
 
-function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
-    const errors:LoginValidationErrors = {}
+function validatePasswordSignup (
+    values:SignupFormValues
+):SignupValidationErrors {
+    const errors:SignupValidationErrors = {}
 
     if (!values.identifier.trim()) {
-        errors.identifier = 'Enter your username or email.'
+        errors.identifier = 'Enter your email or username.'
     }
 
     if (!values.password.trim()) {
@@ -265,81 +294,4 @@ function validateLoginValues (values:LoginFormValues):LoginValidationErrors {
     }
 
     return errors
-}
-
-export function submitLoginValues (
-    values:LoginFormValues
-):LoginSubmitResult {
-    const errors = validateLoginValues(values)
-
-    return {
-        values,
-        errors,
-        message: Object.keys(errors).length === 0 ?
-            UI_ONLY_LOGIN_MESSAGE :
-            '',
-    }
-}
-
-export function startPasskeyLogin ():PasskeyLoginResult {
-    return {
-        method: 'passkey',
-        message: PASSKEY_UI_ONLY_LOGIN_MESSAGE,
-    }
-}
-
-function isMethodTarget (value:unknown):value is SignInMethodTarget {
-    if (!value || typeof value !== 'object') return false
-
-    if ('name' in value && 'value' in value) {
-        return true
-    }
-
-    return 'getAttribute' in value && typeof value.getAttribute === 'function'
-}
-
-function readMethodTarget (target:SignInMethodTarget):{
-    name:string | null;
-    value:string | null;
-} {
-    if ('getAttribute' in target) {
-        return {
-            name: target.getAttribute('name'),
-            value: target.getAttribute('value'),
-        }
-    }
-
-    return {
-        name: target.name,
-        value: target.value,
-    }
-}
-
-export function resolveSelectedMethod (
-    event:Event
-):SignInMethod | null {
-    const candidates = [
-        event.target,
-        ...(typeof event.composedPath === 'function' ? event.composedPath() : []),
-    ]
-
-    for (const candidate of candidates) {
-        if (!isMethodTarget(candidate)) continue
-        const { name, value } = readMethodTarget(candidate)
-        if (name !== 'sign-in-method') continue
-        if (value === 'passkey' || value === 'password') {
-            return value
-        }
-    }
-
-    return null
-}
-
-export function getRadioCheckedAttr (
-    activeMethod:SignInMethod,
-    option:SignInMethod,
-):'checked'|null {
-    return activeMethod === option ?
-        'checked' :
-        null
 }

@@ -3,6 +3,7 @@ import { HomeRoute } from './home.js'
 import { AboutRoute } from './about.js'
 import { LoginRoute } from './login.js'
 import { ProfileRoute } from './profile.js'
+import { SignupRoute } from './signup.js'
 import { type AppState } from '../state.js'
 
 export type AppRoute = {
@@ -15,6 +16,12 @@ export const routes:ReadonlyArray<AppRoute> = [
     { href: '/about', text: 'About' },
     { href: '/login', text: 'Login' },
 ]
+
+const knownClientRoutes = new Set([
+    ...routes.map(route => route.href),
+    '/profile',
+    '/signup',
+])
 
 export function createRouter (_state:AppState):InstanceType<typeof Router> {
     const router = new Router()
@@ -31,6 +38,10 @@ export function createRouter (_state:AppState):InstanceType<typeof Router> {
         return LoginRoute
     })
 
+    router.addRoute('/signup', () => {
+        return SignupRoute
+    })
+
     router.addRoute('/profile', () => {
         return ProfileRoute
     })
@@ -39,5 +50,5 @@ export function createRouter (_state:AppState):InstanceType<typeof Router> {
 }
 
 export function isKnownClientRoute (path:string):boolean {
-    return routes.some(route => route.href === path)
+    return knownClientRoutes.has(path)
 }

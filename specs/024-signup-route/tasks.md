@@ -17,9 +17,9 @@
 
 **Purpose**: Add the new route files and route registration surface needed by later stories
 
-- [ ] T001 [P] Create the dedicated signup route module in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
-- [ ] T002 [P] Create the dedicated signup route stylesheet in `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
-- [ ] T003 Register `/signup` in the client route table and router in `/Users/nick/code/template-hono-spa/src/client/routes/index.ts`
+- [X] T001 [P] Create the dedicated signup route module in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
+- [X] T002 [P] Create the dedicated signup route stylesheet in `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
+- [X] T003 Register `/signup` in the client route table and router in `/Users/nick/code/template-hono-spa/src/client/routes/index.ts`
 
 ---
 
@@ -29,9 +29,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Extend auth client state with signup submission helpers that target account-creation endpoints in `/Users/nick/code/template-hono-spa/src/client/state.ts`
-- [ ] T005 [P] Add unit coverage for route registration and signup-versus-login API path intent in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
-- [ ] T006 [P] Add integration coverage for `/login` to `/signup` navigation and direct `/signup` rendering in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
+- [X] T004 Extend auth client state with signup submission helpers that target account-creation endpoints in `/Users/nick/code/template-hono-spa/src/client/state.ts`
+- [X] T005 [P] Add unit coverage for route registration and signup-versus-login API path intent in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T006 [P] Add integration coverage for `/login` to `/signup` navigation and direct `/signup` rendering in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
 
 **Checkpoint**: Foundation ready; story work can proceed independently
 
@@ -45,10 +45,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Add the visible create-account link and route-specific action copy to `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
-- [ ] T008 [US1] Style the login route secondary create-account link and action row in `/Users/nick/code/template-hono-spa/src/client/routes/login.css`
-- [ ] T009 [US1] Implement the initial `/signup` route shell with create-account heading and back-to-sign-in link in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
-- [ ] T010 [US1] Style the `/signup` route shell to match the login layout language in `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
+- [X] T007 [US1] Add the visible create-account link and route-specific action copy to `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T008 [US1] Style the login route secondary create-account link and action row in `/Users/nick/code/template-hono-spa/src/client/routes/login.css`
+- [X] T009 [US1] Implement the initial `/signup` route shell with create-account heading and back-to-sign-in link in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
+- [X] T010 [US1] Style the `/signup` route shell to match the login layout language in `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
 
 **Checkpoint**: User Story 1 is independently testable via route navigation alone
 
@@ -62,10 +62,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Add signup form state, validation, and radio-selector behavior to `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
-- [ ] T012 [US2] Wire passkey account creation through the registration start/finish flow in `/Users/nick/code/template-hono-spa/src/client/state.ts`
-- [ ] T013 [US2] Add method-specific create-account layout and field styles to `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
-- [ ] T014 [US2] Extend regression coverage for selector behavior and registration-path submission in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
+- [X] T011 [US2] Add signup form state, validation, and radio-selector behavior to `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
+- [X] T012 [US2] Wire passkey account creation through the registration start/finish flow in `/Users/nick/code/template-hono-spa/src/client/state.ts`
+- [X] T013 [US2] Add method-specific create-account layout and field styles to `/Users/nick/code/template-hono-spa/src/client/routes/signup.css`
+- [X] T014 [US2] Extend regression coverage for selector behavior and registration-path submission in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`
 
 **Checkpoint**: User Story 2 is independently testable from `/signup`
 
@@ -79,9 +79,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Remove or refactor any remaining create-account-only logic from the login route in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
-- [ ] T016 [US3] Separate signup-versus-login messaging, return-link behavior, and method-specific copy in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
-- [ ] T017 [US3] Extend end-to-end route regression coverage for login-only actions and `/signup` direct entry in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
+- [X] T015 [US3] Remove or refactor any remaining create-account-only logic from the login route in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T016 [US3] Separate signup-versus-login messaging, return-link behavior, and method-specific copy in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
+- [X] T017 [US3] Extend end-to-end route regression coverage for login-only actions and `/signup` direct entry in `/Users/nick/code/template-hono-spa/test/integration.spec.ts`
 
 **Checkpoint**: User Story 3 is independently testable by comparing `/login` and `/signup`
 
@@ -91,11 +91,11 @@
 
 **Purpose**: Final consistency, docs, and feature-specific verification updates
 
-- [ ] T018 [P] Update manual validation steps to match final route behavior in `/Users/nick/code/template-hono-spa/specs/024-signup-route/quickstart.md`
-- [ ] T019 [P] Update the final signup/login UI contract language in `/Users/nick/code/template-hono-spa/specs/024-signup-route/contracts/signup-route-ui-contract.md`
-- [ ] T020 [P] Update route usage docs for `/login` and `/signup` in `/Users/nick/code/template-hono-spa/README.example.md`
-- [ ] T021 Clean final sign-in route copy and UI consistency in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
-- [ ] T022 Clean final signup route copy and UI consistency in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
+- [X] T018 [P] Update manual validation steps to match final route behavior in `/Users/nick/code/template-hono-spa/specs/024-signup-route/quickstart.md`
+- [X] T019 [P] Update the final signup/login UI contract language in `/Users/nick/code/template-hono-spa/specs/024-signup-route/contracts/signup-route-ui-contract.md`
+- [X] T020 [P] Update route usage docs for `/login` and `/signup` in `/Users/nick/code/template-hono-spa/README.example.md`
+- [X] T021 Clean final sign-in route copy and UI consistency in `/Users/nick/code/template-hono-spa/src/client/routes/login.ts`
+- [X] T022 Clean final signup route copy and UI consistency in `/Users/nick/code/template-hono-spa/src/client/routes/signup.ts`
 
 ---
 

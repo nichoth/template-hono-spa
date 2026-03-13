@@ -13,7 +13,7 @@ Verify that sign-in and account-creation live on separate routes while sharing t
 ## Scenario 1: Reach signup from login
 
 1. Open `/login`.
-2. Confirm the page presents sign-in actions only.
+2. Confirm the page presents sign-in actions only for both passkey and password methods.
 3. Confirm a visible create-account link appears near the primary sign-in action.
 4. Select the link and verify navigation to `/signup`.
 
@@ -35,5 +35,6 @@ Verify that sign-in and account-creation live on separate routes while sharing t
 
 1. Switch `/signup` between password and passkey.
 2. Confirm the visible controls change immediately with the selected option.
+3. On the password path, confirm the create-account button remains account-creation-specific and does not sign the user in.
 3. Return to `/login`.
 4. Confirm `/login` still shows sign-in-only actions and no inline create-account button.

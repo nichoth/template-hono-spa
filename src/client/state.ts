@@ -8,10 +8,68 @@ import {
 import Debug from '@substrate-system/debug'
 const debug = Debug('template:state')
 
+export type LoginUser = {
+    [key:string]: unknown
+}
+
+export type LoginResponse = {
+    data:LoginUser
+}
+
+export type PasswordLoginCredentials = {
+    method:'password';
+    identifier:string;
+    password:string;
+}
+
+export type PasskeyAssertion = {
+    credentialId:string;
+    authenticatorData:string;
+    clientDataJSON:string;
+    signature:string;
+    userHandle?:string;
+}
+
+export type PasskeyLoginContext = {
+    accountIdentifier?:string;
+    challengeReference?:string;
+}
+
+export type PasskeyLoginCredentials = {
+    method:'passkey';
+    assertion:PasskeyAssertion;
+    context:PasskeyLoginContext;
+}
+
+export type LoginCredentials = PasswordLoginCredentials|PasskeyLoginCredentials
+
+export type PasswordLoginRequestBody = {
+    method:'password';
+    identifier:string;
+    password:string;
+}
+
+export type PasskeyLoginRequestBody = {
+    method:'passkey';
+    assertion:{
+        credentialId:string;
+        authenticatorData:string;
+        clientDataJSON:string;
+        signature:string;
+        userHandle?:string;
+    };
+    context:{
+        accountIdentifier?:string;
+        challengeReference?:string;
+    };
+}
+
+export type LoginRequestBody = PasswordLoginRequestBody|PasskeyLoginRequestBody
+
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    user:Signal<RequestFor<{ data }, HTTPError>>
+    user:Signal<RequestFor<LoginResponse, HTTPError>>
     response:Signal<RequestFor<{ message }, HTTPError|Error>>;
     _setRoute?:(path:string) => void;
 }
@@ -26,6 +84,7 @@ const { start, set, error } = RequestState
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
+        user: signal<RequestFor<LoginResponse, HTTPError>>(RequestState()),
         response: signal<RequestFor<{ message }, HTTPError>>(RequestState()),
         count: signal<number>(0),
     }
@@ -55,10 +114,12 @@ export function State ():AppState {
     return state
 }
 
-State.login = async function (state:AppState, credentials) {
+State.login = async function (state:AppState, credentials:LoginCredentials) {
     start(state.user)
     try {
-        const user = await ky.post('/api/login').json<{ data }>()
+        const user = await ky.post('/api/login', {
+            json: buildLoginRequestBody(credentials),
+        }).json<LoginResponse>()
         debug('login response...', user)
         set(state.user, user)
     } catch (_err) {
@@ -95,4 +156,37 @@ function sleep (ms:number):Promise<void> {
     return new Promise(resolve => {
         setTimeout(resolve, ms)
     })
+}
+
+function buildLoginRequestBody (credentials:LoginCredentials):LoginRequestBody {
+    if (credentials.method === 'password') {
+        // early return -- password
+        return {
+            method: 'password',
+            identifier: credentials.identifier,
+            password: credentials.password,
+        }
+    }
+
+    // passkey
+    return {
+        method: 'passkey',
+        assertion: {
+            credentialId: credentials.assertion.credentialId,
+            authenticatorData: credentials.assertion.authenticatorData,
+            clientDataJSON: credentials.assertion.clientDataJSON,
+            signature: credentials.assertion.signature,
+            ...(credentials.assertion.userHandle ?
+                { userHandle: credentials.assertion.userHandle } :
+                {}),
+        },
+        context: {
+            ...(credentials.context.accountIdentifier ?
+                { accountIdentifier: credentials.context.accountIdentifier } :
+                {}),
+            ...(credentials.context.challengeReference ?
+                { challengeReference: credentials.context.challengeReference } :
+                {}),
+        },
+    }
 }

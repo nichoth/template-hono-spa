@@ -20,6 +20,9 @@ import {
 import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
+import {
+    buildLoginRequestBody,
+} from '../src/client/state.js'
 import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
 import {
     submitLoginValues,
@@ -61,6 +64,9 @@ function createTestState ():AppState {
     return {
         route: signal('/'),
         count: signal(0),
+        user: signal<RequestFor<{ data:Record<string, unknown> }, HTTPError>>(
+            RequestState()
+        ),
         response: signal<RequestFor<{ message:string }, HTTPError>>(
             RequestState()
         ),
@@ -302,6 +308,62 @@ describe('Hono worker', () => {
     })
 
     describe('Login route', () => {
+        it('builds a passkey login request body with assertion data and context separated', () => {
+            const result = buildLoginRequestBody({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                    userHandle: 'user-handle',
+                },
+                context: {
+                    accountIdentifier: 'nick@example.com',
+                    challengeReference: 'challenge-123',
+                },
+            })
+
+            expect(result).toEqual({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                    userHandle: 'user-handle',
+                },
+                context: {
+                    accountIdentifier: 'nick@example.com',
+                    challengeReference: 'challenge-123',
+                },
+            })
+        })
+
+        it('omits optional passkey fields from the login request body when they are absent', () => {
+            const result = buildLoginRequestBody({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                },
+                context: {},
+            })
+
+            expect(result).toEqual({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                },
+                context: {},
+            })
+        })
+
         it('renders a login heading with a radio selector for passkey and password', () => {
             const loginSource = sourceFiles['/src/client/routes/login.ts']
             const clientIndexSource = sourceFiles['/src/client/index.ts']

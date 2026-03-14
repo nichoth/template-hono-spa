@@ -4,6 +4,7 @@ export const AUTH_SCHEMA_STATEMENTS = [
         handle TEXT NOT NULL,
         identifier TEXT NOT NULL UNIQUE,
         display_name TEXT,
+        login_method TEXT NOT NULL DEFAULT 'password',
         status TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL

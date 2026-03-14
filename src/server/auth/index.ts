@@ -51,6 +51,7 @@ export type AuthUser = {
     id:string;
     identifier:string;
     displayName:string | null;
+    login_method:'passkey'|'password' | null;
 }
 
 export type SessionSummary = {
@@ -63,6 +64,7 @@ export type SessionResponse = {
     authenticated:true;
     user:AuthUser;
     session:SessionSummary;
+    loginMethod:'passkey'|'password' | null;
 }
 
 export type RegistrationStartRequest = {
@@ -281,6 +283,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             identifier,
             displayName,
             now,
+            loginMethod: 'passkey',
         })
 
         const credentialId = verification.registrationInfo.credential.id
@@ -629,7 +632,7 @@ function parseTransports (
 }
 
 function makeAuthenticatedSessionResponse (
-    user:{ id:string; identifier:string; display_name:string | null },
+    user:{ id:string; identifier:string; display_name:string | null; login_method:'passkey'|'password' | null },
     expiresAt:number,
 ):SessionResponse {
     return {
@@ -638,10 +641,12 @@ function makeAuthenticatedSessionResponse (
             id: user.id,
             identifier: user.identifier,
             displayName: user.display_name,
+            login_method: user.login_method,
         },
         session: {
             expiresAt: new Date(expiresAt).toISOString(),
         },
+        loginMethod: user.login_method ?? null,
     }
 }
 

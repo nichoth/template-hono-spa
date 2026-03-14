@@ -71,6 +71,12 @@ export type RegistrationFinishRequest = {
     credential:RegistrationResponseJSON;
 }
 
+export type RegistrationConfirmationResponse = {
+    status:'confirmation_pending';
+    identifier:string;
+    message:string;
+}
+
 export type AuthenticationStartRequest = {
     identifier:string;
 }
@@ -170,7 +176,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         requestUrl:string,
         request:RegistrationFinishRequest,
-    ):Promise<{ sessionToken:string; response:SessionResponse }> {
+    ):Promise<RegistrationConfirmationResponse> {
         await ensureAuthSchema(db)
 
         const challenge = await findChallengeById(db, request.challengeReference)
@@ -242,18 +248,9 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
         await markChallengeUsed(db, challenge.id, now)
 
-        const session = await createSession(db, {
-            id: deps.createID(),
-            userID: user.id,
-            sessionToken: buildSessionToken(),
-            expiresAt: now + DEFAULT_SESSION_TTL_MS,
-            now,
-        })
-
         await createAuthEvent(db, {
             id: deps.createID(),
             userID: user.id,
-            sessionID: session.id,
             challengeID: challenge.id,
             eventType: 'registration_finish',
             result: 'success',
@@ -261,8 +258,9 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         })
 
         return {
-            sessionToken: session.session_token,
-            response: makeAuthenticatedSessionResponse(user, session.expires_at),
+            status: 'confirmation_pending',
+            identifier: user.identifier,
+            message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
         }
     }
 

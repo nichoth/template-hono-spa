@@ -135,9 +135,8 @@ This is both unit tests and integration tests.
 npm test
 ```
 
-## Rendering
+## Claude
 
-* Server returns the HTML shell only
-* Client script loads and renders the app into `#root`
-* Client-side routes are defined in `src/client/routes/index.ts`
-* Server handles `/api/*` and `/health`
+```
+ Use the Nitpicker agent to review this codebase 
+```

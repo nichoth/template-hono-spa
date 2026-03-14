@@ -4,6 +4,7 @@ import { AboutRoute } from './about.js'
 import { LoginRoute } from './login.js'
 import { ProfileRoute } from './profile.js'
 import { SignupRoute } from './signup.js'
+import { ConfirmRoute } from './confirm.js'
 import { type AppState } from '../state.js'
 
 export type AppRoute = {
@@ -22,9 +23,10 @@ const knownClientRoutes = new Set([
     ...routes.map(route => route.href),
     '/profile',
     '/signup',
+    '/confirm',
 ])
 
-export function createRouter (_state:AppState):InstanceType<typeof Router> {
+export function createRouter (_state?:AppState):InstanceType<typeof Router> {
     const router = new Router()
 
     router.addRoute('/', () => {
@@ -47,9 +49,20 @@ export function createRouter (_state:AppState):InstanceType<typeof Router> {
         return ProfileRoute
     })
 
+    router.addRoute('/confirm', () => {
+        return ConfirmRoute
+    })
+
+    router.addRoute('/confirm/:code', () => {
+        return ConfirmRoute
+    })
+
     return router
 }
 
 export function isKnownClientRoute (path:string):boolean {
-    return knownClientRoutes.has(path)
+    if (knownClientRoutes.has(path)) return true
+    if (path === '/confirm' || path === '/confirm/') return true
+    if (path.startsWith('/confirm/')) return true
+    return false
 }

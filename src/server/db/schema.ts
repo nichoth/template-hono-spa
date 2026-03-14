@@ -55,6 +55,15 @@ export const AUTH_SCHEMA_STATEMENTS = [
         occurred_at INTEGER NOT NULL,
         detail TEXT
     )`,
+    `CREATE TABLE IF NOT EXISTS email_confirmation_codes (
+        code TEXT PRIMARY KEY,
+        identifier TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        used_at INTEGER
+    )`,
 ] as const
 
 export const AUTH_SCHEMA_SQL = `${AUTH_SCHEMA_STATEMENTS.join(';\n\n')};\n`

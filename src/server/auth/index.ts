@@ -2,6 +2,7 @@ import {
     generateAuthenticationOptions,
     generateRegistrationOptions,
     type AuthenticationResponseJSON,
+    type AuthenticatorTransportFuture,
     type PublicKeyCredentialCreationOptionsJSON,
     type PublicKeyCredentialRequestOptionsJSON,
     type RegistrationResponseJSON,
@@ -31,6 +32,11 @@ import {
     revokeSession,
     touchSession,
     updateDeviceUsage,
+    activateUser,
+    createConfirmationCode,
+    findConfirmationCode,
+    markConfirmationCodeExpired,
+    markConfirmationCodeUsed,
 } from '../db/index.js'
 
 const REGISTRATION_TIMEOUT_MS = 5 * 60 * 1000
@@ -39,6 +45,7 @@ const AUTHENTICATION_TIMEOUT_MS = 5 * 60 * 1000
 export const AUTH_SESSION_COOKIE = 'auth_session'
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 export const AUTH_RP_NAME = 'Template Hono SPA'
+export const EMAIL_CONFIRMATION_TTL_MS = 1000 * 60 * 60 * 24
 
 export type AuthUser = {
     id:string;
@@ -77,9 +84,22 @@ export type RegistrationConfirmationResponse = {
     status:'confirmation_pending';
     identifier:string;
     message:string;
-    userId:string;
-    deviceId:string;
-    handle:string;
+}
+
+export type EmailConfirmationRequest = {
+    code:string;
+    identifier?:string;
+}
+
+export type EmailConfirmationResponse = {
+    status:'confirmed';
+    identifier:string;
+    message?:string;
+}
+
+export type RegistrationConfirmationResult = {
+    response:RegistrationConfirmationResponse;
+    confirmationCode:string;
 }
 
 export type AuthenticationStartRequest = {
@@ -141,8 +161,19 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         }
 
         const existingUser = await findUserByIdentifier(db, identifier)
-        if (existingUser?.status === 'active') {
-            throw new AuthError(409, 'identifier_in_use', 'An account with that identifier already exists.')
+        if (existingUser) {
+            if (existingUser.status === 'pending') {
+                throw new AuthError(
+                    409,
+                    'confirmation_pending',
+                    'An account with that identifier is awaiting email confirmation.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'identifier_in_use',
+                'An account with that identifier already exists.',
+            )
         }
 
         const userID = deps.createID()
@@ -181,7 +212,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         requestUrl:string,
         request:RegistrationFinishRequest,
-    ):Promise<RegistrationConfirmationResponse> {
+    ):Promise<RegistrationConfirmationResult> {
         await ensureAuthSchema(db)
 
         const challenge = await findChallengeById(db, request.challengeReference)
@@ -202,7 +233,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         const identifier = challenge.identifier
 
         if (!identifier) {
-            throw new AuthError(500, 'challenge_missing_identifier', 'Registration challenge is missing account data.')
+            throw new AuthError(500,
+                'challenge_missing_identifier', 'Registration challenge is missing account data.')
         }
 
         const verification = await deps.verifyRegistrationResponse({
@@ -221,12 +253,24 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 occurredAt: deps.now(),
                 detail: 'verification_failed',
             })
-            throw new AuthError(400, 'registration_failed', 'Passkey registration could not be verified.')
+            throw new AuthError(400, 'registration_failed',
+                'Passkey registration could not be verified.')
         }
 
         const existingUser = await findUserByIdentifier(db, identifier)
-        if (existingUser?.status === 'active') {
-            throw new AuthError(409, 'identifier_in_use', 'An account with that identifier already exists.')
+        if (existingUser) {
+            if (existingUser.status === 'pending') {
+                throw new AuthError(
+                    409,
+                    'confirmation_pending',
+                    'An account with that identifier is awaiting email confirmation.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'identifier_in_use',
+                'An account with that identifier already exists.',
+            )
         }
 
         const now = deps.now()
@@ -242,10 +286,10 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         const credentialId = verification.registrationInfo.credential.id
         const duplicate = await findDeviceByCredentialId(db, credentialId)
         if (duplicate) {
-            throw new AuthError(409, 'credential_exists', 'That passkey is already registered.')
+            throw new AuthError(409, 'credential_exists',
+                'That passkey is already registered.')
         }
 
-        const authenticatorInfo = verification.registrationInfo.authenticatorInfo
         const deviceId = deps.createID()
         await createDevice(db, {
             id: deviceId,
@@ -256,7 +300,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             ),
             counter: verification.registrationInfo.credential.counter,
             transports: verification.registrationInfo.credential.transports,
-            aaguid: authenticatorInfo?.aaguid,
+            aaguid: verification.registrationInfo.aaguid,
             credentialName: displayName || identifier,
             now,
         })
@@ -272,13 +316,80 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             occurredAt: now,
         })
 
+        const confirmationCode = generateConfirmationCode()
+        await createConfirmationCode(db, {
+            code: confirmationCode,
+            identifier,
+            expiresAt: now + EMAIL_CONFIRMATION_TTL_MS,
+            now,
+        })
+
         return {
-            status: 'confirmation_pending',
+            confirmationCode,
+            response: {
+                status: 'confirmation_pending',
+                identifier: user.identifier,
+                message: 'We sent an email to confirm your email address. ' +
+                    'Check your inbox to finish creating your account.',
+            },
+        }
+    }
+
+    async function confirmEmail (
+        db:D1Database,
+        request:EmailConfirmationRequest,
+    ):Promise<EmailConfirmationResponse> {
+        await ensureAuthSchema(db)
+
+        const code = request.code?.trim()
+        if (!code) {
+            throw new AuthError(400, 'invalid_code',
+                'Enter a valid confirmation code.')
+        }
+
+        const record = await findConfirmationCode(db, code)
+        if (!record) {
+            throw new AuthError(400, 'invalid_code', 'Confirmation code was not found.')
+        }
+
+        const now = deps.now()
+        if (record.status !== 'pending') {
+            if (record.status === 'expired') {
+                throw new AuthError(409, 'expired_code', 'Confirmation code has expired.')
+            }
+
+            throw new AuthError(400, 'invalid_code', 'Confirmation code has already been used.')
+        }
+
+        if (record.expires_at <= now) {
+            await markConfirmationCodeExpired(db, record.code, now)
+            throw new AuthError(409, 'expired_code', 'Confirmation code has expired.')
+        }
+
+        const identifier = record.identifier
+        const user = await findUserByIdentifier(db, identifier)
+        if (!user || user.status === 'active') {
+            if (!user) {
+                throw new AuthError(
+                    404,
+                    'unknown_account',
+                    'No account matches this confirmation code.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'already_confirmed',
+                'This account has already been confirmed.',
+            )
+        }
+
+        await markConfirmationCodeUsed(db, record.code, now)
+        await activateUser(db, identifier, now)
+
+        return {
+            status: 'confirmed',
             identifier: user.identifier,
-            message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
-            userId: user.id,
-            deviceId,
-            handle: user.handle,
+            message: 'Your email address is confirmed. You can now sign in.',
         }
     }
 
@@ -483,6 +594,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
     return {
         startRegistration,
         finishRegistration,
+        confirmEmail,
         startAuthentication,
         finishAuthentication,
         getCurrentSession,
@@ -504,11 +616,13 @@ function buildSessionToken ():string {
     return `${crypto.randomUUID()}${crypto.randomUUID().replaceAll('-', '')}`
 }
 
-function parseTransports (value:string | null):string[] | undefined {
+function parseTransports (
+    value:string | null,
+):AuthenticatorTransportFuture[] | undefined {
     if (!value) return undefined
 
     try {
-        return JSON.parse(value) as string[]
+        return JSON.parse(value) as AuthenticatorTransportFuture[]
     } catch {
         return undefined
     }
@@ -532,6 +646,14 @@ function makeAuthenticatedSessionResponse (
 }
 
 function generateUserHandle ():string {
+    const bytes = new Uint8Array(32)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('')
+}
+
+function generateConfirmationCode ():string {
     const bytes = new Uint8Array(32)
     crypto.getRandomValues(bytes)
     return Array.from(bytes)

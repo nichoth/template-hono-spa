@@ -224,6 +224,25 @@ State.registerWithPasskey = async function (
     }
 }
 
+State.confirmAccount = async function (
+    values:{ code:string; identifier?:string },
+) {
+    try {
+        const result = await ky.post('/api/confirm', {
+            json: values,
+        }).json<{
+            status:'confirmed';
+            identifier:string;
+            message?:string;
+        }>()
+
+        return result
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
 State.login = async function (state:AppState, credentials:LoginCredentials) {
     start(state.user)
 

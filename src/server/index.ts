@@ -13,7 +13,7 @@ import {
     AUTH_SESSION_COOKIE,
     AuthError,
     createAuthService,
-    type RegistrationConfirmationResponse,
+    type EmailConfirmationRequest,
 } from './auth/index.js'
 
 type Bindings = {
@@ -112,9 +112,13 @@ app.post('/api/auth/register/finish', async (c) => {
             body as never,
         )
 
-        logLocalConfirmUrl(c.req.url, result)
+        logLocalConfirmUrl(
+            c.req.url,
+            result.response.identifier,
+            result.confirmationCode,
+        )
 
-        return c.json(result, 200)
+        return c.json(result.response, 200)
     } catch (_err) {
         const err = _err as Error
         console.log('**errrr**', err.message)
@@ -135,11 +139,29 @@ app.post('/api/auth/passkey/register', async (c) => {
             body as never,
         )
 
-        logLocalConfirmUrl(c.req.url, result)
+        logLocalConfirmUrl(
+            c.req.url,
+            result.response.identifier,
+            result.confirmationCode,
+        )
+
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
+app.post('/api/confirm', async (c) => {
+    try {
+        const body = await c.req.json<EmailConfirmationRequest>()
+        const result = await authService.confirmEmail(
+            c.env.AUTH_DB,
+            body,
+        )
 
         return c.json(result, 200)
     } catch (err) {
-        return authErrorResponse(c, err as Error)
+        return authErrorResponse(c, err)
     }
 })
 
@@ -367,15 +389,15 @@ function isLocalhostRequest (requestUrl:string):boolean {
 
 function logLocalConfirmUrl (
     requestUrl:string,
-    result:RegistrationConfirmationResponse,
+    identifier:string,
+    confirmationCode:string,
 ):void {
     if (!isLocalhostRequest(requestUrl)) return
     const origin = new URL(requestUrl).origin
-    const confirmUrl = `${origin}/login`
-        + `?identifier=${encodeURIComponent(result.identifier)}`
+    const confirmUrl = `${origin}/confirm/${encodeURIComponent(confirmationCode)}`
     console.log(
         '\n[auth] Account created for',
-        result.identifier
+        identifier
     )
     console.log('[auth] Confirm URL:', confirmUrl, '\n')
 }

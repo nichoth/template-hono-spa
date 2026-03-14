@@ -31,6 +31,10 @@ import {
     revokeSession,
     touchSession,
     updateDeviceUsage,
+    createConfirmationCode,
+    findConfirmationCode,
+    markConfirmationCodeExpired,
+    markConfirmationCodeUsed,
 } from '../db/index.js'
 
 const REGISTRATION_TIMEOUT_MS = 5 * 60 * 1000
@@ -39,6 +43,7 @@ const AUTHENTICATION_TIMEOUT_MS = 5 * 60 * 1000
 export const AUTH_SESSION_COOKIE = 'auth_session'
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 export const AUTH_RP_NAME = 'Template Hono SPA'
+export const EMAIL_CONFIRMATION_TTL_MS = 1000 * 60 * 60 * 24
 
 export type AuthUser = {
     id:string;
@@ -80,6 +85,22 @@ export type RegistrationConfirmationResponse = {
     userId:string;
     deviceId:string;
     handle:string;
+}
+
+export type EmailConfirmationRequest = {
+    code:string;
+    identifier?:string;
+}
+
+export type EmailConfirmationResponse = {
+    status:'confirmed';
+    identifier:string;
+    message?:string;
+}
+
+export type RegistrationConfirmationResult = {
+    response:RegistrationConfirmationResponse;
+    confirmationCode:string;
 }
 
 export type AuthenticationStartRequest = {
@@ -181,7 +202,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         requestUrl:string,
         request:RegistrationFinishRequest,
-    ):Promise<RegistrationConfirmationResponse> {
+    ):Promise<RegistrationConfirmationResult> {
         await ensureAuthSchema(db)
 
         const challenge = await findChallengeById(db, request.challengeReference)
@@ -272,13 +293,69 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             occurredAt: now,
         })
 
+        const confirmationCode = deps.createID()
+        await createConfirmationCode(db, {
+            code: confirmationCode,
+            identifier,
+            expiresAt: now + EMAIL_CONFIRMATION_TTL_MS,
+            now,
+        })
+
         return {
-            status: 'confirmation_pending',
+            confirmationCode,
+            response: {
+                status: 'confirmation_pending',
+                identifier: user.identifier,
+                message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
+                userId: user.id,
+                deviceId,
+                handle: user.handle,
+            },
+        }
+    }
+
+    async function confirmEmail (
+        db:D1Database,
+        request:EmailConfirmationRequest,
+    ):Promise<EmailConfirmationResponse> {
+        await ensureAuthSchema(db)
+
+        const code = request.code?.trim()
+        if (!code) {
+            throw new AuthError(400, 'invalid_code', 'Enter a valid confirmation code.')
+        }
+
+        const record = await findConfirmationCode(db, code)
+        if (!record) {
+            throw new AuthError(400, 'invalid_code', 'Confirmation code was not found.')
+        }
+
+        const now = deps.now()
+        if (record.status !== 'pending') {
+            if (record.status === 'expired') {
+                throw new AuthError(409, 'expired_code', 'Confirmation code has expired.')
+            }
+
+            throw new AuthError(400, 'invalid_code', 'Confirmation code has already been used.')
+        }
+
+        if (record.expires_at <= now) {
+            await markConfirmationCodeExpired(db, record.code, now)
+            throw new AuthError(409, 'expired_code', 'Confirmation code has expired.')
+        }
+
+        await markConfirmationCodeUsed(db, record.code, now)
+
+        const identifier = record.identifier
+        const user = await findUserByIdentifier(db, identifier)
+        if (!user || user.status !== 'active') {
+            throw new AuthError(404, 'unknown_account', 'No active account matches this confirmation code.')
+        }
+
+        return {
+            status: 'confirmed',
             identifier: user.identifier,
-            message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
-            userId: user.id,
-            deviceId,
-            handle: user.handle,
+            message: 'Your email address is confirmed. You can now sign in.',
         }
     }
 
@@ -483,6 +560,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
     return {
         startRegistration,
         finishRegistration,
+        confirmEmail,
         startAuthentication,
         finishAuthentication,
         getCurrentSession,

@@ -54,6 +54,16 @@ export type SessionWithUserRecord = SessionRecord & {
     user_status:string;
 }
 
+export type ConfirmationCodeRecord = {
+    code:string;
+    identifier:string;
+    status:'pending'|'used'|'expired';
+    expires_at:number;
+    created_at:number;
+    updated_at:number;
+    used_at:number | null;
+}
+
 type ChallengeMetadata = {
     userID?:string;
     displayName?:string;
@@ -71,6 +81,76 @@ export async function ensureAuthSchema (db:D1Database):Promise<void> {
         AUTH_SCHEMA_STATEMENTS.map(statement => db.prepare(statement))
     )
     initializedDbs.add(db)
+}
+
+export async function createConfirmationCode (
+    db:D1Database,
+    params:{
+        code:string;
+        identifier:string;
+        expiresAt:number;
+        now:number;
+    },
+):Promise<void> {
+    await db.prepare(`
+        INSERT INTO email_confirmation_codes (
+            code, identifier, expires_at, status,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, 'pending', ?, ?)
+    `).bind(
+        params.code,
+        params.identifier,
+        params.expiresAt,
+        params.now,
+        params.now,
+    ).run()
+}
+
+export async function findConfirmationCode (
+    db:D1Database,
+    code:string,
+):Promise<ConfirmationCodeRecord | null> {
+    const result = await db.prepare(`
+        SELECT * FROM email_confirmation_codes
+        WHERE code = ?
+        LIMIT 1
+    `).bind(code).first<ConfirmationCodeRecord>()
+
+    return result ?? null
+}
+
+export async function markConfirmationCodeUsed (
+    db:D1Database,
+    code:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE email_confirmation_codes
+        SET status = 'used',
+            used_at = ?,
+            updated_at = ?
+        WHERE code = ?
+    `).bind(
+        now,
+        now,
+        code,
+    ).run()
+}
+
+export async function markConfirmationCodeExpired (
+    db:D1Database,
+    code:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE email_confirmation_codes
+        SET status = 'expired',
+            updated_at = ?
+        WHERE code = ?
+    `).bind(
+        now,
+        code,
+    ).run()
 }
 
 export async function findUserByIdentifier (

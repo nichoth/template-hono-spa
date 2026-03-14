@@ -34,6 +34,7 @@ import {
 } from '../src/client/routes/login.js'
 import type { AppState, SessionResponse } from '../src/client/state.js'
 import { formatLoginStatus } from '../src/client/login-status.js'
+import { getNavRoutes } from '../src/client/routes/index.js'
 import viteConfigSource from '../vite.config.js?raw'
 import styleCssSource from '../src/style.css?inline'
 import cardCssSource from '../src/client/components/card.css?inline'
@@ -325,8 +326,8 @@ describe('Hono worker', () => {
             expect(routes).toEqual([
                 { href: '/', text: 'Home' },
                 { href: '/about', text: 'About' },
-                { href: '/login', text: 'Login' },
-                { href: '/signup', text: 'Create Account' },
+                { href: '/login', text: 'Login', isAuthLink: true },
+                { href: '/signup', text: 'Create Account', isAuthLink: true },
             ])
         })
 
@@ -352,7 +353,8 @@ describe('Hono worker', () => {
 
             expect(navSource).toContain('desktop-nav')
             expect(navSource).toContain('mobile-nav-menu')
-            expect(navSource).toContain('routes.map')
+            expect(navSource).toContain('getNavRoutes')
+            expect(navSource).toContain('visibleRoutes.value')
         })
 
         it('wires the hamburger trigger to mobile menu open and close events', () => {
@@ -369,7 +371,7 @@ describe('Hono worker', () => {
             const navSource = sourceFiles['/src/client/components/nav.ts']
 
             expect(navSource).toContain('nav-links-mobile')
-            expect(navSource).toContain('renderNavItems(currentPath)')
+            expect(navSource).toContain('renderNavItems(currentPath, visibleRoutes.value)')
             expect(navSource).toContain("props.currentPath === props.href ? 'active' : ''")
             expect(navSource).toContain("isMenuOpen.value ? 'open' : ''")
             expect(navSource).toContain('hidden=${')
@@ -844,5 +846,22 @@ describe('Hono worker', () => {
 
             expect(formatLoginStatus(session)).toBe('logged in as anonymous')
         })
+    })
+})
+
+describe('nav routes helper', () => {
+    it('hides auth links when authenticated', () => {
+        const visible = getNavRoutes(true)
+
+        expect(visible.some(route => route.text === 'Login')).toBe(false)
+        expect(visible.some(route => route.text === 'Create Account')).toBe(false)
+        expect(visible.some(route => route.text === 'Home')).toBe(true)
+    })
+
+    it('keeps auth links when not authenticated', () => {
+        const visible = getNavRoutes(false)
+
+        expect(visible.some(route => route.text === 'Login')).toBe(true)
+        expect(visible.some(route => route.text === 'Create Account')).toBe(true)
     })
 })

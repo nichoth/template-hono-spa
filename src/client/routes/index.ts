@@ -10,13 +10,14 @@ import { type AppState } from '../state.js'
 export type AppRoute = {
     href:string;
     text:string;
+    isAuthLink?:boolean;
 }
 
 export const routes:ReadonlyArray<AppRoute> = [
     { href: '/', text: 'Home' },
     { href: '/about', text: 'About' },
-    { href: '/login', text: 'Login' },
-    { href: '/signup', text: 'Create Account' },
+    { href: '/login', text: 'Login', isAuthLink: true },
+    { href: '/signup', text: 'Create Account', isAuthLink: true },
 ]
 
 const knownClientRoutes = new Set([
@@ -58,6 +59,12 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
     })
 
     return router
+}
+
+export function getNavRoutes (authenticated:boolean):AppRoute[] {
+    if (!authenticated) return [...routes]
+
+    return routes.filter(route => !route.isAuthLink)
 }
 
 export function isKnownClientRoute (path:string):boolean {

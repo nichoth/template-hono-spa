@@ -18,7 +18,7 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
         const user = session.user
         const expires = session.session?.expiresAt
         let expiresLabel = 'Expires: Unknown'
-        let expiresHint: string | null = null
+        let expiresHint:string|null = null
 
         if (expires) {
             const parsed = new Date(expires)

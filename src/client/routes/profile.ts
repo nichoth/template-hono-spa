@@ -3,8 +3,7 @@ import { useCallback } from 'preact/hooks'
 import { useComputed } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
-import type { AppState } from '../state.js'
-import { handleLogout } from '../login-status.js'
+import { type AppState, State } from '../state.js'
 import './profile.css'
 
 export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
@@ -53,7 +52,7 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
     const logoutError = useComputed(() => state.logoutError.value)
 
     const onLogout = useCallback(async () => {
-        await handleLogout(state)
+        await State.logout(state)
     }, [state])
 
     return html`<div class="route profile">

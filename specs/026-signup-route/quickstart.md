@@ -17,5 +17,9 @@
 6. Click `Create Account` and verify the app reaches `/signup` without a full-page reload
 7. Confirm `/signup` shows the same passkey/password method choice pattern as `/login`
 8. Confirm the primary action text says `Create account`
-9. Submit a successful signup path and verify the UI tells the user to confirm their email address
+9. In a WebAuthn-capable browser session, submit a successful signup path and verify the UI tells the user to confirm their email address
 10. Submit an invalid signup path and verify actionable route-local feedback appears
+
+## Notes
+
+- Step 9 requires a browser environment that can complete the passkey registration flow. The automated Vitest coverage verifies the confirmation-pending response contract and the route copy even when that interactive browser step is not available in the current shell.

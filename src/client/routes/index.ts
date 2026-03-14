@@ -15,6 +15,7 @@ export const routes:ReadonlyArray<AppRoute> = [
     { href: '/', text: 'Home' },
     { href: '/about', text: 'About' },
     { href: '/login', text: 'Login' },
+    { href: '/signup', text: 'Create Account' },
 ]
 
 const knownClientRoutes = new Set([

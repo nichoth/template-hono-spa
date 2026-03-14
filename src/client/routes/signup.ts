@@ -8,6 +8,7 @@ import {
     getRadioCheckedAttr,
     resolveSelectedMethod,
 } from './login.js'
+import './login.css'
 import './signup.css'
 
 RadioInput.define()
@@ -23,7 +24,7 @@ type SignupFormValues = {
 type SignupValidationErrors = Partial<Record<keyof SignupFormValues, string>>
 
 const PASSWORD_SIGNUP_MESSAGE =
-    'Password account creation is not implemented. Use a passkey account instead.'
+    'Password account creation is not implemented yet. Choose passkey to continue.'
 
 export const SignupRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
     const activeMethod = useSignal<SignupMethod>('passkey')
@@ -33,10 +34,6 @@ export const SignupRoute:FunctionComponent<{ state:AppState }> = function ({ sta
     const fieldErrors = useSignal<SignupValidationErrors>({})
     const submitMessage = useSignal('')
     const passkeyStatus = useSignal<'idle'|'working'>('idle')
-
-    const authenticated = state.user.value.data?.authenticated === true ?
-        state.user.value.data :
-        null
 
     const setActiveMethod = (method:SignupMethod) => {
         activeMethod.value = method
@@ -97,31 +94,15 @@ export const SignupRoute:FunctionComponent<{ state:AppState }> = function ({ sta
         submitMessage.value = ''
 
         try {
-            await State.registerWithPasskey(state, {
+            const result = await State.registerWithPasskey(state, {
                 identifier: identifierValue,
                 displayName: displayName.value.trim() || undefined,
             })
-            submitMessage.value = 'Account created with passkey.'
+            submitMessage.value = result.message
         } catch (err) {
             submitMessage.value = err instanceof Error ?
                 err.message :
                 'Passkey account creation failed.'
-        } finally {
-            passkeyStatus.value = 'idle'
-        }
-    }
-
-    const handleLogout = async () => {
-        passkeyStatus.value = 'working'
-        submitMessage.value = ''
-
-        try {
-            await State.logout(state)
-            submitMessage.value = 'Signed out.'
-        } catch (err) {
-            submitMessage.value = err instanceof Error ?
-                err.message :
-                'Sign-out failed.'
         } finally {
             passkeyStatus.value = 'idle'
         }
@@ -155,133 +136,114 @@ export const SignupRoute:FunctionComponent<{ state:AppState }> = function ({ sta
             </div>
         </div>
 
-        ${authenticated ?
-            html`<div class="login-form login-form-passkey">
+        ${activeMethod.value === 'password' ?
+            html`<form class="login-form" onSubmit=${handlePasswordSubmit} novalidate>
                 <p class="login-method-description">
-                    Account created for ${authenticated.user.identifier}.
+                    Create an account with your email, display name, and password.
                 </p>
+                <substrate-input
+                    label="Email"
+                    name="identifier"
+                    autocomplete="username"
+                    value=${identifier.value}
+                    required
+                    aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
+                    onInput=${(event:InputEvent) => {
+                        const target = event.target as HTMLInputElement
+                        setFieldValue('identifier', target.value)
+                    }}
+                ></substrate-input>
+                ${fieldErrors.value.identifier ?
+                    html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
+                    null}
+                <substrate-input
+                    label="Display Name"
+                    name="display-name"
+                    autocomplete="nickname"
+                    value=${displayName.value}
+                    onInput=${(event:InputEvent) => {
+                        const target = event.target as HTMLInputElement
+                        setFieldValue('displayName', target.value)
+                    }}
+                ></substrate-input>
+                <password-input
+                    label="Password"
+                    name="password"
+                    autocomplete="new-password"
+                    value=${password.value}
+                    required
+                    aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
+                    onInput=${(event:InputEvent) => {
+                        const target = event.target as HTMLInputElement
+                        setFieldValue('password', target.value)
+                    }}
+                ></password-input>
+                ${fieldErrors.value.password ?
+                    html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
+                    null}
+                <substrate-button type="submit">
+                    Create account
+                </substrate-button>
                 <p class="login-route-link">
                     <a href="/login">Back to sign in</a>
                 </p>
-                <substrate-button
-                    type="button"
-                    onClick=${handleLogout}
-                    spinning=${passkeyStatus.value === 'working'}
-                >
-                    Sign out
-                </substrate-button>
                 ${submitMessage.value ?
                     html`<p class="login-submit-message">${submitMessage.value}</p>` :
                     null}
-            </div>` :
-            activeMethod.value === 'password' ?
-                html`<form class="login-form" onSubmit=${handlePasswordSubmit} novalidate>
-                    <p class="login-method-description">
-                        Create an account with your email, display name, and password.
-                    </p>
-                    <substrate-input
-                        label="Email"
-                        name="identifier"
-                        autocomplete="username"
-                        value=${identifier.value}
-                        required
-                        aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('identifier', target.value)
-                        }}
-                    ></substrate-input>
-                    ${fieldErrors.value.identifier ?
-                        html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
-                        null}
-                    <substrate-input
-                        label="Display Name"
-                        name="display-name"
-                        autocomplete="nickname"
-                        value=${displayName.value}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('displayName', target.value)
-                        }}
-                    ></substrate-input>
-                    <password-input
-                        label="Password"
-                        name="password"
-                        autocomplete="new-password"
-                        value=${password.value}
-                        required
-                        aria-invalid=${fieldErrors.value.password ? 'true' : 'false'}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('password', target.value)
-                        }}
-                    ></password-input>
-                    ${fieldErrors.value.password ?
-                        html`<p class="login-field-error">${fieldErrors.value.password}</p>` :
-                        null}
-                    <substrate-button type="submit">
+            </form>` :
+            html`<div class="login-form login-form-passkey">
+                <p class="login-method-description">
+                    Create an account using your device (Face ID, fingerprint, or Windows Hello).
+                </p>
+                <substrate-input
+                    label="Email"
+                    name="identifier"
+                    autocomplete="username webauthn"
+                    value=${identifier.value}
+                    required
+                    aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
+                    onInput=${(event:InputEvent) => {
+                        const target = event.target as HTMLInputElement
+                        setFieldValue('identifier', target.value)
+                    }}
+                ></substrate-input>
+                ${fieldErrors.value.identifier ?
+                    html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
+                    null}
+                <substrate-input
+                    label="Display Name"
+                    name="display-name"
+                    autocomplete="nickname"
+                    value=${displayName.value}
+                    onInput=${(event:InputEvent) => {
+                        const target = event.target as HTMLInputElement
+                        setFieldValue('displayName', target.value)
+                    }}
+                ></substrate-input>
+                <div class="signup-support-copy">
+                    The display name is used only for visual display in the app. Confirm your email address after account creation to finish setup.
+                </div>
+                <div class="login-passkey-actions">
+                    <substrate-button
+                        type="button"
+                        onClick=${handlePasskeySignup}
+                        spinning=${passkeyStatus.value === 'working'}
+                    >
                         Create account
                     </substrate-button>
                     <p class="login-route-link">
                         <a href="/login">Back to sign in</a>
                     </p>
-                    ${submitMessage.value ?
-                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
-                        null}
-                </form>` :
-                html`<div class="login-form login-form-passkey">
-                    <p class="login-method-description">
-                        Create an account using your device (Face ID, fingerprint, or Windows Hello).
-                    </p>
-                    <substrate-input
-                        label="Email"
-                        name="identifier"
-                        autocomplete="username webauthn"
-                        value=${identifier.value}
-                        required
-                        aria-invalid=${fieldErrors.value.identifier ? 'true' : 'false'}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('identifier', target.value)
-                        }}
-                    ></substrate-input>
-                    ${fieldErrors.value.identifier ?
-                        html`<p class="login-field-error">${fieldErrors.value.identifier}</p>` :
-                        null}
-                    <substrate-input
-                        label="Display Name"
-                        name="display-name"
-                        autocomplete="nickname"
-                        value=${displayName.value}
-                        onInput=${(event:InputEvent) => {
-                            const target = event.target as HTMLInputElement
-                            setFieldValue('displayName', target.value)
-                        }}
-                    ></substrate-input>
-                    <div class="signup-support-copy">
-                        The display name is used only for visual display in the app. Login uses your email address.
-                    </div>
-                    <div class="login-passkey-actions">
-                        <substrate-button
-                            type="button"
-                            onClick=${handlePasskeySignup}
-                            spinning=${passkeyStatus.value === 'working'}
-                        >
-                            Create account
-                        </substrate-button>
-                        <p class="login-route-link">
-                            <a href="/login">Back to sign in</a>
-                        </p>
-                    </div>
-                    ${submitMessage.value ?
-                        html`<p class="login-submit-message">${submitMessage.value}</p>` :
-                        null}
-                </div>`}
+                </div>
+                ${submitMessage.value ?
+                    html`<p class="login-submit-message">${submitMessage.value}</p>` :
+                    null}
+            </div>`}
     </div>`
 }
 
 function validatePasswordSignup (
-    values:SignupFormValues
+    values:SignupFormValues,
 ):SignupValidationErrors {
     const errors:SignupValidationErrors = {}
 

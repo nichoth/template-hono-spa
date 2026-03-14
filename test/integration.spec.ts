@@ -166,6 +166,34 @@ describe('Integration tests', () => {
             expect(html).not.toContain('Page not found.')
         })
 
+        it('keeps signup registration start free of auth session cookies before email confirmation',
+            async () => {
+                const identifier = `signup-${crypto.randomUUID()}@example.com`
+                const response = await SELF.fetch(
+                    'http://localhost/api/auth/register/start',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            identifier,
+                            displayName: 'Signup Test',
+                        }),
+                    },
+                )
+
+                expect(response.status).toBe(200)
+                expect(response.headers.get('set-cookie')).toBeNull()
+
+                const sessionResponse = await SELF.fetch('http://localhost/api/session')
+                const session = await sessionResponse.json() as {
+                    authenticated:boolean;
+                }
+
+                expect(sessionResponse.status).toBe(200)
+                expect(session).toEqual({ authenticated: false })
+            }
+        )
+
         it('keeps the shared client shell bootstrapped across primary routes',
             async () => {
                 const responses = await Promise.all([

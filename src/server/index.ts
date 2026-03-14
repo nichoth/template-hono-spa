@@ -111,8 +111,7 @@ app.post('/api/auth/register/finish', async (c) => {
             body as never,
         )
 
-        setSessionCookie(c, result.sessionToken)
-        return c.json(result.response, 200)
+        return c.json(result, 200)
     } catch (err) {
         return authErrorResponse(c, err)
     }

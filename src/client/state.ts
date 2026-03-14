@@ -34,6 +34,12 @@ export type SessionResponse = {
     };
 }
 
+export type SignupConfirmationResponse = {
+    status:'confirmation_pending';
+    identifier:string;
+    message:string;
+}
+
 export type PasswordLoginCredentials = {
     method:'password';
     identifier:string;
@@ -192,8 +198,6 @@ State.registerWithPasskey = async function (
     state:AppState,
     values:PasskeyRegistrationValues,
 ) {
-    start(state.user)
-
     try {
         const startResponse = await ky.post('/api/auth/register/start', {
             json: values,
@@ -206,18 +210,16 @@ State.registerWithPasskey = async function (
             optionsJSON: startResponse.options,
         })
 
-        const user = await ky.post('/api/auth/register/finish', {
+        const result = await ky.post('/api/auth/register/finish', {
             json: {
                 challengeReference: startResponse.challengeReference,
                 credential,
             },
-        }).json<SessionResponse>()
+        }).json<SignupConfirmationResponse>()
 
-        set(state.user, user)
-        return user
+        return result
     } catch (_err) {
         const err = _err as HTTPError|Error
-        error(state.user, err)
         throw err
     }
 }

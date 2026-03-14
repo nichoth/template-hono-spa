@@ -325,6 +325,7 @@ describe('Hono worker', () => {
                 { href: '/', text: 'Home' },
                 { href: '/about', text: 'About' },
                 { href: '/login', text: 'Login' },
+                { href: '/signup', text: 'Create Account' },
             ])
         })
 
@@ -568,6 +569,7 @@ describe('Hono worker', () => {
             const signupSource = sourceFiles['/src/client/routes/signup.ts']
 
             expect(signupSource).toContain('<h2>Create Account</h2>')
+            expect(signupSource).toContain('./login.css')
             expect(signupSource).toContain('radio-input')
             expect(signupSource).toContain('value="passkey"')
             expect(signupSource).toContain('value="password"')
@@ -583,6 +585,19 @@ describe('Hono worker', () => {
             expect(signupSource).toContain('Create account')
             expect(signupSource).toContain('Back to sign in')
         })
+
+        it('tells the visitor to confirm their email address after successful signup', () => {
+            const stateSource = sourceFiles['/src/client/state.ts']
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+            const serverSource = sourceFiles['/src/server/index.ts']
+            const registerFinishHandler = serverSource.match(
+                /app\.post\('\/api\/auth\/register\/finish'[\s\S]*?app\.post\('\/api\/auth\/login\/start'/,
+            )?.[0] ?? ''
+
+            expect(stateSource).toContain('confirmation_pending')
+            expect(signupSource).toContain('Confirm your email address')
+            expect(registerFinishHandler).not.toContain('setSessionCookie(c, result.sessionToken)')
+        })
     })
 
     describe('Home card layout', () => {
@@ -597,7 +612,7 @@ describe('Hono worker', () => {
             const homeSource = sourceFiles['/src/client/routes/home.ts']
             const cardMatches = homeSource.match(/<\$\{Card\}/g) ?? []
 
-            expect(homeSource).toContain('<$\\{Counter}')
+            expect(homeSource).toMatch(/<\$\{Counter\}/)
             expect(cardMatches).toHaveLength(2)
             expect(homeSource).toContain('class="fetcher"')
         })

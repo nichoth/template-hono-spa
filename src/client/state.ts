@@ -104,6 +104,8 @@ export type AppState = {
     count:Signal<number>;
     user:Signal<RequestFor<SessionResponse, HTTPError|Error>>;
     response:Signal<RequestFor<{ message:string }, HTTPError|Error>>;
+    logoutInProgress:Signal<boolean>;
+    logoutError:Signal<string | null>;
     _setRoute?:(path:string) => void;
 }
 
@@ -115,6 +117,8 @@ export function State ():AppState {
         user: signal<RequestFor<SessionResponse, HTTPError|Error>>(RequestState()),
         response: signal<RequestFor<{ message:string }, HTTPError|Error>>(RequestState()),
         count: signal<number>(0),
+        logoutInProgress: signal<boolean>(false),
+        logoutError: signal<string | null>(null),
     }
 
     const onRoute = Route()
@@ -148,14 +152,20 @@ State.restoreSession = async function (state:AppState) {
 }
 
 State.logout = async function (state:AppState) {
+    state.logoutInProgress.value = true
+    state.logoutError.value = null
     start(state.user)
 
     try {
         const user = await ky.post('/api/logout').json<SessionResponse>()
         set(state.user, user)
+        state.logoutInProgress.value = false
+        state.logoutError.value = null
         return user
     } catch (_err) {
         const err = _err as HTTPError|Error
+        state.logoutInProgress.value = false
+        state.logoutError.value = err.message ?? 'Logout failed'
         error(state.user, err)
     }
 }

@@ -42,6 +42,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - No persistent storage changes; the header watches the same session signal populated by `/api/session`. (031-hide-auth-links)
 - TypeScript 5.9 targeting ES2022 modules with Vite 8 and Cloudflare Workers. + Preact, `@preact/signals`, LightningCSS-managed CSS with custom media queries, Hono, `ky`. (032-custom-media-breakpoints)
 - Not applicable—CSS-only change. (032-custom-media-breakpoints)
+- TypeScript (ES2022) with CSS modules compiled by LightningCSS + Vite 8 build system, Preact + `htm/preact`, `@substrate-system` UI primitives, `route-event`, Hono for Cloudflare Workers routing, and shared LightningCSS config (034-profile-logout-button)
+- N/A (UI-only adjustment; session state is client-derived and cleared via existing auth service) (034-profile-logout-button)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -61,9 +63,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 034-profile-logout-button: Added TypeScript (ES2022) with CSS modules compiled by LightningCSS + Vite 8 build system, Preact + `htm/preact`, `@substrate-system` UI primitives, `route-event`, Hono for Cloudflare Workers routing, and shared LightningCSS config
 - 032-custom-media-breakpoints: Added TypeScript 5.9 targeting ES2022 modules with Vite 8 and Cloudflare Workers. + Preact, `@preact/signals`, LightningCSS-managed CSS with custom media queries, Hono, `ky`.
 - 031-hide-auth-links: Added TypeScript 5.9 targeting ES2022 modules in a Vite 8-built client running on Cloudflare Workers. + Preact 10, `@preact/signals`, `route-event` routing helpers, `@substrate-system` state utilities, Hono for API routing, `ky` for HTTP calls.
-- 030-show-login-state: Added TypeScript 5.9 targeting ES2022 modules running in Vite 8-built client and Cloudflare Workers shell. + Preact 10, `@preact/signals`, `htm`, `State` helpers from `@substrate-system/state`, Hono-powered server routes, `ky` for HTTP requests.
 
 
 <!-- MANUAL ADDITIONS START -->

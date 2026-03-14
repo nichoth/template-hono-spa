@@ -1,4 +1,4 @@
-import type { SessionResponse } from './state.js'
+import { State, type AppState, type SessionResponse } from './state.js'
 
 export function formatLoginStatus (session?: SessionResponse | null): string {
     const identifier = session?.user?.identifier
@@ -9,4 +9,8 @@ export function formatLoginStatus (session?: SessionResponse | null): string {
     }
 
     return 'logged in as anonymous'
+}
+
+export async function handleLogout (state: AppState): Promise<void> {
+    await State.logout(state)
 }

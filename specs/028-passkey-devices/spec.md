@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "I would like to add provisions for passwordless login + multiple devices per user."
 
+## Clarifications
+
+### Session 2026-03-14
+
+- Q: Should passkey logins follow the same Hono-managed session cookie flow as the existing login endpoints? → A: Yes, keep using `AUTH_SESSION_COOKIE` so Hono manages sessions via cookies just like `/api/auth/login/finish`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Register passkey-enabled device (Priority: P1)
@@ -34,6 +40,8 @@ Users must be able to log in from any registered device by verifying the signed 
 
 1. **Given** a valid device row, **When** the authenticator signs the challenge, **Then** the system verifies the signature with the stored public key and updates the counter to the new value.
 2. **Given** a credential ID that is revoked or not linked to the user, **When** the login attempt arrives, **Then** authentication fails before the counter changes.
+
+3. **Given** a successful passkey authentication, **When** the response is returned, **Then** the service sets the same Hono-managed `AUTH_SESSION_COOKIE` used by the legacy login flow so session handling stays consistent.
 
 ---
 

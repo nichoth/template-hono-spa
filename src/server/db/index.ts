@@ -2,6 +2,7 @@ import { AUTH_SCHEMA_STATEMENTS } from './schema.js'
 
 export type UserRecord = {
     id:string;
+    handle:string;
     identifier:string;
     display_name:string | null;
     status:string;
@@ -9,18 +10,18 @@ export type UserRecord = {
     updated_at:number;
 }
 
-export type PasskeyCredentialRecord = {
+export type DeviceRecord = {
     id:string;
     user_id:string;
     credential_id:string;
     public_key:string;
     counter:number;
     transports_json:string | null;
-    device_type:string;
-    backed_up:number;
-    status:string;
+    aaguid:string | null;
+    credential_name:string | null;
     created_at:number;
     last_used_at:number | null;
+    is_revoked:number;
 }
 
 export type AuthChallengeRecord = {
@@ -103,15 +104,17 @@ export async function createUser (
     params:{
         id:string;
         identifier:string;
+        handle:string;
         displayName?:string;
         now:number;
     }
 ):Promise<UserRecord> {
     await db.prepare(`
-        INSERT INTO users (id, identifier, display_name, status, created_at, updated_at)
-        VALUES (?, ?, ?, 'active', ?, ?)
+        INSERT INTO users (id, handle, identifier, display_name, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, 'active', ?, ?)
     `).bind(
         params.id,
+        params.handle,
         params.identifier,
         params.displayName ?? null,
         params.now,
@@ -120,7 +123,7 @@ export async function createUser (
 
     return {
         id: params.id,
-        identifier: params.identifier,
+        handle: params.handle,
         display_name: params.displayName ?? null,
         status: 'active',
         created_at: params.now,
@@ -128,33 +131,47 @@ export async function createUser (
     }
 }
 
-export async function listActiveCredentialsByUserId (
+export async function listActiveDevicesByUserId (
     db:D1Database,
     userID:string,
-):Promise<PasskeyCredentialRecord[]> {
+):Promise<DeviceRecord[]> {
     const result = await db.prepare(`
-        SELECT * FROM passkey_credentials
-        WHERE user_id = ? AND status = 'active'
+        SELECT * FROM devices
+        WHERE user_id = ? AND is_revoked = 0
         ORDER BY created_at ASC
-    `).bind(userID).all<PasskeyCredentialRecord>()
+    `).bind(userID).all<DeviceRecord>()
 
     return result.results ?? []
 }
 
-export async function findCredentialByCredentialId (
+export async function listDevicesByUserId (
+    db:D1Database,
+    userID:string,
+):Promise<DeviceRecord[]> {
+    const result = await db.prepare(`
+        SELECT * FROM devices
+        WHERE user_id = ?
+        ORDER BY CASE WHEN last_used_at IS NULL THEN 0 ELSE 1 END DESC,
+                 last_used_at DESC, created_at ASC
+    `).bind(userID).all<DeviceRecord>()
+
+    return result.results ?? []
+}
+
+export async function findDeviceByCredentialId (
     db:D1Database,
     credentialID:string,
-):Promise<PasskeyCredentialRecord | null> {
+):Promise<DeviceRecord | null> {
     const result = await db.prepare(`
-        SELECT * FROM passkey_credentials
+        SELECT * FROM devices
         WHERE credential_id = ?
         LIMIT 1
-    `).bind(credentialID).first<PasskeyCredentialRecord>()
+    `).bind(credentialID).first<DeviceRecord>()
 
     return result ?? null
 }
 
-export async function createCredential (
+export async function createDevice (
     db:D1Database,
     params:{
         id:string;
@@ -163,17 +180,17 @@ export async function createCredential (
         publicKey:string;
         counter:number;
         transports:string[] | undefined;
-        deviceType:string;
-        backedUp:boolean;
+        aaguid:string | undefined;
+        credentialName:string | undefined;
         now:number;
     }
 ):Promise<void> {
     await db.prepare(`
-        INSERT INTO passkey_credentials (
+        INSERT INTO devices (
             id, user_id, credential_id, public_key, counter,
-            transports_json, device_type, backed_up, status, created_at, last_used_at
+            transports_json, aaguid, credential_name, created_at, last_used_at, is_revoked
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).bind(
         params.id,
         params.userID,
@@ -181,14 +198,14 @@ export async function createCredential (
         params.publicKey,
         params.counter,
         params.transports ? JSON.stringify(params.transports) : null,
-        params.deviceType,
-        params.backedUp ? 1 : 0,
+        params.aaguid ?? null,
+        params.credentialName ?? null,
         params.now,
         params.now,
     ).run()
 }
 
-export async function updateCredentialCounter (
+export async function updateDeviceUsage (
     db:D1Database,
     params:{
         credentialID:string;
@@ -197,7 +214,7 @@ export async function updateCredentialCounter (
     }
 ):Promise<void> {
     await db.prepare(`
-        UPDATE passkey_credentials
+        UPDATE devices
         SET counter = ?, last_used_at = ?
         WHERE credential_id = ?
     `).bind(
@@ -205,6 +222,17 @@ export async function updateCredentialCounter (
         params.now,
         params.credentialID,
     ).run()
+}
+
+export async function revokeDevice (
+    db:D1Database,
+    deviceID:string,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE devices
+        SET is_revoked = 1
+        WHERE id = ?
+    `).bind(deviceID).run()
 }
 
 export async function createChallenge (

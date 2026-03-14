@@ -119,6 +119,25 @@ app.post('/api/auth/register/finish', async (c) => {
     }
 })
 
+app.post('/api/auth/passkey/register', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
 app.post('/api/auth/login/start', async (c) => {
     try {
         const body = await c.req.json<{
@@ -154,6 +173,68 @@ app.post('/api/auth/login/finish', async (c) => {
         return c.json(result.response, 200)
     } catch (err) {
         return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/passkey/login', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        setSessionCookie(c, result.sessionToken)
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.get('/api/auth/passkey/devices', async (c) => {
+    try {
+        const userId = c.req.query('userId')
+        if (!userId) {
+            return c.json({
+                error: 'userId query parameter is required',
+            }, 400)
+        }
+
+        const devices = await authService.listRegisteredDevices(
+            c.env.AUTH_DB,
+            userId,
+        )
+
+        return c.json(devices.map(device => ({
+            deviceId: device.id,
+            credentialId: device.credential_id,
+            credentialName: device.credential_name,
+            aaguid: device.aaguid,
+            transports: device.transports_json ? JSON.parse(device.transports_json) : [],
+            lastUsedAt: device.last_used_at ? new Date(device.last_used_at).toISOString() : null,
+            isRevoked: Boolean(device.is_revoked),
+        })), 200)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
+app.patch('/api/auth/passkey/devices/:deviceId/revoke', async (c) => {
+    try {
+        const deviceId = c.req.param('deviceId')
+        await authService.revokeRegisteredDevice(
+            c.env.AUTH_DB,
+            deviceId,
+        )
+
+        return c.body(null, 204)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
     }
 })
 

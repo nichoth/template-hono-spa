@@ -1,25 +1,26 @@
 export const AUTH_SCHEMA_STATEMENTS = [
     `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY,
+        handle TEXT NOT NULL,
         identifier TEXT NOT NULL UNIQUE,
         display_name TEXT,
         status TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
     )`,
-    `CREATE TABLE IF NOT EXISTS passkey_credentials (
+    `CREATE TABLE IF NOT EXISTS devices (
         id TEXT PRIMARY KEY,
         user_id TEXT NOT NULL,
         credential_id TEXT NOT NULL UNIQUE,
         public_key TEXT NOT NULL,
         counter INTEGER NOT NULL DEFAULT 0,
         transports_json TEXT,
-        device_type TEXT NOT NULL DEFAULT 'singleDevice',
-        backed_up INTEGER NOT NULL DEFAULT 0,
-        status TEXT NOT NULL DEFAULT 'active',
+        aaguid TEXT,
+        credential_name TEXT,
         created_at INTEGER NOT NULL,
         last_used_at INTEGER,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        is_revoked INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
     `CREATE TABLE IF NOT EXISTS auth_challenges (
         id TEXT PRIMARY KEY,

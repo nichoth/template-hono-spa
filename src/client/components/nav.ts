@@ -1,10 +1,10 @@
 import type { ComponentChildren, FunctionComponent } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
-import { useSignal } from '@preact/signals'
+import { useSignal, useComputed, } from '@preact/signals'
 import { HamburgerTwo } from '@substrate-system/hamburger-two'
 import { html } from 'htm/preact'
-import { routes } from '../routes/index.js'
 import type { AppState } from '../state.js'
+import { getNavRoutes, type AppRoute } from '../routes/index.js'
 import './nav.css'
 // import Debug from '@substrate-system/debug'
 // const debug = Debug('template:view')
@@ -79,10 +79,16 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         }
     }
 
+    const visibleRoutes = useComputed(() => {
+        const session = state.user.value.data
+        const authenticated = session?.authenticated === true
+        return getNavRoutes(Boolean(authenticated))
+    })
+
     return html`<nav class="app-nav" aria-label="Main navigation">
         <div class="desktop-nav">
             <ul class="nav-links nav-links-inline">
-                ${renderNavItems(currentPath)}
+                ${renderNavItems(currentPath, visibleRoutes.value)}
             </ul>
         </div>
         <${HamburgerTwo.TAG}
@@ -91,14 +97,14 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         ></${HamburgerTwo.TAG}>
         <div class=${menuClasses} hidden=${!isMenuOpen}>
             <ul class="nav-links nav-links-mobile">
-                ${renderNavItems(currentPath)}
+                ${renderNavItems(currentPath, visibleRoutes.value)}
             </ul>
         </div>
     </nav>`
 }
 
-function renderNavItems (currentPath:string) {
-    return routes.map(route => html`<li key=${route.href}>
+function renderNavItems (currentPath:string, navRoutes:ReadonlyArray<AppRoute>) {
+    return navRoutes.map(route => html`<li key=${route.href}>
         <${NavLink}
             href=${route.href}
             currentPath=${currentPath}

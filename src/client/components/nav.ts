@@ -79,16 +79,20 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         }
     }
 
-    const visibleRoutes = useComputed(() => {
-        const session = state.user.value.data
-        const authenticated = session?.authenticated === true
-        return getNavRoutes(Boolean(authenticated))
+    const isAuthenticated = useComputed(() => {
+        return state.user.value.data?.authenticated === true
     })
+
+    const visibleRoutes = useComputed(() => {
+        return getNavRoutes(isAuthenticated.value)
+    })
+
+    const navRoutes = visibleRoutes.value
 
     return html`<nav class="app-nav" aria-label="Main navigation">
         <div class="desktop-nav">
             <ul class="nav-links nav-links-inline">
-                ${renderNavItems(currentPath, visibleRoutes.value)}
+                ${renderNavItems(currentPath, navRoutes)}
             </ul>
         </div>
         <${HamburgerTwo.TAG}
@@ -97,7 +101,7 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         ></${HamburgerTwo.TAG}>
         <div class=${menuClasses} hidden=${!isMenuOpen}>
             <ul class="nav-links nav-links-mobile">
-                ${renderNavItems(currentPath, visibleRoutes.value)}
+                ${renderNavItems(currentPath, navRoutes)}
             </ul>
         </div>
     </nav>`

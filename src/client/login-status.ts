@@ -11,7 +11,7 @@ export function formatLoginStatus (session?: SessionResponse | null): string {
         return `logged in via ${loginMethodLabel} as ${identifier}`
     }
 
-    return 'logged in as anonymous'
+    return 'anonymous'
 }
 
 function formatLoginMethod (method:'passkey'|'password'|null|undefined): string {

@@ -1,7 +1,6 @@
 import {
     generateAuthenticationOptions,
     generateRegistrationOptions,
-    isoBase64URL,
     type AuthenticationResponseJSON,
     type PublicKeyCredentialCreationOptionsJSON,
     type PublicKeyCredentialRequestOptionsJSON,
@@ -9,6 +8,7 @@ import {
     verifyAuthenticationResponse,
     verifyRegistrationResponse,
 } from '@simplewebauthn/server'
+import { isoBase64URL } from '@simplewebauthn/server/helpers'
 import {
     createAuthEvent,
     createChallenge,

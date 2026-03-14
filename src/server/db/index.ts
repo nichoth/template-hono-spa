@@ -124,6 +124,7 @@ export async function createUser (
     return {
         id: params.id,
         handle: params.handle,
+        identifier: params.identifier,
         display_name: params.displayName ?? null,
         status: 'active',
         created_at: params.now,

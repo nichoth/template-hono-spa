@@ -112,7 +112,9 @@ app.post('/api/auth/register/finish', async (c) => {
         )
 
         return c.json(result, 200)
-    } catch (err) {
+    } catch (_err) {
+        const err = _err as Error
+        console.log('**errrr**', err.message)
         return authErrorResponse(c, err)
     }
 })

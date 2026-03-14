@@ -406,9 +406,12 @@ describe('Integration tests', () => {
                             authenticatorInfo: {
                                 rpIdHash: new Uint8Array(32),
                                 flags: {
-                                    up: true, uv: true,
-                                    be: true, bs: true,
-                                    at: true, ed: false,
+                                    up: true,
+                                    uv: true,
+                                    be: true,
+                                    bs: true,
+                                    at: true,
+                                    ed: false,
                                     flagsInt: 0,
                                 },
                                 counter: 0,
@@ -531,9 +534,12 @@ describe('Integration tests', () => {
                             authenticatorInfo: {
                                 rpIdHash: new Uint8Array(32),
                                 flags: {
-                                    up: true, uv: true,
-                                    be: true, bs: true,
-                                    at: true, ed: false,
+                                    up: true,
+                                    uv: true,
+                                    be: true,
+                                    bs: true,
+                                    at: true,
+                                    ed: false,
                                     flagsInt: 0,
                                 },
                                 counter: 0,

@@ -23,7 +23,7 @@ import {
 import {
     buildLoginRequestBody,
 } from '../src/client/state.js'
-import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+import { createRouter, routes, isKnownClientRoute, getNavRoutes } from '../src/client/routes/index.js'
 import {
     submitLoginValues,
     startPasskeyLogin,
@@ -34,7 +34,6 @@ import {
 } from '../src/client/routes/login.js'
 import type { AppState, SessionResponse } from '../src/client/state.js'
 import { formatLoginStatus } from '../src/client/login-status.js'
-import { getNavRoutes } from '../src/client/routes/index.js'
 import viteConfigSource from '../vite.config.js?raw'
 import styleCssSource from '../src/style.css?inline'
 import cardCssSource from '../src/client/components/card.css?inline'

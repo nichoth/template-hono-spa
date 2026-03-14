@@ -1,9 +1,11 @@
+import { type FunctionComponent } from 'preact'
 import { useEffect, useRef } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
+import { HTTPError } from 'ky'
 import { html } from 'htm/preact'
 import { State } from '../state.js'
 import type { AppState } from '../state.js'
-import { HTTPError } from 'ky'
+import { ELLIPSIS } from '../constants.js'
 
 type SubmissionState = 'idle'|'loading'|'success'|'error'|'missing-code'
 
@@ -25,14 +27,17 @@ function extractIdentifierFromSearch (search:string):string | null {
     return params.get('identifier')
 }
 
-export const ConfirmRoute = function ({ state }: { state:AppState }) {
+export const ConfirmRoute:FunctionComponent<{
+    state:AppState
+}> = function ({ state }) {
     const submissionState = useSignal<SubmissionState>('idle')
-    const message = useSignal('Preparing your confirmation flow…')
+    const message = useSignal('Preparing your confirmation flow' + ELLIPSIS)
     const identifier = useSignal<string | null>(null)
     const errorCode = useSignal<string | null>(null)
     const bannerRef = useRef<HTMLDivElement | null>(null)
 
-    // Banner focus ensures keyboard/screen reader users are notified when the panel updates.
+    // Banner focus ensures keyboard/screen reader users are notified
+    // when the panel updates.
     useEffect(() => {
         if (
             submissionState.value === 'success'
@@ -58,16 +63,17 @@ export const ConfirmRoute = function ({ state }: { state:AppState }) {
 
         if (!code) {
             submissionState.value = 'missing-code'
-            message.value = 'This route requires a confirmation link. Check your email for the most recent link or request a new one.'
+            message.value = 'This route requires a confirmation link. ' +
+                'Check your email for the most recent link or request a new one.'
             errorCode.value = null
             return
         }
 
         submissionState.value = 'loading'
         errorCode.value = null
-        message.value = 'Verifying your confirmation code…'
+        message.value = 'Verifying your confirmation code…';
 
-        void (async () => {
+        (async () => {
             try {
                 const confirmation = await State.confirmAccount({
                     code,
@@ -77,7 +83,8 @@ export const ConfirmRoute = function ({ state }: { state:AppState }) {
                 if (cancelled) return
                 submissionState.value = 'success'
                 identifier.value = confirmation.identifier
-                message.value = confirmation.message ?? 'Email confirmed. You can now sign in.'
+                message.value = confirmation.message ?? 'Email confirmed. ' +
+                    'You can now sign in.'
             } catch (_err) {
                 if (cancelled) return
                 const err = _err as HTTPError|Error
@@ -89,7 +96,8 @@ export const ConfirmRoute = function ({ state }: { state:AppState }) {
                             message?:string;
                         }
                         errorCode.value = payload.error ?? null
-                        message.value = payload.message ?? 'We could not confirm your account.'
+                        message.value = (payload.message ??
+                            'We could not confirm your account.')
                     } catch {
                         message.value = 'We could not confirm your account.'
                     }

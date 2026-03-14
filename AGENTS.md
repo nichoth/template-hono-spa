@@ -34,6 +34,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, `@substrate-system/routes`, `@substrate-system/radio-input`, Hono, `ky`, `@simplewebauthn/browser`, `@simplewebauthn/server` (026-signup-route)
 - Cloudflare D1 auth tables already used for users, challenges, credentials, sessions, and auth events (026-signup-route)
 - N/A for runtime data; filesystem build output under `public/` (027-fix-vite-config)
+- TypeScript (ES2022) + Hono, route-event routing utilities, `@cloudflare/workers-types`, `@cloudflare/d1`, and Preact client hooks where needed (028-passkey-devices)
+- Cloudflare D1 relational database for `users` and `devices` tables (028-passkey-devices)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -53,9 +55,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 028-passkey-devices: Added TypeScript (ES2022) + Hono, route-event routing utilities, `@cloudflare/workers-types`, `@cloudflare/d1`, and Preact client hooks where needed
 - 027-fix-vite-config: Added TypeScript (ESM, ES2022 strict mode), JavaScript config files, CSS + Vite 8, Vitest 3, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server`, Lightning CSS, Browserslis
 - 026-signup-route: Added TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, `@substrate-system/routes`, `@substrate-system/radio-input`, Hono, `ky`, `@simplewebauthn/browser`, `@simplewebauthn/server`
-- 025-square-cards: Added TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, Hono shell app, Lightning CSS pipeline
 
 
 <!-- MANUAL ADDITIONS START -->

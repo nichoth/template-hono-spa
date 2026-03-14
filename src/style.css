@@ -49,6 +49,10 @@
     min-width: 0;
 }
 
+.controls {
+    text-align: right;
+}
+
 a {
     transition: all 0.2s;
     text-underline-offset: 1px;
@@ -106,6 +110,15 @@ header {
             }
         }
     }
+
+    & .login-status {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--color-text-base);
+        margin-inline: 0.5rem 0;
+        width: 18rem;
+    }
 }
 
 body {
@@ -124,6 +137,14 @@ body {
         line-height: 1.4;
         max-width: var(--layout-measure);
         overflow-wrap: anywhere;
+    }
+}
+
+@media (--small) {
+    header {
+        & .login-status {
+            display: none;
+        }
     }
 }
 

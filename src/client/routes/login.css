@@ -45,8 +45,18 @@
     max-width: 28rem;
 }
 
+.login-passkey-actions {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: start;
+}
+
 .login-method-description,
 .login-submit-message {
+    margin: 0;
+}
+
+.login-route-link {
     margin: 0;
 }
 

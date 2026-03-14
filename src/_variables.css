@@ -5,4 +5,3 @@
 @custom-media --small (width <= 680px);
 @custom-media --medium (width <= 1024px);
 @custom-media --large (width > 1024px);
-

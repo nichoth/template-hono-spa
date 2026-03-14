@@ -16,7 +16,6 @@ const TEXT = 'This page is rendered on the client with Preact.'
 export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
-    // const isSpinning = useSignal(false)
     const isPending = useComputed<boolean>(() => {
         return state.response.value.pending
     })
@@ -48,33 +47,35 @@ export const HomeRoute:FunctionComponent<{
     })
 
     return html`<div class="route home">
-        <div class="cards cards-grid" aria-label="Home content grid">
-            <${Counter} count=${state.count} />
-            <${Card}>${TEXT}<//>
-            <${Card} class="fetcher">
-                <span>More cards${ELLIPSIS}</span>
-                <p>
-                    This calls our API server, but adds a delay
-                    so we can see the button spin.
-                </p>
-                <div>
-                    <${SubstrateButton.TAG}
-                        spinning=${isPending.value && fetchClick.value}
-                        onClick=${httpFetch}
-                    >Fetch<//>
+        <div class="cards-scroll" aria-label="Scrollable home cards">
+            <div class="cards cards-grid" aria-label="Home content grid">
+                <${Counter} count=${state.count} />
+                <${Card}>${TEXT}<//>
+                <${Card} class="fetcher">
+                    <span>More cards${ELLIPSIS}</span>
+                    <p>
+                        This calls our API server, but adds a delay
+                        so you can see the button spin.
+                    </p>
+                    <div>
+                        <${SubstrateButton.TAG}
+                            spinning=${isPending.value && fetchClick.value}
+                            onClick=${httpFetch}
+                        >Fetch<//>
 
-                    <${SubstrateButton.TAG}
-                        spinning=${isPending.value && errClick.value}
-                        onClick=${errorFetch}
-                    >Error<//>
-                </div>
+                        <${SubstrateButton.TAG}
+                            spinning=${isPending.value && errClick.value}
+                            onClick=${errorFetch}
+                        >Error<//>
+                    </div>
 
-                <pre>
-                    ${JSON.stringify(state.response.value, errorReplacer, 2)}
-                </pre>
-            <//>
+                    <pre>
+                        ${JSON.stringify(state.response.value, errorReplacer, 2)}
+                    </pre>
+                <//>
+            </div>
         </div>
-    </section>`
+    </div>`
 }
 
 function errorReplacer (_key, value) {

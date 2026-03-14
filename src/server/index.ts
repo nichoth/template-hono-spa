@@ -1,5 +1,7 @@
 import { type Context, Hono } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { cors } from 'hono/cors'
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import {
     credentialsMatch,
     parseBasicAuthHeader,
@@ -8,20 +10,29 @@ import { resolveDeploymentContext } from './deployment-context.js'
 import { unauthorizedBasicAuthResponse } from './access-response.js'
 import { type AssetPaths, resolveStartupAssets } from './startup-assets.js'
 import { formatStartupFailure } from './startup-errors.js'
+import {
+    AUTH_SESSION_COOKIE,
+    AuthError,
+    createAuthService,
+    type EmailConfirmationRequest,
+} from './auth/index.js'
 
 type Bindings = {
     ASSETS?:Fetcher
+    AUTH_DB:D1Database
     NODE_ENV?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
-    STAGING_BASIC_AUTH_USERNAME?:string
+    STAGING_USERNAME?:string
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
+    AUTH_SESSION_TTL_SECONDS?:string
 }
 
 let cachedAssets:AssetPaths|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
+const authService = createAuthService()
 const FOOBAR_RESPONSE = {
     ok: true,
     route: '/api/foobar',
@@ -46,7 +57,7 @@ app.use('*', async (c, next) => {
     if (
         credentialsMatch(
             credential,
-            c.env?.STAGING_BASIC_AUTH_USERNAME,
+            c.env?.STAGING_USERNAME,
             c.env?.STAGING_PW,
         )
     ) {
@@ -68,6 +79,221 @@ app.get('/api/health', (c) => {
 
 app.get('/api/foobar', (c) => {
     return c.json(FOOBAR_RESPONSE, 200)
+})
+
+app.post('/api/auth/register/start', async (c) => {
+    try {
+        const body = await c.req.json<{
+            identifier:string;
+            displayName?:string;
+        }>()
+
+        const result = await authService.startRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/register/finish', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        logLocalConfirmUrl(
+            c.req.url,
+            result.response.identifier,
+            result.confirmationCode,
+        )
+
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/passkey/register', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishRegistration(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        logLocalConfirmUrl(
+            c.req.url,
+            result.response.identifier,
+            result.confirmationCode,
+        )
+
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
+app.post('/api/confirm', async (c) => {
+    try {
+        const body = await c.req.json<EmailConfirmationRequest>()
+        const result = await authService.confirmEmail(
+            c.env.AUTH_DB,
+            body,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/login/start', async (c) => {
+    try {
+        const body = await c.req.json<{
+            identifier:string;
+        }>()
+
+        const result = await authService.startAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/login/finish', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        setSessionCookie(c, result.sessionToken)
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/passkey/login', async (c) => {
+    try {
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result = await authService.finishAuthentication(
+            c.env.AUTH_DB,
+            c.req.url,
+            body as never,
+        )
+
+        setSessionCookie(c, result.sessionToken)
+        return c.json(result.response, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.get('/api/auth/passkey/devices', async (c) => {
+    try {
+        const userId = c.req.query('userId')
+        if (!userId) {
+            return c.json({
+                error: 'userId query parameter is required',
+            }, 400)
+        }
+
+        const devices = await authService.listRegisteredDevices(
+            c.env.AUTH_DB,
+            userId,
+        )
+
+        return c.json(devices.map(device => ({
+            deviceId: device.id,
+            credentialId: device.credential_id,
+            credentialName: device.credential_name,
+            aaguid: device.aaguid,
+            transports: device.transports_json ? JSON.parse(device.transports_json) : [],
+            lastUsedAt: device.last_used_at ? new Date(device.last_used_at).toISOString() : null,
+            isRevoked: Boolean(device.is_revoked),
+        })), 200)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
+app.patch('/api/auth/passkey/devices/:deviceId/revoke', async (c) => {
+    try {
+        const deviceId = c.req.param('deviceId')
+        await authService.revokeRegisteredDevice(
+            c.env.AUTH_DB,
+            deviceId,
+        )
+
+        return c.body(null, 204)
+    } catch (err) {
+        return authErrorResponse(c, err as Error)
+    }
+})
+
+app.get('/api/session', async (c) => {
+    try {
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
+        const result = await authService.getCurrentSession(
+            c.env.AUTH_DB,
+            sessionToken,
+        )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/logout', async (c) => {
+    try {
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
+        const result = await authService.logout(
+            c.env.AUTH_DB,
+            sessionToken,
+        )
+
+        deleteCookie(c, AUTH_SESSION_COOKIE, {
+            path: '/',
+        })
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
 })
 
 app.all('/api/foobar', (c) => {
@@ -106,6 +332,42 @@ function fetchAsset (c:Context<{ Bindings:Bindings }>) {
     return c.env.ASSETS.fetch(c.req.raw)
 }
 
+function setSessionCookie (
+    c:Context<{ Bindings:Bindings }>,
+    sessionToken:string,
+) {
+    const ttlSeconds = Number(c.env.AUTH_SESSION_TTL_SECONDS || '2592000')
+
+    setCookie(c, AUTH_SESSION_COOKIE, sessionToken, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        path: '/',
+        secure: !isLocalhostRequest(c.req.url),
+        maxAge: ttlSeconds,
+    })
+}
+
+function authErrorResponse (
+    c:Context<{ Bindings:Bindings }>,
+    err:unknown,
+) {
+    if (err instanceof AuthError) {
+        return c.json({
+            error: err.code,
+            message: err.message,
+        }, err.status as ContentfulStatusCode)
+    }
+
+    const message = err instanceof Error ?
+        err.message :
+        'Unknown authentication error.'
+
+    return c.json({
+        error: 'internal_error',
+        message,
+    }, 500)
+}
+
 function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefined {
     if (c.env?.NODE_ENV === 'test') {
         const overrideBranch = c.req.header('x-deploy-branch')
@@ -122,6 +384,21 @@ function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefine
 function isLocalhostRequest (requestUrl:string):boolean {
     const hostname = new URL(requestUrl).hostname
     return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
+function logLocalConfirmUrl (
+    requestUrl:string,
+    identifier:string,
+    confirmationCode:string,
+):void {
+    if (!isLocalhostRequest(requestUrl)) return
+    const origin = new URL(requestUrl).origin
+    const confirmUrl = `${origin}/confirm/${encodeURIComponent(confirmationCode)}`
+    console.log(
+        '\n[auth] Account created for',
+        identifier
+    )
+    console.log('[auth] Confirm URL:', confirmUrl, '\n')
 }
 
 function shouldServeShell (pathname:string):boolean {

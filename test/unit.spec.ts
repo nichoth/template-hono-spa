@@ -20,16 +20,28 @@ import {
 import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
-import { createRouter, routes, isKnownClientRoute } from '../src/client/routes/index.js'
+import {
+    buildLoginRequestBody,
+} from '../src/client/state.js'
+import { createRouter, routes, isKnownClientRoute, getNavRoutes } from '../src/client/routes/index.js'
 import {
     submitLoginValues,
     startPasskeyLogin,
     PASSKEY_UI_ONLY_LOGIN_MESSAGE,
+    UI_ONLY_LOGIN_MESSAGE,
     getRadioCheckedAttr,
     resolveSelectedMethod,
 } from '../src/client/routes/login.js'
-import type { AppState } from '../src/client/state.js'
+import type { AppState, SessionResponse } from '../src/client/state.js'
+import { formatLoginStatus } from '../src/client/login-status.js'
 import viteConfigSource from '../vite.config.js?raw'
+import styleCssSource from '../src/style.css?inline'
+import cardCssSource from '../src/client/components/card.css?inline'
+import navCssSource from '../src/client/components/nav.css?inline'
+import homeCssSource from '../src/client/routes/home.css?inline'
+import loginCssSource from '../src/client/routes/login.css?inline'
+import profileCssSource from '../src/client/routes/profile.css?inline'
+import signupCssSource from '../src/client/routes/signup.css?inline'
 
 vi.mock('@substrate-system/button', () => ({
     SubstrateButton: {
@@ -51,16 +63,23 @@ const sourceFiles = import.meta.glob('/src/**/*.ts', {
     eager: true,
 }) as Record<string, string>
 
-const cssSourceFiles = import.meta.glob('/src/**/*.css', {
-    query: '?raw',
-    import: 'default',
-    eager: true,
-}) as Record<string, string>
+const cssSourceFiles:Record<string, string> = {
+    '/src/style.css': styleCssSource,
+    '/src/client/components/card.css': cardCssSource,
+    '/src/client/components/nav.css': navCssSource,
+    '/src/client/routes/home.css': homeCssSource,
+    '/src/client/routes/login.css': loginCssSource,
+    '/src/client/routes/profile.css': profileCssSource,
+    '/src/client/routes/signup.css': signupCssSource,
+}
 
 function createTestState ():AppState {
     return {
         route: signal('/'),
         count: signal(0),
+        user: signal<RequestFor<{ data:Record<string, unknown> }, HTTPError>>(
+            RequestState()
+        ),
         response: signal<RequestFor<{ message:string }, HTTPError>>(
             RequestState()
         ),
@@ -222,6 +241,67 @@ describe('Hono worker', () => {
             })
         })
 
+        it('POST /api/auth/register/start returns registration options and a challenge reference',
+            async () => {
+                const request = new Request(
+                    'http://example.com/api/auth/register/start',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            identifier: `person-${crypto.randomUUID()}@example.com`,
+                            displayName: 'Test Person',
+                        }),
+                    }
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request,
+                    env,
+                    ctx,
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(200)
+                const data = await response.json() as {
+                    challengeReference:string;
+                    options:{
+                        challenge:string;
+                        rp:{ id?:string; name:string };
+                        user:{ name:string; displayName:string; id:string };
+                    };
+                }
+
+                expect(data.challengeReference).toBeTruthy()
+                expect(data.options.challenge).toBeTruthy()
+                expect(data.options.rp.name).toBeTruthy()
+                expect(data.options.user.name).toContain('@example.com')
+                expect(data.options.user.displayName).toBe('Test Person')
+            }
+        )
+
+        it('GET /api/session returns an unauthenticated result when no session cookie is present',
+            async () => {
+                const request = new Request(
+                    'http://example.com/api/session'
+                )
+                const ctx = createExecutionContext()
+                const response = await worker.fetch(
+                    request,
+                    env,
+                    ctx,
+                )
+                await waitOnExecutionContext(ctx)
+
+                expect(response.status).toBe(200)
+                const data = await response.json() as {
+                    authenticated:boolean;
+                }
+
+                expect(data.authenticated).toBe(false)
+            }
+        )
+
         it('GET /health returns ok', async () => {
             const request = new Request(
                 'http://example.com/health'
@@ -245,7 +325,8 @@ describe('Hono worker', () => {
             expect(routes).toEqual([
                 { href: '/', text: 'Home' },
                 { href: '/about', text: 'About' },
-                { href: '/login', text: 'Login' },
+                { href: '/login', text: 'Login', isAuthLink: true },
+                { href: '/signup', text: 'Create Account', isAuthLink: true },
             ])
         })
 
@@ -254,9 +335,15 @@ describe('Hono worker', () => {
             expect(router.match('/')).toBeTruthy()
             expect(router.match('/about')).toBeTruthy()
             expect(router.match('/login')).toBeTruthy()
+            expect(router.match('/signup')).toBeTruthy()
+            expect(router.match('/confirm')).toBeTruthy()
+            expect(router.match('/confirm/abc123')).toBeTruthy()
             expect(router.match('/missing')).toBeFalsy()
             expect(isKnownClientRoute('/about')).toBe(true)
             expect(isKnownClientRoute('/login')).toBe(true)
+            expect(isKnownClientRoute('/signup')).toBe(true)
+            expect(isKnownClientRoute('/confirm')).toBe(true)
+            expect(isKnownClientRoute('/confirm/abc123')).toBe(true)
             expect(isKnownClientRoute('/missing')).toBe(false)
         })
 
@@ -265,7 +352,8 @@ describe('Hono worker', () => {
 
             expect(navSource).toContain('desktop-nav')
             expect(navSource).toContain('mobile-nav-menu')
-            expect(navSource).toContain('routes.map')
+            expect(navSource).toContain('getNavRoutes')
+            expect(navSource).toContain('visibleRoutes.value')
         })
 
         it('wires the hamburger trigger to mobile menu open and close events', () => {
@@ -282,7 +370,7 @@ describe('Hono worker', () => {
             const navSource = sourceFiles['/src/client/components/nav.ts']
 
             expect(navSource).toContain('nav-links-mobile')
-            expect(navSource).toContain('renderNavItems(currentPath)')
+            expect(navSource).toContain('renderNavItems(currentPath, visibleRoutes.value)')
             expect(navSource).toContain("props.currentPath === props.href ? 'active' : ''")
             expect(navSource).toContain("isMenuOpen.value ? 'open' : ''")
             expect(navSource).toContain('hidden=${')
@@ -302,6 +390,69 @@ describe('Hono worker', () => {
     })
 
     describe('Login route', () => {
+        it('keeps a visible route from login to signup', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+
+            expect(loginSource).toContain('Create an account')
+            expect(loginSource).toContain('href="/signup"')
+        })
+
+        it('builds a passkey login request body with assertion data and context separated', () => {
+            const result = buildLoginRequestBody({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                    userHandle: 'user-handle',
+                },
+                context: {
+                    accountIdentifier: 'nick@example.com',
+                    challengeReference: 'challenge-123',
+                },
+            })
+
+            expect(result).toEqual({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                    userHandle: 'user-handle',
+                },
+                context: {
+                    accountIdentifier: 'nick@example.com',
+                    challengeReference: 'challenge-123',
+                },
+            })
+        })
+
+        it('omits optional passkey fields from the login request body when they are absent', () => {
+            const result = buildLoginRequestBody({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                },
+                context: {},
+            })
+
+            expect(result).toEqual({
+                method: 'passkey',
+                assertion: {
+                    credentialId: 'cred-123',
+                    authenticatorData: 'auth-data',
+                    clientDataJSON: 'client-data',
+                    signature: 'sig-123',
+                },
+                context: {},
+            })
+        })
+
         it('renders a login heading with a radio selector for passkey and password', () => {
             const loginSource = sourceFiles['/src/client/routes/login.ts']
             const clientIndexSource = sourceFiles['/src/client/index.ts']
@@ -325,6 +476,16 @@ describe('Hono worker', () => {
             expect(loginSource).toContain('Continue with passkey')
             expect(loginSource)
                 .toContain('Sign in using your device (Face ID, fingerprint, or Windows Hello).')
+        })
+
+        it('keeps the login screen focused on sign-in only for the passkey path', () => {
+            const loginSource = sourceFiles['/src/client/routes/login.ts']
+            const stateSource = sourceFiles['/src/client/state.ts']
+
+            expect(loginSource).not.toContain('Create passkey account')
+            expect(loginSource).not.toContain('Display Name')
+            expect(loginSource).not.toContain('Create account')
+            expect(stateSource).toContain('State.registerWithPasskey')
         })
 
         it('returns missing-field errors without clearing valid values for password sign-in', () => {
@@ -355,7 +516,7 @@ describe('Hono worker', () => {
             })
             expect(result.errors).toEqual({})
             expect(result.message)
-                .toBe('Login is not connected yet. No sign-in was performed.')
+                .toBe(UI_ONLY_LOGIN_MESSAGE)
         })
 
         it('starts a passkey login attempt without requiring a password', () => {
@@ -409,6 +570,69 @@ describe('Hono worker', () => {
         })
     })
 
+    describe('Signup route', () => {
+        it('renders a dedicated create-account heading with the shared radio selector', () => {
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+
+            expect(signupSource).toContain('<h2>Create Account</h2>')
+            expect(signupSource).toContain('./login.css')
+            expect(signupSource).toContain('radio-input')
+            expect(signupSource).toContain('value="passkey"')
+            expect(signupSource).toContain('value="password"')
+        })
+
+        it('keeps signup submission on the registration path rather than the login path', () => {
+            const stateSource = sourceFiles['/src/client/state.ts']
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+
+            expect(stateSource).toContain('State.registerWithPasskey')
+            expect(stateSource).toContain('/api/auth/register/start')
+            expect(stateSource).toContain('/api/auth/register/finish')
+            expect(signupSource).toContain('Create account')
+            expect(signupSource).toContain('Back to sign in')
+        })
+
+        it('tells the visitor to confirm their email address after successful signup', () => {
+            const stateSource = sourceFiles['/src/client/state.ts']
+            const signupSource = sourceFiles['/src/client/routes/signup.ts']
+            const serverSource = sourceFiles['/src/server/index.ts']
+            const registerFinishHandler = serverSource.match(
+                /app\.post\('\/api\/auth\/register\/finish'[\s\S]*?app\.post\('\/api\/auth\/login\/start'/,
+            )?.[0] ?? ''
+
+            expect(stateSource).toContain('confirmation_pending')
+            expect(signupSource).toContain('Confirm your email address')
+            expect(registerFinishHandler).not.toContain('setSessionCookie(c, result.sessionToken)')
+        })
+    })
+
+    describe('Home card layout', () => {
+        it('wraps home cards in a dedicated scroll container', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+
+            expect(homeSource).toContain('cards-scroll')
+            expect(homeSource).toContain('cards cards-grid')
+        })
+
+        it('keeps the three home cards in the expected route structure', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+            const cardMatches = homeSource.match(/<\$\{Card\}/g) ?? []
+
+            expect(homeSource).toMatch(/<\$\{Counter\}/)
+            expect(cardMatches).toHaveLength(2)
+            expect(homeSource).toContain('class="fetcher"')
+        })
+
+        it('preserves the fetcher controls and response panel inside the home card markup', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+
+            expect(homeSource).toContain('This calls our API server')
+            expect(homeSource).toContain('>Fetch<//>')
+            expect(homeSource).toContain('>Error<//>')
+            expect(homeSource).toContain('<pre>')
+        })
+    })
+
     describe('Shared color tokens', () => {
         it('keeps maintained stylesheets free of direct color literals', () => {
             const maintainedStyles = [
@@ -418,6 +642,7 @@ describe('Hono worker', () => {
                 '/src/client/routes/home.css',
                 '/src/client/routes/login.css',
                 '/src/client/routes/profile.css',
+                '/src/client/routes/signup.css',
             ]
 
             const offenders = maintainedStyles.flatMap(path => {
@@ -435,6 +660,15 @@ describe('Hono worker', () => {
         it('disables the Cloudflare inspector port in Vite config for local startup compatibility', () => {
             expect(viteConfigSource)
                 .toContain('cloudflare({ inspectorPort: false })')
+        })
+
+        it('wraps Cloudflare plugin config to remove deprecated optimizeDeps.esbuildOptions before Vite resolves it', () => {
+            expect(viteConfigSource)
+                .toContain('wrapCloudflarePluginsForVite8')
+            expect(viteConfigSource)
+                .toContain('configEnvironment: wrapConfigHook(plugin.configEnvironment)')
+            expect(viteConfigSource)
+                .toContain('rolldownOptions.resolve.symlinks = !esbuildOptions.preserveSymlinks')
         })
 
         it('keeps the current build output contract explicit in Vite config', () => {
@@ -564,5 +798,69 @@ describe('Hono worker', () => {
             const tsxFiles = import.meta.glob('/src/**/*.tsx', { eager: true })
             expect(Object.keys(tsxFiles)).toEqual([])
         })
+    })
+
+    describe('login status helper', () => {
+        it('returns the authenticated identifier when available', () => {
+            const session: SessionResponse = {
+                authenticated: true,
+                user: {
+                    identifier: 'user@example.com',
+                    displayName: 'User Example',
+                    id: 'user-1',
+                },
+                session: {
+                    expiresAt: new Date().toISOString(),
+                },
+            }
+
+            expect(formatLoginStatus(session)).toBe('logged in as user@example.com')
+        })
+
+        it('falls back to anonymous for unauthenticated sessions', () => {
+            const anonymousVariants = [
+                { authenticated: false },
+                null,
+                undefined,
+            ]
+
+            for (const variant of anonymousVariants) {
+                expect(formatLoginStatus(variant as SessionResponse | null | undefined))
+                    .toBe('logged in as anonymous')
+            }
+        })
+
+        it('handles authenticated sessions with missing identifiers as anonymous', () => {
+            const session: SessionResponse = {
+                authenticated: true,
+                user: {
+                    identifier: '',
+                    displayName: null,
+                    id: 'user-2',
+                },
+                session: {
+                    expiresAt: new Date().toISOString(),
+                },
+            }
+
+            expect(formatLoginStatus(session)).toBe('logged in as anonymous')
+        })
+    })
+})
+
+describe('nav routes helper', () => {
+    it('hides auth links when authenticated', () => {
+        const visible = getNavRoutes(true)
+
+        expect(visible.some(route => route.text === 'Login')).toBe(false)
+        expect(visible.some(route => route.text === 'Create Account')).toBe(false)
+        expect(visible.some(route => route.text === 'Home')).toBe(true)
+    })
+
+    it('keeps auth links when not authenticated', () => {
+        const visible = getNavRoutes(false)
+
+        expect(visible.some(route => route.text === 'Login')).toBe(true)
+        expect(visible.some(route => route.text === 'Create Account')).toBe(true)
     })
 })

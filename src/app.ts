@@ -4,7 +4,7 @@ import htm from 'htm'
 import { h, Fragment } from 'preact'
 import { createRouter } from './client/routes/index.js'
 import type { AppState } from './client/state.js'
-import { Nav } from './components/nav.js'
+import { Nav } from './client/components/nav.js'
 
 const router = createRouter()
 const html = htm.bind(h)

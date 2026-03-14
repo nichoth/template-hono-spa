@@ -1,12 +1,19 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
+import {
+    createAuthService,
+    type RegistrationConfirmationResult,
+} from '../src/server/auth/index.js'
+import {
+    AUTH_SCHEMA_STATEMENTS,
+} from '../src/server/db/schema.js'
 
 function basicAuthHeader (username:string, password:string):string {
     return `Basic ${btoa(`${username}:${password}`)}`
 }
 
 function testCredential (
-    key:'STAGING_BASIC_AUTH_USERNAME'|'STAGING_PW',
+    key:'STAGING_USERNAME'|'STAGING_PW',
     fallback:string,
 ):string {
     const value = env[key]
@@ -36,7 +43,7 @@ describe('Integration tests', () => {
                         'x-deploy-branch': 'staging',
                         authorization: basicAuthHeader(
                             testCredential(
-                                'STAGING_BASIC_AUTH_USERNAME',
+                                'STAGING_USERNAME',
                                 'staging-user',
                             ),
                             testCredential('STAGING_PW', 'staging-pass'),
@@ -154,12 +161,472 @@ describe('Integration tests', () => {
             }
         )
 
+        it('serves shell for the signup route deep link', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/signup'
+            )
+            const html = await response.text()
+
+            expect(response.status).toBe(200)
+            expect(html).toContain('<div id="root"></div>')
+            expect(html).toContain('/src/client/index.ts')
+            expect(html).not.toContain('Page not found.')
+        })
+
+        it('keeps signup registration start free of auth session cookies before email confirmation',
+            async () => {
+                const identifier = `signup-${crypto.randomUUID()}@example.com`
+                const response = await SELF.fetch(
+                    'http://localhost/api/auth/register/start',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            identifier,
+                            displayName: 'Signup Test',
+                        }),
+                    },
+                )
+
+                expect(response.status).toBe(200)
+                expect(response.headers.get('set-cookie')).toBeNull()
+
+                const sessionResponse = await SELF.fetch('http://localhost/api/session')
+                const session = await sessionResponse.json() as {
+                    authenticated:boolean;
+                }
+
+                expect(sessionResponse.status).toBe(200)
+                expect(session).toEqual({ authenticated: false })
+            }
+        )
+
+        it('completes passkey registration start-to-finish',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `reg-finish-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakePublicKey = new Uint8Array([
+                    1, 2, 3, 4, 5, 6, 7, 8,
+                ])
+                const fakeCredentialId = 'fake-cred-id'
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions: async (
+                        opts
+                    ) => ({
+                        challenge: 'test-challenge',
+                        rp: {
+                            name: opts.rpName,
+                            id: opts.rpID,
+                        },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName:
+                                opts.userDisplayName || '',
+                        },
+                        pubKeyCredParams: [
+                            { type: 'public-key', alg: -7 },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                    verifyRegistrationResponse: async () => ({
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid: '00000000-0000-0000-0000-000000000000',
+                            credential: {
+                                id: fakeCredentialId,
+                                publicKey: fakePublicKey,
+                                counter: 0,
+                                transports: [
+                                    'internal' as const,
+                                ],
+                            },
+                            credentialType:
+                                'public-key' as const,
+                            attestationObject: new Uint8Array(
+                                0
+                            ),
+                            userVerified: true,
+                            credentialDeviceType:
+                                'multiDevice' as const,
+                            credentialBackedUp: true,
+                            origin: 'http://localhost',
+                            rpID: 'localhost',
+                            authenticatorInfo: {
+                                rpIdHash: new Uint8Array(32),
+                                flags: {
+                                    up: true,
+                                    uv: true,
+                                    be: true,
+                                    bs: true,
+                                    at: true,
+                                    ed: false,
+                                    flagsInt: 0,
+                                },
+                                counter: 0,
+                                aaguid: '00000000-0000-0000-0000-000000000000',
+                                credentialID: new Uint8Array(
+                                    0
+                                ),
+                                credentialPublicKey:
+                                    new Uint8Array(0),
+                            },
+                        },
+                    }),
+                    generateAuthenticationOptions:
+                        async () => ({
+                            challenge: '',
+                            rpId: '',
+                        }),
+                    verifyAuthenticationResponse:
+                        async () => ({
+                            verified: false,
+                            authenticationInfo: {} as never,
+                        }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `test-id-${idCounter}`
+                    },
+                })
+
+                const startResult =
+                    await authService.startRegistration(
+                        env.AUTH_DB,
+                        'http://localhost/api/auth/register/start',
+                        {
+                            identifier,
+                            displayName: 'Test User',
+                        },
+                    )
+
+                expect(startResult.challengeReference)
+                    .toBeTruthy()
+                expect(startResult.options.challenge)
+                    .toBe('test-challenge')
+
+                const finishResult =
+                    await authService.finishRegistration(
+                        env.AUTH_DB,
+                        'http://localhost/api/auth/register/finish',
+                        {
+                            challengeReference:
+                                startResult.challengeReference,
+                            credential: {} as never,
+                        },
+                    )
+
+                const result = finishResult as
+                    RegistrationConfirmationResult
+                expect(result.response.status)
+                    .toBe('confirmation_pending')
+                expect(result.response.identifier).toBe(
+                    identifier.toLowerCase()
+                )
+                expect(result.response.message).toBeTruthy()
+                expect(result.confirmationCode).toBeTruthy()
+            }
+        )
+
+        it('confirms email with a valid code via /api/confirm',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `confirm-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakePublicKey = new Uint8Array([
+                    9, 10, 11, 12,
+                ])
+                const fakeCredentialId = `cred-confirm-${
+                    crypto.randomUUID()
+                }`
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions: async (opts) => ({
+                        challenge: 'confirm-challenge',
+                        rp: { name: opts.rpName, id: opts.rpID },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName: opts.userDisplayName || '',
+                        },
+                        pubKeyCredParams: [
+                            { type: 'public-key', alg: -7 },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                    verifyRegistrationResponse: async () => ({
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid: '00000000-0000-0000-0000-000000000000',
+                            credential: {
+                                id: fakeCredentialId,
+                                publicKey: fakePublicKey,
+                                counter: 0,
+                                transports: ['internal' as const],
+                            },
+                            credentialType: 'public-key' as const,
+                            attestationObject: new Uint8Array(0),
+                            userVerified: true,
+                            credentialDeviceType: 'multiDevice' as const,
+                            credentialBackedUp: true,
+                            origin: 'http://localhost',
+                            rpID: 'localhost',
+                            authenticatorInfo: {
+                                rpIdHash: new Uint8Array(32),
+                                flags: {
+                                    up: true,
+                                    uv: true,
+                                    be: true,
+                                    bs: true,
+                                    at: true,
+                                    ed: false,
+                                    flagsInt: 0,
+                                },
+                                counter: 0,
+                                aaguid: '00000000-0000-0000-0000-000000000000',
+                                credentialID: new Uint8Array(0),
+                                credentialPublicKey: new Uint8Array(0),
+                            },
+                        },
+                    }),
+                    generateAuthenticationOptions: async () => ({
+                        challenge: '',
+                        rpId: '',
+                    }),
+                    verifyAuthenticationResponse: async () => ({
+                        verified: false,
+                        authenticationInfo: {} as never,
+                    }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `confirm-id-${idCounter}`
+                    },
+                })
+
+                const startResult = await authService.startRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/start',
+                    { identifier },
+                )
+
+                const finishResult = await authService.finishRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/finish',
+                    {
+                        challengeReference: startResult.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+
+                const response = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            code: finishResult.confirmationCode,
+                            identifier,
+                        }),
+                    },
+                )
+
+                expect(response.status).toBe(200)
+                const body = await response.json() as {
+                    status:string;
+                    identifier:string;
+                }
+                expect(body.status).toBe('confirmed')
+                expect(body.identifier).toBe(identifier.toLowerCase())
+            }
+        )
+
+        it('rejects an already-used confirmation code',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `used-code-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakePublicKey = new Uint8Array([
+                    13, 14, 15, 16,
+                ])
+                const fakeCredentialId = `cred-used-${
+                    crypto.randomUUID()
+                }`
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions: async (opts) => ({
+                        challenge: 'used-challenge',
+                        rp: { name: opts.rpName, id: opts.rpID },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName: opts.userDisplayName || '',
+                        },
+                        pubKeyCredParams: [
+                            { type: 'public-key', alg: -7 },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                    verifyRegistrationResponse: async () => ({
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid: '00000000-0000-0000-0000-000000000000',
+                            credential: {
+                                id: fakeCredentialId,
+                                publicKey: fakePublicKey,
+                                counter: 0,
+                                transports: ['internal' as const],
+                            },
+                            credentialType: 'public-key' as const,
+                            attestationObject: new Uint8Array(0),
+                            userVerified: true,
+                            credentialDeviceType: 'multiDevice' as const,
+                            credentialBackedUp: true,
+                            origin: 'http://localhost',
+                            rpID: 'localhost',
+                            authenticatorInfo: {
+                                rpIdHash: new Uint8Array(32),
+                                flags: {
+                                    up: true,
+                                    uv: true,
+                                    be: true,
+                                    bs: true,
+                                    at: true,
+                                    ed: false,
+                                    flagsInt: 0,
+                                },
+                                counter: 0,
+                                aaguid: '00000000-0000-0000-0000-000000000000',
+                                credentialID: new Uint8Array(0),
+                                credentialPublicKey: new Uint8Array(0),
+                            },
+                        },
+                    }),
+                    generateAuthenticationOptions: async () => ({
+                        challenge: '',
+                        rpId: '',
+                    }),
+                    verifyAuthenticationResponse: async () => ({
+                        verified: false,
+                        authenticationInfo: {} as never,
+                    }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `used-id-${idCounter}`
+                    },
+                })
+
+                const startResult = await authService.startRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/start',
+                    { identifier },
+                )
+
+                const finishResult = await authService.finishRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/finish',
+                    {
+                        challengeReference: startResult.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+
+                const confirmBody = JSON.stringify({
+                    code: finishResult.confirmationCode,
+                })
+
+                await SELF.fetch('http://localhost/api/confirm', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: confirmBody,
+                })
+
+                const second = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: confirmBody,
+                    },
+                )
+
+                expect(second.status).toBe(400)
+                const body = await second.json() as { error:string }
+                expect(body.error).toBe('invalid_code')
+            }
+        )
+
+        it('rejects a missing confirmation code',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ code: '' }),
+                    },
+                )
+                expect(response.status).toBe(400)
+                const body = await response.json() as { error:string }
+                expect(body.error).toBe('invalid_code')
+            }
+        )
+
         it('keeps the shared client shell bootstrapped across primary routes',
             async () => {
                 const responses = await Promise.all([
                     SELF.fetch('http://localhost/'),
                     SELF.fetch('http://localhost/about'),
                     SELF.fetch('http://localhost/login'),
+                    SELF.fetch('http://localhost/signup'),
                 ])
 
                 const htmlByRoute = await Promise.all(responses.map(async response => {
@@ -171,6 +638,20 @@ describe('Integration tests', () => {
                     expect(html).toContain('<div id="root"></div>')
                     expect(html).toContain('/src/client/index.ts')
                 }
+            }
+        )
+
+        it('keeps primary shell routes reachable after the Vite optimizeDeps compatibility change',
+            async () => {
+                const [homeResponse, aboutResponse] = await Promise.all([
+                    SELF.fetch('http://localhost/'),
+                    SELF.fetch('http://localhost/about'),
+                ])
+
+                expect(homeResponse.status).toBe(200)
+                expect(aboutResponse.status).toBe(200)
+                expect(await homeResponse.text()).toContain('/src/client/index.ts')
+                expect(await aboutResponse.text()).toContain('/src/client/index.ts')
             }
         )
 
@@ -212,7 +693,7 @@ describe('Integration tests', () => {
                             'x-deploy-branch': 'staging',
                             authorization: basicAuthHeader(
                                 testCredential(
-                                    'STAGING_BASIC_AUTH_USERNAME',
+                                    'STAGING_USERNAME',
                                     'staging-user',
                                 ),
                                 testCredential('STAGING_PW', 'staging-pass'),
@@ -317,6 +798,35 @@ describe('Integration tests', () => {
                 })
             }
         )
+
+        it('returns unauthenticated session state before login', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/session'
+            )
+
+            expect(response.status).toBe(200)
+            const data = await response.json() as {
+                authenticated:boolean;
+            }
+            expect(data).toEqual({
+                authenticated: false,
+            })
+        })
+
+        it('allows logout without an existing session and returns unauthenticated state', async () => {
+            const response = await SELF.fetch(
+                'http://localhost/api/logout',
+                { method: 'POST' }
+            )
+
+            expect(response.status).toBe(200)
+            const data = await response.json() as {
+                authenticated:boolean;
+            }
+            expect(data).toEqual({
+                authenticated: false,
+            })
+        })
     })
 
     describe('CORS configuration', () => {

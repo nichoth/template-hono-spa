@@ -9,7 +9,7 @@ Validate that `README.md` gives maintainers enough information to configure and 
 1. Open `/Users/nick/code/template-hono-spa/README.md`.
 2. Confirm the README identifies the staging deployment context explicitly.
 3. Confirm the README names both staging secrets exactly:
-   - `STAGING_BASIC_AUTH_USERNAME`
+   - `STAGING_USERNAME`
    - `STAGING_PW`
 4. Confirm the README includes the staging secret setup commands or equivalent step-by-step instructions for applying those values.
 5. Confirm the README includes at least one CLI command that generates a random password.
@@ -27,7 +27,7 @@ cd /Users/nick/code/template-hono-spa && HOME=/tmp npm test
 
 ## Validation Notes
 
-- 2026-03-12: `README.md` now includes a dedicated staging password protection section with the `staging` deployment scope, exact secret names `STAGING_BASIC_AUTH_USERNAME` and `STAGING_PW`, and the `wrangler` commands to apply them.
+- 2026-03-12: `README.md` now includes a dedicated staging password protection section with the `staging` deployment scope, exact secret names `STAGING_USERNAME` and `STAGING_PW`, and the `wrangler` commands to apply them.
 - 2026-03-12: `README.md` includes a CLI password-generation example using `openssl rand -base64 32` and explains that the generated value should be used for `STAGING_PW`.
 - 2026-03-12: `README.md` includes staging password rotation guidance and clarifies that username rotation is optional and separate.
 - 2026-03-12: `npm run lint` passed after the README update.

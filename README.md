@@ -3,8 +3,9 @@
 A template for web apps with [Hono](https://hono.dev/) and
 [Preact](https://preactjs.com/).
 
-This is a server that serves a client-rendered Preact app shell.
+This is a Cloudflare worker that serves a client-rendered Preact app.
 At build time, `vite build` (via `@cloudflare/vite-plugin`) produces:
+
 1. A Cloudflare Worker bundle (the server)                                    
 2. Client-side JS/CSS assets in public/
 
@@ -17,15 +18,14 @@ the browser by Preact.
 <!-- toc -->
 
 - [Use](#use)
-- [Test](#test)
-  * [Run tests](#run-tests)
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
 - [Deploy](#deploy)
   * [Staging Password Protection](#staging-password-protection)
+- [Test](#test)
+  * [Run tests](#run-tests)
 - [Rendering](#rendering)
-- [Notes](#notes)
 
 <!-- tocstop -->
 
@@ -37,16 +37,6 @@ Use the template button in Github's UI, then start the docs:
 
 ```sh
 mv ./README.example.md README.md
-```
-
-## Test
-
-### Run tests
-
-This is both unit tests and integration tests.
-
-```sh
-npm test
 ```
 
 ### Open a browser with visual test results
@@ -63,7 +53,16 @@ Start a Vite server at `localhost:8888`.
 npm start
 ```
 
-### Local Dev
+## Cloduflare
+
+This uses Cloudflare as web host and for some infratructure.
+
+### D1
+
+### Websockets
+
+
+## Local Dev
 
 Locally we are using [Vite](https://vite.dev/) as server. In the
 [vite config](./vite.config.js) we use a plugin, `@cloudflare/vite-plugin`.
@@ -94,10 +93,10 @@ only applies to the staging deploy flow:
 wrangler deploy --env staging
 ```
 
-Set the staging secrets in Cloudflare with these exact names:
+Set the staging secrets in Cloudflare with these env variables:
 
 ```sh
-wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging
+wrangler secret put STAGING_USERNAME --env staging
 wrangler secret put STAGING_PW --env staging
 ```
 
@@ -114,22 +113,30 @@ prompts for the secret.
 Recommended setup flow:
 
 1. Choose the staging username you want to use.
-2. Run `wrangler secret put STAGING_BASIC_AUTH_USERNAME --env staging`.
+2. Run `wrangler secret put STAGING_USERNAME --env staging`.
 3. Generate a fresh password with `openssl rand -base64 32`.
 4. Run `wrangler secret put STAGING_PW --env staging` and paste the generated password.
 5. Deploy staging with `wrangler deploy --env staging`.
 
 To rotate staging access later, generate a new password and update
 `STAGING_PW` in the `staging` environment again. You only need to change
-`STAGING_BASIC_AUTH_USERNAME` if you also want to rotate the username.
+`STAGING_USERNAME` if you also want to rotate the username.
 
 Do not reuse the checked-in example values from local files as real deployment
 credentials.
 
-## Rendering
+## Test
 
-* Server returns the HTML shell only
-* Client script loads and renders the app into `#root`
-* Route state is sourced from the browser URL
-* Client route definitions live in `src/client/routes/index.ts`
-* Server keeps ownership of `/api/*` and `/health`
+### Run tests
+
+This is both unit tests and integration tests.
+
+```sh
+npm test
+```
+
+## Claude
+
+```
+Use the Nitpicker agent to review this codebase 
+```

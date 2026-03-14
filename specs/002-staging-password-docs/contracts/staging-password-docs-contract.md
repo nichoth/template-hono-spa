@@ -8,7 +8,7 @@ Define the minimum documentation content that `README.md` must provide for stagi
 
 1. The README must identify that password protection applies to the staging deployment context.
 2. The README must name both staging secret identifiers exactly:
-   - `STAGING_BASIC_AUTH_USERNAME`
+   - `STAGING_USERNAME`
    - `STAGING_PW`
 3. The README must show how maintainers apply the secrets to the staging environment.
 4. The README must include at least one CLI command that generates a random password value.

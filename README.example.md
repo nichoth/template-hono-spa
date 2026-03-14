@@ -22,6 +22,9 @@ the browser by Preact.
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
+- [Deploy](#deploy)
+  * [Backend Auth](#backend-auth)
+  * [Passkey Login Test Flow](#passkey-login-test-flow)
 - [Rendering](#rendering)
 - [Notes](#notes)
   * [Create a Random String (eg a password)](#create-a-random-string-eg-a-password)
@@ -72,6 +75,129 @@ The plugin embeds a Cloudflare Worker runtime inside Vite's dev server.
 Vite gives us HMR and bundling. The Vite plugin runs the worker code.
 
 Vite builds to `public/`, but we do not use that folder during development.
+
+## Deploy
+
+### Backend Auth
+
+Passkey auth uses a Cloudflare D1 database bound as `AUTH_DB`.
+
+The checked-in [`wrangler.jsonc`](./wrangler.jsonc) and
+[`wrangler.test.jsonc`](./wrangler.test.jsonc) already expect that binding
+name. Before you can use registration, login, session restore, or logout, you
+need to create real D1 databases and replace the placeholder database IDs.
+
+Create the production/local database:
+
+```sh
+wrangler d1 create template-hono-spa-auth
+```
+
+Create the staging database:
+
+```sh
+wrangler d1 create staging-template-hono-spa-auth
+```
+
+Update [`wrangler.jsonc`](./wrangler.jsonc):
+
+1. Replace the placeholder `database_id` for the default `AUTH_DB` binding.
+2. Replace the placeholder `database_id` for `env.staging.AUTH_DB`.
+3. Keep the binding name as `AUTH_DB` so the Worker and tests continue to match.
+
+Apply the auth schema migration to the default database:
+
+```sh
+wrangler d1 migrations apply template-hono-spa-auth
+```
+
+Apply the auth schema migration to staging:
+
+```sh
+wrangler d1 migrations apply staging-template-hono-spa-auth --env staging
+```
+
+For local development, start the app after the D1 binding is configured:
+
+```sh
+npm start
+```
+
+Cloudflare setup checklist:
+
+1. Create the default D1 database with
+   `wrangler d1 create template-hono-spa-auth`.
+2. Create the staging D1 database with
+   `wrangler d1 create staging-template-hono-spa-auth`.
+3. Replace the placeholder `database_id` values in
+   [`wrangler.jsonc`](./wrangler.jsonc).
+4. Keep the binding name `AUTH_DB` in default and staging config.
+5. Apply the checked-in migration from
+   [`migrations/0001_auth_schema.sql`](./migrations/0001_auth_schema.sql)
+   to each database.
+6. Start local dev with `npm start` or deploy with
+   `wrangler deploy` / `wrangler deploy --env staging`.
+
+For tests, [`wrangler.test.jsonc`](./wrangler.test.jsonc) provisions an
+isolated `AUTH_DB` binding and the test runner applies the same schema shape,
+so no extra local test-only setup is required beyond installing dependencies.
+
+Current backend auth services:
+
+1. `AUTH_DB` D1 binding for users, credentials, challenges, sessions,
+   and auth events
+2. Cookie-based session handling backed by D1
+3. Existing optional staging basic-auth secrets for the `staging` environment
+
+No extra auth secret is currently required for session signing because sessions
+are stored server-side in D1 with opaque random tokens.
+
+### Passkey Login Test Flow
+
+1. Frontend:
+   - `/signup` creates a new account with a passkey
+   - `/login` signs in with an existing passkey
+   - the client restores the current session on load
+   - the authenticated view supports sign-out
+2. Backend:
+   - `POST /api/auth/register/start`
+   - `POST /api/auth/register/finish`
+   - `POST /api/auth/login/start`
+   - `POST /api/auth/login/finish`
+   - `GET /api/session`
+   - `POST /api/logout`
+
+How to test passkey auth locally:
+
+1. Complete the Cloudflare auth backend setup above so `AUTH_DB`
+   points at a real local/default D1 database.
+2. Run `npm start`.
+3. Open `http://localhost:8888/signup`.
+4. Leave the selector on `Passkey`.
+5. Enter the new account email or username and an optional display name.
+6. Click `Create account`.
+7. Complete the browser/device passkey prompt.
+8. Confirm the page shows the authenticated account-created state.
+9. Open `http://localhost:8888/login`.
+10. Leave the selector on `Passkey`.
+11. Enter the same account email or username.
+12. Click `Continue with passkey`.
+13. Complete the browser/device passkey prompt.
+14. Confirm the page shows the authenticated state.
+15. Refresh the page and confirm the session is restored.
+16. Click `Sign out` and confirm the authenticated state disappears.
+17. Switch the login route to `Password` and confirm the screen still links to `/signup` instead of creating an account inline.
+
+What to verify during testing:
+
+1. Signup works through `/signup` with one valid passkey registration ceremony.
+2. Login works through `/login` with one valid passkey ceremony for an existing account.
+3. `GET /api/session` returns authenticated state after login and
+   unauthenticated state after logout.
+4. `POST /api/logout` invalidates the previous session.
+5. The same `AUTH_DB` binding name is used in local, test,
+   and staging environments.
+
 
 ## Rendering
 

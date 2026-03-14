@@ -2,7 +2,7 @@ import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import {
     createAuthService,
-    type RegistrationConfirmationResponse,
+    type RegistrationConfirmationResult,
 } from '../src/server/auth/index.js'
 import {
     AUTH_SCHEMA_STATEMENTS,
@@ -334,15 +334,16 @@ describe('Integration tests', () => {
                     )
 
                 const result = finishResult as
-                    RegistrationConfirmationResponse
-                expect(result.status)
+                    RegistrationConfirmationResult
+                expect(result.response.status)
                     .toBe('confirmation_pending')
-                expect(result.identifier).toBe(
+                expect(result.response.identifier).toBe(
                     identifier.toLowerCase()
                 )
-                expect(result.userId).toBeTruthy()
-                expect(result.deviceId).toBeTruthy()
-                expect(result.handle).toBeTruthy()
+                expect(result.response.userId).toBeTruthy()
+                expect(result.response.deviceId).toBeTruthy()
+                expect(result.response.handle).toBeTruthy()
+                expect(result.confirmationCode).toBeTruthy()
             }
         )
 

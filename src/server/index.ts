@@ -13,6 +13,7 @@ import {
     AUTH_SESSION_COOKIE,
     AuthError,
     createAuthService,
+    type RegistrationConfirmationResponse,
 } from './auth/index.js'
 
 type Bindings = {
@@ -111,6 +112,8 @@ app.post('/api/auth/register/finish', async (c) => {
             body as never,
         )
 
+        logLocalConfirmUrl(c.req.url, result)
+
         return c.json(result, 200)
     } catch (_err) {
         const err = _err as Error
@@ -131,6 +134,8 @@ app.post('/api/auth/passkey/register', async (c) => {
             c.req.url,
             body as never,
         )
+
+        logLocalConfirmUrl(c.req.url, result)
 
         return c.json(result, 200)
     } catch (err) {
@@ -358,6 +363,21 @@ function resolveRequestBranch (c:Context<{ Bindings:Bindings }>):string|undefine
 function isLocalhostRequest (requestUrl:string):boolean {
     const hostname = new URL(requestUrl).hostname
     return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
+function logLocalConfirmUrl (
+    requestUrl:string,
+    result:RegistrationConfirmationResponse,
+):void {
+    if (!isLocalhostRequest(requestUrl)) return
+    const origin = new URL(requestUrl).origin
+    const confirmUrl = `${origin}/login`
+        + `?identifier=${encodeURIComponent(result.identifier)}`
+    console.log(
+        '\n[auth] Account created for',
+        result.identifier
+    )
+    console.log('[auth] Confirm URL:', confirmUrl, '\n')
 }
 
 function shouldServeShell (pathname:string):boolean {

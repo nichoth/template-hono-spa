@@ -106,6 +106,14 @@ header {
             }
         }
     }
+
+    & .login-status {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 400;
+        color: var(--color-text-base);
+        margin-inline: 0.5rem 0;
+    }
 }
 
 body {
@@ -124,6 +132,14 @@ body {
         line-height: 1.4;
         max-width: var(--layout-measure);
         overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 679px) {
+    header {
+        & .login-status {
+            display: none;
+        }
     }
 }
 

@@ -13,6 +13,7 @@ import { NotFound } from './not-found.js'
 import { Nav } from './components/nav.js'
 import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
+import { formatLoginStatus } from './login-status.js'
 const debug = Debug('template')
 
 BlurHash.define()
@@ -42,6 +43,10 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
         return router.match(path)
     })
 
+    const loginLabel = useComputed(() => {
+        return formatLoginStatus(state.user.value.data ?? null)
+    })
+
     if (!match.value || !match.value.action) {
         return html`<${NotFound} />`
     }
@@ -54,6 +59,9 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
                 <a href="/">T</a>  ${/* <-- site logo here */null}
             </h1>
             <${Nav} state=${state} />
+            <p class="login-status" aria-live="polite">
+                ${loginLabel.value}
+            </p>
             <div class="avatar">
                 <a href="/profile">
                     <${BlurHash.TAG}

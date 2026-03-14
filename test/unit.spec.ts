@@ -32,7 +32,8 @@ import {
     getRadioCheckedAttr,
     resolveSelectedMethod,
 } from '../src/client/routes/login.js'
-import type { AppState } from '../src/client/state.js'
+import type { AppState, SessionResponse } from '../src/client/state.js'
+import { formatLoginStatus } from '../src/client/login-status.js'
 import viteConfigSource from '../vite.config.js?raw'
 import styleCssSource from '../src/style.css?inline'
 import cardCssSource from '../src/client/components/card.css?inline'
@@ -795,6 +796,53 @@ describe('Hono worker', () => {
         it('source tree has no remaining .tsx files', () => {
             const tsxFiles = import.meta.glob('/src/**/*.tsx', { eager: true })
             expect(Object.keys(tsxFiles)).toEqual([])
+        })
+    })
+
+    describe('login status helper', () => {
+        it('returns the authenticated identifier when available', () => {
+            const session: SessionResponse = {
+                authenticated: true,
+                user: {
+                    identifier: 'user@example.com',
+                    displayName: 'User Example',
+                    id: 'user-1',
+                },
+                session: {
+                    expiresAt: new Date().toISOString(),
+                },
+            }
+
+            expect(formatLoginStatus(session)).toBe('logged in as user@example.com')
+        })
+
+        it('falls back to anonymous for unauthenticated sessions', () => {
+            const anonymousVariants = [
+                { authenticated: false },
+                null,
+                undefined,
+            ]
+
+            for (const variant of anonymousVariants) {
+                expect(formatLoginStatus(variant as SessionResponse | null | undefined))
+                    .toBe('logged in as anonymous')
+            }
+        })
+
+        it('handles authenticated sessions with missing identifiers as anonymous', () => {
+            const session: SessionResponse = {
+                authenticated: true,
+                user: {
+                    identifier: '',
+                    displayName: null,
+                    id: 'user-2',
+                },
+                session: {
+                    expiresAt: new Date().toISOString(),
+                },
+            }
+
+            expect(formatLoginStatus(session)).toBe('logged in as anonymous')
         })
     })
 })

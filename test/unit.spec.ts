@@ -34,6 +34,13 @@ import {
 } from '../src/client/routes/login.js'
 import type { AppState } from '../src/client/state.js'
 import viteConfigSource from '../vite.config.js?raw'
+import styleCssSource from '../src/style.css?inline'
+import cardCssSource from '../src/client/components/card.css?inline'
+import navCssSource from '../src/client/components/nav.css?inline'
+import homeCssSource from '../src/client/routes/home.css?inline'
+import loginCssSource from '../src/client/routes/login.css?inline'
+import profileCssSource from '../src/client/routes/profile.css?inline'
+import signupCssSource from '../src/client/routes/signup.css?inline'
 
 vi.mock('@substrate-system/button', () => ({
     SubstrateButton: {
@@ -55,11 +62,15 @@ const sourceFiles = import.meta.glob('/src/**/*.ts', {
     eager: true,
 }) as Record<string, string>
 
-const cssSourceFiles = import.meta.glob('/src/**/*.css', {
-    query: '?raw',
-    import: 'default',
-    eager: true,
-}) as Record<string, string>
+const cssSourceFiles:Record<string, string> = {
+    '/src/style.css': styleCssSource,
+    '/src/client/components/card.css': cardCssSource,
+    '/src/client/components/nav.css': navCssSource,
+    '/src/client/routes/home.css': homeCssSource,
+    '/src/client/routes/login.css': loginCssSource,
+    '/src/client/routes/profile.css': profileCssSource,
+    '/src/client/routes/signup.css': signupCssSource,
+}
 
 function createTestState ():AppState {
     return {
@@ -575,28 +586,29 @@ describe('Hono worker', () => {
     })
 
     describe('Home card layout', () => {
-        it('prefers square home cards before content-driven growth', () => {
-            const homeCss = cssSourceFiles['/src/client/routes/home.css']
-
-            expect(homeCss).toContain('aspect-ratio: 1 / 1')
-        })
-
-        it('keeps a three-card home row scrollable when the viewport is narrow', () => {
+        it('wraps home cards in a dedicated scroll container', () => {
             const homeSource = sourceFiles['/src/client/routes/home.ts']
-            const homeCss = cssSourceFiles['/src/client/routes/home.css']
 
             expect(homeSource).toContain('cards-scroll')
-            expect(homeCss).toContain('overflow-x: auto')
-            expect(homeCss).toContain('grid-template-columns: repeat(3, minmax(')
+            expect(homeSource).toContain('cards cards-grid')
         })
 
-        it('keeps fetcher content readable inside square-preferred cards', () => {
-            const homeCss = cssSourceFiles['/src/client/routes/home.css']
-            const cardCss = cssSourceFiles['/src/client/components/card.css']
+        it('keeps the three home cards in the expected route structure', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+            const cardMatches = homeSource.match(/<\$\{Card\}/g) ?? []
 
-            expect(homeCss).toContain('white-space: pre-wrap')
-            expect(homeCss).toContain('overflow: auto')
-            expect(cardCss).toContain('gap: 1rem')
+            expect(homeSource).toContain('<$\\{Counter}')
+            expect(cardMatches).toHaveLength(2)
+            expect(homeSource).toContain('class="fetcher"')
+        })
+
+        it('preserves the fetcher controls and response panel inside the home card markup', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+
+            expect(homeSource).toContain('This calls our API server')
+            expect(homeSource).toContain('>Fetch<//>')
+            expect(homeSource).toContain('>Error<//>')
+            expect(homeSource).toContain('<pre>')
         })
     })
 

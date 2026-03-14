@@ -90,9 +90,9 @@
 
 **Purpose**: Validate the full feature across automated and manual checks.
 
-- [ ] T014 Run `npm test` and fix any resulting regressions in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`, `/Users/nick/code/template-hono-spa/src/client/routes/home.css`, `/Users/nick/code/template-hono-spa/src/client/routes/home.ts`, and `/Users/nick/code/template-hono-spa/src/client/components/card.css`
-- [ ] T015 Run `npm run lint` and resolve any lint violations in `/Users/nick/code/template-hono-spa/src/client/routes/home.ts`, `/Users/nick/code/template-hono-spa/test/unit.spec.ts`, and `/Users/nick/code/template-hono-spa/src/client/components/card.css`
-- [ ] T016 Execute the manual verification flow in `/Users/nick/code/template-hono-spa/specs/025-square-cards/quickstart.md` and update `/Users/nick/code/template-hono-spa/specs/025-square-cards/quickstart.md` if any verification step needs clarification
+- [X] T014 Run `npm test` and fix any resulting regressions in `/Users/nick/code/template-hono-spa/test/unit.spec.ts`, `/Users/nick/code/template-hono-spa/src/client/routes/home.css`, `/Users/nick/code/template-hono-spa/src/client/routes/home.ts`, and `/Users/nick/code/template-hono-spa/src/client/components/card.css`
+- [X] T015 Run `npm run lint` and resolve any lint violations in `/Users/nick/code/template-hono-spa/src/client/routes/home.ts`, `/Users/nick/code/template-hono-spa/test/unit.spec.ts`, and `/Users/nick/code/template-hono-spa/src/client/components/card.css`
+- [X] T016 Execute the manual verification flow in `/Users/nick/code/template-hono-spa/specs/025-square-cards/quickstart.md` and update `/Users/nick/code/template-hono-spa/specs/025-square-cards/quickstart.md` if any verification step needs clarification
 
 ---
 

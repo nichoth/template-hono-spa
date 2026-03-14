@@ -54,8 +54,8 @@ export const HomeRoute:FunctionComponent<{
                 <${Card} class="fetcher">
                     <span>More cards${ELLIPSIS}</span>
                     <p>
-                        This calls our API server, but adds a delay
-                        so we can see the button spin.
+                        This calls the API server, but adds a delay
+                        so you can see the button spin.
                     </p>
                     <div>
                         <${SubstrateButton.TAG}

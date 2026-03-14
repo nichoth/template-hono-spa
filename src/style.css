@@ -49,6 +49,10 @@
     min-width: 0;
 }
 
+.controls {
+    text-align: right;
+}
+
 a {
     transition: all 0.2s;
     text-underline-offset: 1px;

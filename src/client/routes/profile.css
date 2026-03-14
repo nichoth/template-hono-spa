@@ -1,3 +1,9 @@
+@import url("../../_variables.css");
+
 .route.profile {
-    /* empty */
+    min-height: 60vh;
+
+    & h2 {
+        margin-top: 0;
+    }
 }

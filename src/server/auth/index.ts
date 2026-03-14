@@ -12,23 +12,25 @@ import {
 import {
     createAuthEvent,
     createChallenge,
-    createCredential,
+    createDevice,
     createSession,
     createUser,
     ensureAuthSchema,
     expireSession,
     findChallengeById,
-    findCredentialByCredentialId,
+    findDeviceByCredentialId,
     findSessionByToken,
     findUserById,
     findUserByIdentifier,
+    listActiveDevicesByUserId,
+    listDevicesByUserId,
     markChallengeExpired,
     markChallengeUsed,
     parseChallengeMetadata,
+    revokeDevice,
     revokeSession,
     touchSession,
-    updateCredentialCounter,
-    listActiveCredentialsByUserId,
+    updateDeviceUsage,
 } from '../db/index.js'
 
 const REGISTRATION_TIMEOUT_MS = 5 * 60 * 1000
@@ -75,6 +77,9 @@ export type RegistrationConfirmationResponse = {
     status:'confirmation_pending';
     identifier:string;
     message:string;
+    userId:string;
+    deviceId:string;
+    handle:string;
 }
 
 export type AuthenticationStartRequest = {
@@ -225,24 +230,34 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         }
 
         const now = deps.now()
+        const handle = generateUserHandle()
         const user = await createUser(db, {
             id: userID,
+            handle,
             identifier,
             displayName,
             now,
         })
 
-        await createCredential(db, {
-            id: deps.createID(),
+        const credentialId = verification.registrationInfo.credential.id
+        const duplicate = await findDeviceByCredentialId(db, credentialId)
+        if (duplicate) {
+            throw new AuthError(409, 'credential_exists', 'That passkey is already registered.')
+        }
+
+        const authenticatorInfo = verification.registrationInfo.authenticatorInfo
+        const deviceId = deps.createID()
+        await createDevice(db, {
+            id: deviceId,
             userID: user.id,
-            credentialID: verification.registrationInfo.credential.id,
+            credentialID: credentialId,
             publicKey: isoBase64URL.fromBuffer(
                 verification.registrationInfo.credential.publicKey
             ),
             counter: verification.registrationInfo.credential.counter,
             transports: verification.registrationInfo.credential.transports,
-            deviceType: verification.registrationInfo.credentialDeviceType,
-            backedUp: verification.registrationInfo.credentialBackedUp,
+            aaguid: authenticatorInfo?.aaguid,
+            credentialName: displayName || identifier,
             now,
         })
 
@@ -261,6 +276,9 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             status: 'confirmation_pending',
             identifier: user.identifier,
             message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
+            userId: user.id,
+            deviceId,
+            handle: user.handle,
         }
     }
 
@@ -281,7 +299,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             throw new AuthError(404, 'unknown_account', 'No passkey account was found for that identifier.')
         }
 
-        const credentials = await listActiveCredentialsByUserId(db, user.id)
+        const credentials = await listActiveDevicesByUserId(db, user.id)
         if (credentials.length === 0) {
             throw new AuthError(400, 'no_passkey_credentials', 'No active passkeys are available for this account.')
         }
@@ -332,8 +350,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             throw new AuthError(400, 'expired_challenge', 'Login challenge has expired.')
         }
 
-        const credential = await findCredentialByCredentialId(db, request.credential.id)
-        if (!credential || credential.status !== 'active') {
+        const device = await findDeviceByCredentialId(db, request.credential.id)
+        if (!device || device.is_revoked) {
             throw new AuthError(404, 'unknown_credential', 'The passkey credential is not recognized.')
         }
 
@@ -343,10 +361,10 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             expectedOrigin: deriveExpectedOrigin(requestUrl),
             expectedRPID: deriveRpID(requestUrl),
             credential: {
-                id: credential.credential_id,
-                publicKey: isoBase64URL.toBuffer(credential.public_key),
-                counter: credential.counter,
-                transports: parseTransports(credential.transports_json),
+                id: device.credential_id,
+                publicKey: isoBase64URL.toBuffer(device.public_key),
+                counter: device.counter,
+                transports: parseTransports(device.transports_json),
             },
         })
 
@@ -354,25 +372,26 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             throw new AuthError(400, 'authentication_failed', 'Passkey sign-in could not be verified.')
         }
 
-        await updateCredentialCounter(db, {
-            credentialID: credential.credential_id,
+        const updateNow = deps.now()
+        await updateDeviceUsage(db, {
+            credentialID: device.credential_id,
             counter: verification.authenticationInfo.newCounter,
-            now: deps.now(),
+            now: updateNow,
         })
-        await markChallengeUsed(db, challenge.id, deps.now())
+        await markChallengeUsed(db, challenge.id, updateNow)
 
-        const user = await findUserById(db, credential.user_id)
+        const user = await findUserById(db, device.user_id)
         if (!user || user.status !== 'active') {
             throw new AuthError(404, 'unknown_account', 'The passkey account is no longer available.')
         }
 
-        const now = deps.now()
+        const sessionNow = deps.now()
         const session = await createSession(db, {
             id: deps.createID(),
             userID: user.id,
             sessionToken: buildSessionToken(),
-            expiresAt: now + DEFAULT_SESSION_TTL_MS,
-            now,
+            expiresAt: sessionNow + DEFAULT_SESSION_TTL_MS,
+            now: sessionNow,
         })
 
         await createAuthEvent(db, {
@@ -382,7 +401,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             challengeID: challenge.id,
             eventType: 'login_finish',
             result: 'success',
-            occurredAt: now,
+            occurredAt: sessionNow,
         })
 
         return {
@@ -445,6 +464,22 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         return { authenticated: false }
     }
 
+    async function listRegisteredDevices (
+        db:D1Database,
+        userID:string,
+    ) {
+        await ensureAuthSchema(db)
+        return listDevicesByUserId(db, userID)
+    }
+
+    async function revokeRegisteredDevice (
+        db:D1Database,
+        deviceID:string,
+    ) {
+        await ensureAuthSchema(db)
+        await revokeDevice(db, deviceID)
+    }
+
     return {
         startRegistration,
         finishRegistration,
@@ -452,6 +487,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         finishAuthentication,
         getCurrentSession,
         logout,
+        listRegisteredDevices,
+        revokeRegisteredDevice,
     }
 }
 
@@ -492,4 +529,12 @@ function makeAuthenticatedSessionResponse (
             expiresAt: new Date(expiresAt).toISOString(),
         },
     }
+}
+
+function generateUserHandle ():string {
+    const bytes = new Uint8Array(32)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('')
 }

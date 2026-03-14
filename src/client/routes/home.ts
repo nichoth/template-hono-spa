@@ -16,7 +16,6 @@ const TEXT = 'This page is rendered on the client with Preact.'
 export const HomeRoute:FunctionComponent<{
     state:AppState
 }> = function HomeRoute ({ state }) {
-    // const isSpinning = useSignal(false)
     const isPending = useComputed<boolean>(() => {
         return state.response.value.pending
     })

@@ -18,15 +18,14 @@ the browser by Preact.
 <!-- toc -->
 
 - [Use](#use)
-- [Test](#test)
-  * [Run tests](#run-tests)
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
   * [Local Dev](#local-dev)
 - [Deploy](#deploy)
   * [Staging Password Protection](#staging-password-protection)
+- [Test](#test)
+  * [Run tests](#run-tests)
 - [Rendering](#rendering)
-- [Notes](#notes)
 
 <!-- tocstop -->
 
@@ -38,16 +37,6 @@ Use the template button in Github's UI, then start the docs:
 
 ```sh
 mv ./README.example.md README.md
-```
-
-## Test
-
-### Run tests
-
-This is both unit tests and integration tests.
-
-```sh
-npm test
 ```
 
 ### Open a browser with visual test results
@@ -64,8 +53,16 @@ Start a Vite server at `localhost:8888`.
 npm start
 ```
 
+## Cloduflare
 
-### Local Dev
+This uses Cloudflare as web host and for some infratructure.
+
+### D1
+
+### Websockets
+
+
+## Local Dev
 
 Locally we are using [Vite](https://vite.dev/) as server. In the
 [vite config](./vite.config.js) we use a plugin, `@cloudflare/vite-plugin`.
@@ -128,10 +125,19 @@ To rotate staging access later, generate a new password and update
 Do not reuse the checked-in example values from local files as real deployment
 credentials.
 
+## Test
+
+### Run tests
+
+This is both unit tests and integration tests.
+
+```sh
+npm test
+```
+
 ## Rendering
 
 * Server returns the HTML shell only
 * Client script loads and renders the app into `#root`
-* Route state is sourced from the browser URL
-* Client route definitions live in `src/client/routes/index.ts`
-* Server keeps ownership of `/api/*` and `/health`
+* Client-side routes are defined in `src/client/routes/index.ts`
+* Server handles `/api/*` and `/health`

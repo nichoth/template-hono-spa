@@ -5,6 +5,7 @@ export type UserRecord = {
     handle:string;
     identifier:string;
     display_name:string | null;
+    login_method:'passkey'|'password' | null;
     status:string;
     created_at:number;
     updated_at:number;
@@ -52,6 +53,7 @@ export type SessionWithUserRecord = SessionRecord & {
     identifier:string;
     display_name:string | null;
     user_status:string;
+    login_method:'passkey'|'password' | null;
 }
 
 export type ConfirmationCodeRecord = {
@@ -186,17 +188,19 @@ export async function createUser (
         identifier:string;
         handle:string;
         displayName?:string;
+        loginMethod:'passkey'|'password';
         now:number;
     }
 ):Promise<UserRecord> {
     await db.prepare(`
-        INSERT INTO users (id, handle, identifier, display_name, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'pending', ?, ?)
+        INSERT INTO users (id, handle, identifier, display_name, login_method, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
     `).bind(
         params.id,
         params.handle,
         params.identifier,
         params.displayName ?? null,
+        params.loginMethod,
         params.now,
         params.now,
     ).run()
@@ -207,6 +211,7 @@ export async function createUser (
         identifier: params.identifier,
         display_name: params.displayName ?? null,
         status: 'pending',
+        login_method: params.loginMethod,
         created_at: params.now,
         updated_at: params.now,
     }
@@ -452,6 +457,7 @@ export async function findSessionByToken (
             sessions.*,
             users.identifier AS identifier,
             users.display_name AS display_name,
+            users.login_method AS login_method,
             users.status AS user_status
         FROM sessions
         INNER JOIN users ON users.id = sessions.user_id

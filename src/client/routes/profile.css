@@ -6,4 +6,45 @@
     & h2 {
         margin-top: 0;
     }
+
+    .profile-card {
+        margin: 1rem 0;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        background: #f5f5f5;
+        border: 1px solid #e1e1e1;
+        box-shadow: 0 4px 12px rgba(33, 33, 33, 0.08);
+    }
+
+    .profile-fields {
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem 1.5rem;
+    }
+
+    dt {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #555;
+    }
+
+    .profile-field-value {
+        margin: 0.25rem 0 0;
+        font-weight: 600;
+        color: #111;
+    }
+
+    .profile-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+    }
+}
 }

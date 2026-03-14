@@ -22,6 +22,7 @@ export type AuthUser = {
     id:string;
     identifier:string;
     displayName:string | null;
+    login_method:'passkey'|'password' | null;
 }
 
 export type SessionResponse = {
@@ -32,6 +33,7 @@ export type SessionResponse = {
     session:{
         expiresAt:string;
     };
+    loginMethod:'passkey'|'password' | null;
 }
 
 export type SignupConfirmationResponse = {

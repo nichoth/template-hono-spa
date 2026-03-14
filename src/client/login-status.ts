@@ -13,7 +13,7 @@ export function formatLoginStatus (session?:SessionResponse|null):string {
         }
     }
 
-    return 'anonymous'
+    return ''
 }
 
 function formatLoginMethod (method:'passkey'|'password'|null|undefined): string {

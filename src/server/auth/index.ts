@@ -558,10 +558,12 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 id: session.user_id,
                 identifier: session.identifier,
                 displayName: session.display_name,
+                login_method: session.login_method,
             },
             session: {
                 expiresAt: new Date(session.expires_at).toISOString(),
             },
+            loginMethod: session.login_method ?? null,
         }
     }
 

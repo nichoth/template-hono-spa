@@ -656,6 +656,15 @@ describe('Hono worker', () => {
                 .toContain('cloudflare({ inspectorPort: false })')
         })
 
+        it('wraps Cloudflare plugin config to remove deprecated optimizeDeps.esbuildOptions before Vite resolves it', () => {
+            expect(viteConfigSource)
+                .toContain('wrapCloudflarePluginsForVite8')
+            expect(viteConfigSource)
+                .toContain('configEnvironment: wrapConfigHook(plugin.configEnvironment)')
+            expect(viteConfigSource)
+                .toContain('rolldownOptions.resolve.symlinks = !esbuildOptions.preserveSymlinks')
+        })
+
         it('keeps the current build output contract explicit in Vite config', () => {
             expect(viteConfigSource).toContain("outDir: './public'")
             expect(viteConfigSource).toContain("manifest: 'vite-manifest.json'")

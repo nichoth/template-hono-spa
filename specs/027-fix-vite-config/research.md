@@ -39,3 +39,11 @@
 - **Alternatives considered**:
   - Keep all rationale solely in code comments: rejected because planning artifacts should explain the observable contract, not just low-level edits.
   - Depend entirely on test names to document intent: rejected because tests alone do not define the full operational boundary.
+
+## Decision 6: Use a local Vite 8 compatibility shim around the installed Cloudflare plugin
+
+- **Decision**: Wrap the Cloudflare Vite plugin in [/Users/nick/code/template-hono-spa/vite.config.js](/Users/nick/code/template-hono-spa/vite.config.js) and rewrite plugin-provided `optimizeDeps.esbuildOptions` into `optimizeDeps.rolldownOptions` before Vite resolves the final config.
+- **Rationale**: The installed `@cloudflare/vite-plugin@1.19.0` still declares peer support for Vite 6 and 7 and injects deprecated optimize-deps settings. A small wrapper keeps the startup contract intact without broad dependency churn.
+- **Alternatives considered**:
+  - Replace the Cloudflare plugin immediately: rejected because it would broaden scope into dependency management and unknown runtime changes.
+  - Ignore the warning until the plugin updates upstream: rejected because the user explicitly requested a clean `npm start` flow now.

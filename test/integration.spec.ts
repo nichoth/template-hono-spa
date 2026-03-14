@@ -215,6 +215,20 @@ describe('Integration tests', () => {
             }
         )
 
+        it('keeps primary shell routes reachable after the Vite optimizeDeps compatibility change',
+            async () => {
+                const [homeResponse, aboutResponse] = await Promise.all([
+                    SELF.fetch('http://localhost/'),
+                    SELF.fetch('http://localhost/about'),
+                ])
+
+                expect(homeResponse.status).toBe(200)
+                expect(aboutResponse.status).toBe(200)
+                expect(await homeResponse.text()).toContain('/src/client/index.ts')
+                expect(await aboutResponse.text()).toContain('/src/client/index.ts')
+            }
+        )
+
         it('serves shell for unknown client paths',
             async () => {
                 const response = await SELF.fetch(

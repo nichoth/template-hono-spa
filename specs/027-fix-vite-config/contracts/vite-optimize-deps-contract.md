@@ -12,6 +12,7 @@ Define the observable behavior required after fixing the dependency-optimization
 4. The configuration must use a supported dependency-optimization path if such configuration is required for the repository or its plugins.
 5. The fix must not introduce new manual local-setup workarounds for routine development.
 6. The compatibility-sensitive configuration surface must remain localized and understandable enough for future maintenance.
+7. Any temporary compatibility shim for plugin-provided config must stay localized to [/Users/nick/code/template-hono-spa/vite.config.js](/Users/nick/code/template-hono-spa/vite.config.js) and rewrite deprecated optimize-deps settings before Vite resolves them.
 
 ## Covered Surfaces
 
@@ -24,3 +25,4 @@ Define the observable behavior required after fixing the dependency-optimization
 - Automated validation should confirm lint and tests remain green after the configuration change.
 - Runtime validation should confirm `npm start` no longer emits the reported warning and still serves the application locally.
 - Review should confirm the maintained configuration no longer depends on the deprecated optimization path.
+- Unit validation should confirm the worker environment resolves dependency-optimization settings through `rolldownOptions` rather than plugin-provided deprecated config.

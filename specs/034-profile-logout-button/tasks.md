@@ -18,9 +18,9 @@ description: "Task list for adding the profile logout button"
 
 **Purpose**: Understand the current logout/session flow and confirm available styling variables before touching feature files.
 
-- [ ] T001 Review `specs/034-profile-logout-button/spec.md` and related docs to fix the scope and ensure the logout story is well understood.
-- [P] T002 Audit `src/client/login-status.ts` to confirm the existing logout handler, session signals, and how the header controls render for authenticated users.
-- [P] T003 Verify the custom media and typography tokens in `src/_variables.css` so we know which LightningCSS breakpoints and `rem`-based styles are available for the desktop-only button.
+- [x] T001 Review `specs/034-profile-logout-button/spec.md` and related docs to fix the scope and ensure the logout story is well understood.
+- [x] T002 Audit `src/client/login-status.ts` to confirm the existing logout handler, session signals, and how the header controls render for authenticated users.
+- [x] T003 Verify the custom media and typography tokens in `src/_variables.css` so we know which LightningCSS breakpoints and `rem`-based styles are available for the desktop-only button.
 
 ---
 
@@ -28,9 +28,9 @@ description: "Task list for adding the profile logout button"
 
 **Purpose**: Prepare shared session state and reusable handlers so the profile route can safely surface the logout control.
 
-- [ ] T004 Propagate `logoutInProgress` and `logoutError` flags (as described in `data-model.md`) through `src/client/state.ts`/`login-status.ts` so downstream UI can read pending/failure states.
-- [ ] T005 Expose a `handleLogout` callback from `src/client/login-status.ts` that cleans session context and reports errors; document the contract in `contracts/ui.md` for the profile header to consume.
-- [ ] T006 Confirm that `src/client/routes/profile.ts` imports the session signals it needs (e.g., `isAuthenticated`, `logoutInProgress`, `logoutError`) and leaves space in the layout for a desktop-only control.
+- [x] T004 Propagate `logoutInProgress` and `logoutError` flags (as described in `data-model.md`) through `src/client/state.ts`/`login-status.ts` so downstream UI can read pending/failure states.
+- [x] T005 Expose a `handleLogout` callback from `src/client/login-status.ts` that cleans session context and reports errors; document the contract in `contracts/ui.md` for the profile header to consume.
+- [x] T006 Confirm that `src/client/routes/profile.ts` imports the session signals it needs (e.g., `isAuthenticated`, `logoutInProgress`, `logoutError`) and leaves space in the layout for a desktop-only control.
 
 ---
 
@@ -46,11 +46,11 @@ description: "Task list for adding the profile logout button"
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Update `src/client/routes/profile.ts` to render a logout button near the avatar area, hide it when `isAuthenticated` is false, and wire it to the exposed `handleLogout` callback.
-- [ ] T009 [US1] Style the button via `src/client/routes/profile.css` (or `src/style.css` if shared) so it inherits the desktop typography (≥1rem) and aligns with the header layout defined in `profile.ts`.
-- [ ] T010 [US1] Use `src/_variables.css` custom media breakpoints to keep the button desktop-only (e.g., show only above the largest mobile breakpoint) while preserving existing spacing.
-- [ ] T011 [US1] Ensure the button reflects pending/error states from `logoutInProgress`/`logoutError` (disabled+spinner text when pending, inline message when error) so users understand the current status.
-- [ ] T012 [US1] Confirm that after logout completes the profile header removes authenticated UI (avatar/text/button) and landing/entry content is restored per spec.
+- [x] T008 [US1] Update `src/client/routes/profile.ts` to render a logout button near the avatar area, hide it when `isAuthenticated` is false, and wire it to the exposed `handleLogout` callback.
+- [x] T009 [US1] Style the button via `src/client/routes/profile.css` (or `src/style.css` if shared) so it inherits the desktop typography (≥1rem) and aligns with the header layout defined in `profile.ts`.
+- [x] T010 [US1] Use `src/_variables.css` custom media breakpoints to keep the button desktop-only (e.g., show only above the largest mobile breakpoint) while preserving existing spacing.
+- [x] T011 [US1] Ensure the button reflects pending/error states from `logoutInProgress`/`logoutError` (disabled+spinner text when pending, inline message when error) so users understand the current status.
+- [x] T012 [US1] Confirm that after logout completes the profile header removes authenticated UI (avatar/text/button) and landing/entry content is restored per spec.
 
 ---
 
@@ -100,4 +100,3 @@ description: "Task list for adding the profile logout button"
 3. A third developer implements and styles the button (Phase 3) while Phase 4 runs concurrently once verification begins.
 
 ---
-

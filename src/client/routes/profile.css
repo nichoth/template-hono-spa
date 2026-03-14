@@ -2,32 +2,8 @@
 
 .route.profile {
     min-height: 60vh;
-}
 
-.route.profile h2 {
-    margin-top: 0;
-}
-
-.profile-logout-wrapper {
-    margin-top: 3rem;
-    text-align: right;
-    display: none;
-    gap: 0.5rem;
-}
-
-.profile-logout-button {
-    font-size: 1rem;
-    padding-inline: 0.75rem;
-}
-
-.profile-logout-error {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--color-status-error);
-}
-
-@media (--large) {
-    .profile-logout-wrapper {
-        display: block;
+    & h2 {
+        margin-top: 0;
     }
 }

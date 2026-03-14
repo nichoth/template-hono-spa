@@ -25,7 +25,7 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
             Profile data goes here.
         </p>
         ${isAuthenticated.value ? html`
-            <div class="profile-logout-wrapper" aria-live="polite">
+            <div class="controls" aria-live="polite">
                 <${SubstrateButton.TAG}
                     class="profile-logout-button"
                     type="button"

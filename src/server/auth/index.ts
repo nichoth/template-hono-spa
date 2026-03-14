@@ -31,6 +31,7 @@ import {
     revokeSession,
     touchSession,
     updateDeviceUsage,
+    activateUser,
     createConfirmationCode,
     findConfirmationCode,
     markConfirmationCodeExpired,
@@ -82,9 +83,6 @@ export type RegistrationConfirmationResponse = {
     status:'confirmation_pending';
     identifier:string;
     message:string;
-    userId:string;
-    deviceId:string;
-    handle:string;
 }
 
 export type EmailConfirmationRequest = {
@@ -162,8 +160,19 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         }
 
         const existingUser = await findUserByIdentifier(db, identifier)
-        if (existingUser?.status === 'active') {
-            throw new AuthError(409, 'identifier_in_use', 'An account with that identifier already exists.')
+        if (existingUser) {
+            if (existingUser.status === 'pending') {
+                throw new AuthError(
+                    409,
+                    'confirmation_pending',
+                    'An account with that identifier is awaiting email confirmation.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'identifier_in_use',
+                'An account with that identifier already exists.',
+            )
         }
 
         const userID = deps.createID()
@@ -246,8 +255,19 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         }
 
         const existingUser = await findUserByIdentifier(db, identifier)
-        if (existingUser?.status === 'active') {
-            throw new AuthError(409, 'identifier_in_use', 'An account with that identifier already exists.')
+        if (existingUser) {
+            if (existingUser.status === 'pending') {
+                throw new AuthError(
+                    409,
+                    'confirmation_pending',
+                    'An account with that identifier is awaiting email confirmation.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'identifier_in_use',
+                'An account with that identifier already exists.',
+            )
         }
 
         const now = deps.now()
@@ -293,7 +313,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             occurredAt: now,
         })
 
-        const confirmationCode = deps.createID()
+        const confirmationCode = generateConfirmationCode()
         await createConfirmationCode(db, {
             code: confirmationCode,
             identifier,
@@ -307,9 +327,6 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 status: 'confirmation_pending',
                 identifier: user.identifier,
                 message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
-                userId: user.id,
-                deviceId,
-                handle: user.handle,
             },
         }
     }
@@ -344,13 +361,25 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             throw new AuthError(409, 'expired_code', 'Confirmation code has expired.')
         }
 
-        await markConfirmationCodeUsed(db, record.code, now)
-
         const identifier = record.identifier
         const user = await findUserByIdentifier(db, identifier)
-        if (!user || user.status !== 'active') {
-            throw new AuthError(404, 'unknown_account', 'No active account matches this confirmation code.')
+        if (!user || user.status === 'active') {
+            if (!user) {
+                throw new AuthError(
+                    404,
+                    'unknown_account',
+                    'No account matches this confirmation code.',
+                )
+            }
+            throw new AuthError(
+                409,
+                'already_confirmed',
+                'This account has already been confirmed.',
+            )
         }
+
+        await markConfirmationCodeUsed(db, record.code, now)
+        await activateUser(db, identifier, now)
 
         return {
             status: 'confirmed',
@@ -610,6 +639,14 @@ function makeAuthenticatedSessionResponse (
 }
 
 function generateUserHandle ():string {
+    const bytes = new Uint8Array(32)
+    crypto.getRandomValues(bytes)
+    return Array.from(bytes)
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('')
+}
+
+function generateConfirmationCode ():string {
     const bytes = new Uint8Array(32)
     crypto.getRandomValues(bytes)
     return Array.from(bytes)

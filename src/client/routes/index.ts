@@ -26,7 +26,7 @@ const knownClientRoutes = new Set([
     '/confirm',
 ])
 
-export function createRouter (_state:AppState):InstanceType<typeof Router> {
+export function createRouter (_state?:AppState):InstanceType<typeof Router> {
     const router = new Router()
 
     router.addRoute('/', () => {

@@ -340,10 +340,277 @@ describe('Integration tests', () => {
                 expect(result.response.identifier).toBe(
                     identifier.toLowerCase()
                 )
-                expect(result.response.userId).toBeTruthy()
-                expect(result.response.deviceId).toBeTruthy()
-                expect(result.response.handle).toBeTruthy()
+                expect(result.response.message).toBeTruthy()
                 expect(result.confirmationCode).toBeTruthy()
+            }
+        )
+
+        it('confirms email with a valid code via /api/confirm',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `confirm-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakePublicKey = new Uint8Array([
+                    9, 10, 11, 12,
+                ])
+                const fakeCredentialId = `cred-confirm-${
+                    crypto.randomUUID()
+                }`
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions: async (opts) => ({
+                        challenge: 'confirm-challenge',
+                        rp: { name: opts.rpName, id: opts.rpID },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName: opts.userDisplayName || '',
+                        },
+                        pubKeyCredParams: [
+                            { type: 'public-key', alg: -7 },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                    verifyRegistrationResponse: async () => ({
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid: '00000000-0000-0000-0000-000000000000',
+                            credential: {
+                                id: fakeCredentialId,
+                                publicKey: fakePublicKey,
+                                counter: 0,
+                                transports: ['internal' as const],
+                            },
+                            credentialType: 'public-key' as const,
+                            attestationObject: new Uint8Array(0),
+                            userVerified: true,
+                            credentialDeviceType: 'multiDevice' as const,
+                            credentialBackedUp: true,
+                            origin: 'http://localhost',
+                            rpID: 'localhost',
+                            authenticatorInfo: {
+                                rpIdHash: new Uint8Array(32),
+                                flags: {
+                                    up: true, uv: true,
+                                    be: true, bs: true,
+                                    at: true, ed: false,
+                                    flagsInt: 0,
+                                },
+                                counter: 0,
+                                aaguid: '00000000-0000-0000-0000-000000000000',
+                                credentialID: new Uint8Array(0),
+                                credentialPublicKey: new Uint8Array(0),
+                            },
+                        },
+                    }),
+                    generateAuthenticationOptions: async () => ({
+                        challenge: '',
+                        rpId: '',
+                    }),
+                    verifyAuthenticationResponse: async () => ({
+                        verified: false,
+                        authenticationInfo: {} as never,
+                    }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `confirm-id-${idCounter}`
+                    },
+                })
+
+                const startResult = await authService.startRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/start',
+                    { identifier },
+                )
+
+                const finishResult = await authService.finishRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/finish',
+                    {
+                        challengeReference: startResult.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+
+                const response = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({
+                            code: finishResult.confirmationCode,
+                            identifier,
+                        }),
+                    },
+                )
+
+                expect(response.status).toBe(200)
+                const body = await response.json() as {
+                    status:string;
+                    identifier:string;
+                }
+                expect(body.status).toBe('confirmed')
+                expect(body.identifier).toBe(identifier.toLowerCase())
+            }
+        )
+
+        it('rejects an already-used confirmation code',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `used-code-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakePublicKey = new Uint8Array([
+                    13, 14, 15, 16,
+                ])
+                const fakeCredentialId = `cred-used-${
+                    crypto.randomUUID()
+                }`
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions: async (opts) => ({
+                        challenge: 'used-challenge',
+                        rp: { name: opts.rpName, id: opts.rpID },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName: opts.userDisplayName || '',
+                        },
+                        pubKeyCredParams: [
+                            { type: 'public-key', alg: -7 },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                    verifyRegistrationResponse: async () => ({
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid: '00000000-0000-0000-0000-000000000000',
+                            credential: {
+                                id: fakeCredentialId,
+                                publicKey: fakePublicKey,
+                                counter: 0,
+                                transports: ['internal' as const],
+                            },
+                            credentialType: 'public-key' as const,
+                            attestationObject: new Uint8Array(0),
+                            userVerified: true,
+                            credentialDeviceType: 'multiDevice' as const,
+                            credentialBackedUp: true,
+                            origin: 'http://localhost',
+                            rpID: 'localhost',
+                            authenticatorInfo: {
+                                rpIdHash: new Uint8Array(32),
+                                flags: {
+                                    up: true, uv: true,
+                                    be: true, bs: true,
+                                    at: true, ed: false,
+                                    flagsInt: 0,
+                                },
+                                counter: 0,
+                                aaguid: '00000000-0000-0000-0000-000000000000',
+                                credentialID: new Uint8Array(0),
+                                credentialPublicKey: new Uint8Array(0),
+                            },
+                        },
+                    }),
+                    generateAuthenticationOptions: async () => ({
+                        challenge: '',
+                        rpId: '',
+                    }),
+                    verifyAuthenticationResponse: async () => ({
+                        verified: false,
+                        authenticationInfo: {} as never,
+                    }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `used-id-${idCounter}`
+                    },
+                })
+
+                const startResult = await authService.startRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/start',
+                    { identifier },
+                )
+
+                const finishResult = await authService.finishRegistration(
+                    env.AUTH_DB,
+                    'http://localhost/api/auth/register/finish',
+                    {
+                        challengeReference: startResult.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+
+                const confirmBody = JSON.stringify({
+                    code: finishResult.confirmationCode,
+                })
+
+                await SELF.fetch('http://localhost/api/confirm', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: confirmBody,
+                })
+
+                const second = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: confirmBody,
+                    },
+                )
+
+                expect(second.status).toBe(400)
+                const body = await second.json() as { error:string }
+                expect(body.error).toBe('invalid_code')
+            }
+        )
+
+        it('rejects a missing confirmation code',
+            async () => {
+                const response = await SELF.fetch(
+                    'http://localhost/api/confirm',
+                    {
+                        method: 'POST',
+                        headers: { 'content-type': 'application/json' },
+                        body: JSON.stringify({ code: '' }),
+                    },
+                )
+                expect(response.status).toBe(400)
+                const body = await response.json() as { error:string }
+                expect(body.error).toBe('invalid_code')
             }
         )
 

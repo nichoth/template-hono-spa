@@ -225,7 +225,6 @@ State.registerWithPasskey = async function (
 }
 
 State.confirmAccount = async function (
-    state:AppState,
     values:{ code:string; identifier?:string },
 ) {
     try {

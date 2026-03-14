@@ -22,14 +22,7 @@ function normalizeCodeFromPath (path:string):string | null {
 function extractIdentifierFromSearch (search:string):string | null {
     if (!search) return null
     const params = new URLSearchParams(search)
-    const identifier = params.get('identifier')
-    if (!identifier) return null
-
-    try {
-        return decodeURIComponent(identifier)
-    } catch {
-        return identifier
-    }
+    return params.get('identifier')
 }
 
 export const ConfirmRoute = function ({ state }: { state:AppState }) {
@@ -76,7 +69,7 @@ export const ConfirmRoute = function ({ state }: { state:AppState }) {
 
         void (async () => {
             try {
-                const confirmation = await State.confirmAccount(state, {
+                const confirmation = await State.confirmAccount({
                     code,
                     identifier: searchIdentifier ?? undefined,
                 })

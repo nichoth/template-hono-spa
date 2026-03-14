@@ -191,7 +191,7 @@ export async function createUser (
 ):Promise<UserRecord> {
     await db.prepare(`
         INSERT INTO users (id, handle, identifier, display_name, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, 'active', ?, ?)
+        VALUES (?, ?, ?, ?, 'pending', ?, ?)
     `).bind(
         params.id,
         params.handle,
@@ -206,10 +206,22 @@ export async function createUser (
         handle: params.handle,
         identifier: params.identifier,
         display_name: params.displayName ?? null,
-        status: 'active',
+        status: 'pending',
         created_at: params.now,
         updated_at: params.now,
     }
+}
+
+export async function activateUser (
+    db:D1Database,
+    identifier:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE users
+        SET status = 'active', updated_at = ?
+        WHERE identifier = ?
+    `).bind(now, identifier).run()
 }
 
 export async function listActiveDevicesByUserId (

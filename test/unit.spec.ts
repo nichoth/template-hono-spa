@@ -574,6 +574,32 @@ describe('Hono worker', () => {
         })
     })
 
+    describe('Home card layout', () => {
+        it('prefers square home cards before content-driven growth', () => {
+            const homeCss = cssSourceFiles['/src/client/routes/home.css']
+
+            expect(homeCss).toContain('aspect-ratio: 1 / 1')
+        })
+
+        it('keeps a three-card home row scrollable when the viewport is narrow', () => {
+            const homeSource = sourceFiles['/src/client/routes/home.ts']
+            const homeCss = cssSourceFiles['/src/client/routes/home.css']
+
+            expect(homeSource).toContain('cards-scroll')
+            expect(homeCss).toContain('overflow-x: auto')
+            expect(homeCss).toContain('grid-template-columns: repeat(3, minmax(')
+        })
+
+        it('keeps fetcher content readable inside square-preferred cards', () => {
+            const homeCss = cssSourceFiles['/src/client/routes/home.css']
+            const cardCss = cssSourceFiles['/src/client/components/card.css']
+
+            expect(homeCss).toContain('white-space: pre-wrap')
+            expect(homeCss).toContain('overflow: auto')
+            expect(cardCss).toContain('gap: 1rem')
+        })
+    })
+
     describe('Shared color tokens', () => {
         it('keeps maintained stylesheets free of direct color literals', () => {
             const maintainedStyles = [

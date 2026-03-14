@@ -138,5 +138,5 @@ npm test
 ## Claude
 
 ```
- Use the Nitpicker agent to review this codebase 
+Use the Nitpicker agent to review this codebase 
 ```

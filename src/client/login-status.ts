@@ -1,14 +1,16 @@
 import { State, type AppState, type SessionResponse } from './state.js'
 
-export function formatLoginStatus (session?: SessionResponse | null): string {
-    const identifier = session?.user?.identifier
-    const isAuthenticated = session?.authenticated === true && Boolean(identifier)
+export function formatLoginStatus (session?:SessionResponse|null):string {
+    if (session?.authenticated === true) {
+        const user = session.user
+        const identifier = user?.identifier
 
-    if (isAuthenticated && identifier) {
-        const loginMethodLabel = formatLoginMethod(
-            session?.loginMethod ?? session?.user?.login_method ?? null
-        )
-        return `logged in via ${loginMethodLabel} as ${identifier}`
+        if (identifier) {
+            const loginMethodLabel = formatLoginMethod(
+                session.loginMethod ?? user?.login_method ?? null
+            )
+            return `logged in via ${loginMethodLabel} as ${identifier}`
+        }
     }
 
     return 'anonymous'

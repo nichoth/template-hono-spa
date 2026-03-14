@@ -13,8 +13,8 @@ description: "Task list for the show login state feature"
 
 **Purpose**: Reserve header slots and styling so user story work can plug in the login indicator without disturbing the nav/avatar layout.
 
-- [ ] T001 [P] Insert a `<p class="login-status" aria-live="polite">logged in as anonymous</p>` right after the `<${Nav}>` component in `src/client/index.ts`, keeping the avatar anchor untouched so the layout can later show dynamic text.
-- [ ] T002 [P] Define the `.login-status` rule in `src/style.css` with nav-link color, `font-size: 1rem`, inline spacing (e.g., `margin-inline-start`), and default desktop visibility so the placeholder inherits the header rhythm.
+- [X] T001 [P] Insert a `<p class="login-status" aria-live="polite">logged in as anonymous</p>` right after the `<${Nav}>` component in `src/client/index.ts`, keeping the avatar anchor untouched so the layout can later show dynamic text.
+- [X] T002 [P] Define the `.login-status` rule in `src/style.css` with nav-link color, `font-size: 1rem`, inline spacing (e.g., `margin-inline-start`), and default desktop visibility so the placeholder inherits the header rhythm.
 
 ---
 
@@ -22,7 +22,7 @@ description: "Task list for the show login state feature"
 
 **Purpose**: Provide a reusable login-status formatter that all user stories can rely on before they add story-specific behavior.
 
-- [ ] T003 Create `src/client/login-status.ts` that exports `formatLoginStatus(session?: SessionResponse | null): string`, returning `logged in as <identifier>` when `authenticated === true` with a non-empty `identifier`, and `logged in as anonymous` for any other state.
+- [X] T003 Create `src/client/login-status.ts` that exports `formatLoginStatus(session?: SessionResponse | null): string`, returning `logged in as <identifier>` when `authenticated === true` with a non-empty `identifier`, and `logged in as anonymous` for any other state.
 
 ---
 
@@ -34,11 +34,11 @@ description: "Task list for the show login state feature"
 
 ### Tests for User Story 1
 
-- [ ] T004 [US1] Add a Vitest unit test in `test/unit.spec.ts` that imports `formatLoginStatus` and asserts it returns `logged in as user@example.com` when supplied a session with `authenticated:true` and `user.identifier`.
+- [X] T004 [US1] Add a Vitest unit test in `test/unit.spec.ts` that imports `formatLoginStatus` and asserts it returns `logged in as user@example.com` when supplied a session with `authenticated:true` and `user.identifier`.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Update `src/client/index.ts` to import `formatLoginStatus`, create a `useComputed` signal that reads `state.user.value.data`, and bind its output to the `.login-status` element so authenticated sessions render the email text without touching the avatar link.
+- [X] T005 [US1] Update `src/client/index.ts` to import `formatLoginStatus`, create a `useComputed` signal that reads `state.user.value.data`, and bind its output to the `.login-status` element so authenticated sessions render the email text without touching the avatar link.
 
 ---
 
@@ -50,11 +50,11 @@ description: "Task list for the show login state feature"
 
 ### Tests for User Story 2
 
-- [ ] T006 [US2] Extend `test/unit.spec.ts` with a test covering the anonymous path: pass `authenticated:false`, `null`, or a session missing `user.identifier` and assert `formatLoginStatus` still returns `logged in as anonymous`.
+- [X] T006 [US2] Extend `test/unit.spec.ts` with a test covering the anonymous path: pass `authenticated:false`, `null`, or a session missing `user.identifier` and assert `formatLoginStatus` still returns `logged in as anonymous`.
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Harden `formatLoginStatus` in `src/client/login-status.ts` (if needed) so it explicitly treats missing `user`, missing `identifier`, and falsy `authenticated` values as the anonymous path before user story 1 renders anything.
+- [X] T007 [US2] Harden `formatLoginStatus` in `src/client/login-status.ts` (if needed) so it explicitly treats missing `user`, missing `identifier`, and falsy `authenticated` values as the anonymous path before user story 1 renders anything.
 
 ---
 
@@ -66,7 +66,7 @@ description: "Task list for the show login state feature"
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] Add a media query to `src/style.css` that sets `.login-status` to `display:none` (or `visibility:hidden`) for viewports narrower than ~680px, ensuring the desktop-specific text never clips the mobile nav.
+- [X] T008 [US3] Add a media query to `src/style.css` that sets `.login-status` to `display:none` (or `visibility:hidden`) for viewports narrower than ~680px, ensuring the desktop-specific text never clips the mobile nav.
 
 ---
 
@@ -74,8 +74,8 @@ description: "Task list for the show login state feature"
 
 **Purpose**: Document and verify the new indicator across the feature space.
 
-- [ ] T009 Update `specs/030-show-login-state/quickstart.md` to mention verifying both the authenticated email and anonymous fallback on desktop plus re-validating the mobile layout, keeping the quickstart in sync with the implemented behavior.
-- [ ] T010 [P] Run `npm test` and confirm the Vitest suite still passes after the login-status helper and header updates.
+- [X] T009 Update `specs/030-show-login-state/quickstart.md` to mention verifying both the authenticated email and anonymous fallback on desktop plus re-validating the mobile layout, keeping the quickstart in sync with the implemented behavior.
+- [X] T010 [P] Run `npm test` and confirm the Vitest suite still passes after the login-status helper and header updates.
 
 ---
 

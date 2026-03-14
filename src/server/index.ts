@@ -1,4 +1,5 @@
 import { type Context, Hono } from 'hono'
+import type { ContentfulStatusCode } from 'hono/utils/http-status'
 import { cors } from 'hono/cors'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import {
@@ -354,7 +355,7 @@ function authErrorResponse (
         return c.json({
             error: err.code,
             message: err.message,
-        }, err.status)
+        }, err.status as ContentfulStatusCode)
     }
 
     const message = err instanceof Error ?

@@ -2,6 +2,7 @@ import {
     generateAuthenticationOptions,
     generateRegistrationOptions,
     type AuthenticationResponseJSON,
+    type AuthenticatorTransportFuture,
     type PublicKeyCredentialCreationOptionsJSON,
     type PublicKeyCredentialRequestOptionsJSON,
     type RegistrationResponseJSON,
@@ -232,7 +233,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         const identifier = challenge.identifier
 
         if (!identifier) {
-            throw new AuthError(500, 'challenge_missing_identifier', 'Registration challenge is missing account data.')
+            throw new AuthError(500,
+                'challenge_missing_identifier', 'Registration challenge is missing account data.')
         }
 
         const verification = await deps.verifyRegistrationResponse({
@@ -251,7 +253,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 occurredAt: deps.now(),
                 detail: 'verification_failed',
             })
-            throw new AuthError(400, 'registration_failed', 'Passkey registration could not be verified.')
+            throw new AuthError(400, 'registration_failed',
+                'Passkey registration could not be verified.')
         }
 
         const existingUser = await findUserByIdentifier(db, identifier)
@@ -283,10 +286,10 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         const credentialId = verification.registrationInfo.credential.id
         const duplicate = await findDeviceByCredentialId(db, credentialId)
         if (duplicate) {
-            throw new AuthError(409, 'credential_exists', 'That passkey is already registered.')
+            throw new AuthError(409, 'credential_exists',
+                'That passkey is already registered.')
         }
 
-        const authenticatorInfo = verification.registrationInfo.authenticatorInfo
         const deviceId = deps.createID()
         await createDevice(db, {
             id: deviceId,
@@ -297,7 +300,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             ),
             counter: verification.registrationInfo.credential.counter,
             transports: verification.registrationInfo.credential.transports,
-            aaguid: authenticatorInfo?.aaguid,
+            aaguid: verification.registrationInfo.aaguid,
             credentialName: displayName || identifier,
             now,
         })
@@ -326,7 +329,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             response: {
                 status: 'confirmation_pending',
                 identifier: user.identifier,
-                message: 'We sent an email to confirm your email address. Check your inbox to finish creating your account.',
+                message: 'We sent an email to confirm your email address. ' +
+                    'Check your inbox to finish creating your account.',
             },
         }
     }
@@ -339,7 +343,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
         const code = request.code?.trim()
         if (!code) {
-            throw new AuthError(400, 'invalid_code', 'Enter a valid confirmation code.')
+            throw new AuthError(400, 'invalid_code',
+                'Enter a valid confirmation code.')
         }
 
         const record = await findConfirmationCode(db, code)
@@ -611,11 +616,13 @@ function buildSessionToken ():string {
     return `${crypto.randomUUID()}${crypto.randomUUID().replaceAll('-', '')}`
 }
 
-function parseTransports (value:string | null):string[] | undefined {
+function parseTransports (
+    value:string | null,
+):AuthenticatorTransportFuture[] | undefined {
     if (!value) return undefined
 
     try {
-        return JSON.parse(value) as string[]
+        return JSON.parse(value) as AuthenticatorTransportFuture[]
     } catch {
         return undefined
     }

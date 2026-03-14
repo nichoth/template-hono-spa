@@ -84,7 +84,10 @@ export const ConfirmRoute = function ({ state }: { state:AppState }) {
                 submissionState.value = 'error'
                 if (err instanceof HTTPError) {
                     try {
-                        const payload = await err.response.json()
+                        const payload = await err.response.json() as {
+                            error?:string;
+                            message?:string;
+                        }
                         errorCode.value = payload.error ?? null
                         message.value = payload.message ?? 'We could not confirm your account.'
                     } catch {

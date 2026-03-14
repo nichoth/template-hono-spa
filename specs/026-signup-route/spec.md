@@ -1,92 +1,94 @@
-# Feature Specification: Create Account Route
+# Feature Specification: Signup Navigation And Confirmation
 
 **Feature Branch**: `[026-signup-route]`  
 **Created**: 2026-03-13  
 **Status**: Draft  
-**Input**: User description: "We need to add a client-side route ro create a new account."
+**Input**: User description: "Should have an additional Create Account nav link at the top [Image #1]. The link should go to the route `/signup`, which has a form very similar to the login page [Image #2] -- same passkey vs password radio buttons. The submit button text should say create account. After you click create account, the backend will send an email to the user to confirm their email address."
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 - Reach Account Creation (Priority: P1)
+### User Story 1 - Reach Signup From Top Navigation (Priority: P1)
 
-A visitor who wants to register can navigate to a dedicated create-account screen from the existing client-side app.
+A visitor who wants to register can reach the create-account route directly from the top navigation.
 
-**Why this priority**: If people cannot reliably reach the account-creation route, the feature provides no value.
+**Why this priority**: The top-level path to registration is the primary user-visible gap described in the request.
 
-**Independent Test**: Open the app, use the intended navigation path to reach the create-account route, and confirm the route loads as a distinct screen without a full-page reload.
+**Independent Test**: Open the app, confirm a `Create Account` navigation link appears in the top navigation, activate it, and verify the app reaches `/signup` without a full-page reload.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor is on an existing public route, **When** they choose the path to create a new account, **Then** the app shows a dedicated create-account route.
-2. **Given** a visitor opens the create-account route directly, **When** the route loads, **Then** they see the account-creation screen instead of an error or unrelated page.
+1. **Given** a visitor is viewing a public route with the top navigation, **When** they look at the main navigation links, **Then** they see a `Create Account` link alongside the existing links.
+2. **Given** a visitor activates the `Create Account` link, **When** the app navigates, **Then** the visitor reaches the `/signup` route without leaving the client-side app.
 
 ---
 
-### User Story 2 - Submit New Account Details (Priority: P1)
+### User Story 2 - Use A Signup Form That Matches Login Choices (Priority: P1)
 
-A visitor on the create-account route can provide the required account details and submit them from that screen.
+A visitor on `/signup` sees a create-account form that feels consistent with the login screen, including the same passkey-versus-password choice.
 
-**Why this priority**: The route must support the primary task of starting a new account, not just display a page shell.
+**Why this priority**: The route must support the intended signup interaction, not just act as a navigation destination.
 
-**Independent Test**: Open the create-account route, enter valid registration details, submit the form, and confirm the app provides a clear success path.
+**Independent Test**: Open `/signup`, confirm the form includes passkey and password method choices like the login screen, and verify the primary action is clearly labeled `Create account`.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor is on the create-account route, **When** they provide all required registration details, **Then** the app accepts the submission and shows a clear next step.
-2. **Given** a visitor has not yet completed account creation, **When** they review the route, **Then** the route makes it clear that the screen is for creating a new account rather than signing in to an existing one.
+1. **Given** a visitor is on `/signup`, **When** the route renders, **Then** the route shows the same passkey and password choice pattern used on the login screen.
+2. **Given** a visitor is ready to submit the signup form, **When** they view the primary action, **Then** the action text says `Create account`.
 
 ---
 
-### User Story 3 - Recover From Entry Problems (Priority: P2)
+### User Story 3 - Receive Email Confirmation Guidance (Priority: P2)
 
-A visitor who misses required information or enters invalid details receives clear feedback and can correct the issue without losing progress unnecessarily.
+A visitor who submits the signup form understands that the next step is email confirmation rather than immediate access.
 
-**Why this priority**: Error recovery improves task completion and reduces abandonment during registration.
+**Why this priority**: The request explicitly defines email confirmation as the post-submit outcome, and users need clear guidance to complete registration.
 
-**Independent Test**: Open the create-account route, submit incomplete or invalid details, and confirm the route highlights what needs to be corrected while preserving unaffected inputs.
+**Independent Test**: Submit the create-account flow with valid details and verify the screen confirms that an email has been sent to the user for address confirmation.
 
 **Acceptance Scenarios**:
 
-1. **Given** a visitor submits incomplete or invalid information, **When** the submission is evaluated, **Then** the route explains what needs to be corrected.
-2. **Given** a visitor corrects the reported problem, **When** they submit again, **Then** the route allows them to continue without re-entering unchanged valid information.
+1. **Given** a visitor submits valid create-account details, **When** the submission succeeds, **Then** the route tells the visitor that a confirmation email has been sent.
+2. **Given** a visitor has submitted the create-account form, **When** the app shows the next step, **Then** the app does not imply that registration is complete before email confirmation.
 
 ### Edge Cases
 
-- What happens when a visitor lands directly on the create-account route while not coming from another in-app page?
-- How does the route behave when a visitor submits the form with missing required information?
-- How does the route behave when the visitor is already signed in and attempts to access the create-account route?
+- What happens when a visitor lands directly on `/signup` without using the top navigation?
+- What happens when the signup form is submitted but the backend cannot start the email-confirmation flow?
+- How does the route behave when the visitor switches between passkey and password methods after entering some information?
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST provide a dedicated client-side route for creating a new account.
-- **FR-002**: The system MUST allow visitors to reach the create-account route from an existing public path in the app.
-- **FR-003**: The system MUST render account-creation content that clearly distinguishes the route from the sign-in experience.
-- **FR-004**: The system MUST collect and submit the required registration details from the create-account route.
-- **FR-005**: The system MUST provide a clear outcome after a successful account-creation submission.
-- **FR-006**: The system MUST show actionable feedback when required or invalid information prevents account creation.
-- **FR-007**: The system MUST preserve valid visitor-entered information when only part of the submission needs correction.
-- **FR-008**: The system MUST support direct navigation to the create-account route without requiring a full-page reload.
-- **FR-009**: The system MUST handle access to the create-account route in a way that avoids confusing already signed-in users.
+- **FR-001**: The system MUST expose a `Create Account` link in the top navigation.
+- **FR-002**: The system MUST navigate the `Create Account` link to the client-side route `/signup`.
+- **FR-003**: The system MUST preserve direct access to `/signup` without requiring a full-page reload.
+- **FR-004**: The system MUST render signup content on `/signup` that is clearly for creating a new account rather than signing in.
+- **FR-005**: The system MUST present the same passkey-versus-password method selection pattern on `/signup` as on the login route.
+- **FR-006**: The system MUST label the primary signup action as `Create account`.
+- **FR-007**: The system MUST collect the information required to start account creation for the selected signup method.
+- **FR-008**: The system MUST tell the visitor after a successful submission that a confirmation email has been sent to confirm their email address.
+- **FR-009**: The system MUST avoid implying that account creation is fully complete before the email-confirmation step is finished.
+- **FR-010**: The system MUST show actionable feedback when the signup request cannot be completed.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Create Account Route**: The client-visible screen where a visitor begins account registration.
-- **Registration Submission**: The set of visitor-provided details required to request a new account.
-- **Submission Feedback**: The success or error information shown after the route evaluates a registration attempt.
+- **Signup Navigation Link**: The top-navigation entry that takes a visitor to `/signup`.
+- **Signup Method Choice**: The visitor’s selected account-creation method, either passkey or password.
+- **Signup Submission**: The set of visitor-provided details used to start account creation.
+- **Email Confirmation Notice**: The success feedback shown after the backend starts the email-confirmation flow.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: 100% of tested navigation paths to the create-account route reach the correct screen without a full-page reload.
-- **SC-002**: At least 90% of test users can identify the create-account screen as distinct from sign-in on first view.
-- **SC-003**: At least 90% of valid registration attempts tested on the route reach a clear next step without requiring a second submission.
-- **SC-004**: 100% of tested invalid or incomplete submissions return feedback that identifies what the visitor must correct.
+- **SC-001**: 100% of tested top-navigation renders display a `Create Account` link that routes to `/signup`.
+- **SC-002**: 100% of tested visits to `/signup` show the passkey and password method choices and a primary action labeled `Create account`.
+- **SC-003**: 100% of tested successful signup submissions show guidance that a confirmation email has been sent.
+- **SC-004**: 100% of tested signup failures show feedback that tells the visitor what prevented the email-confirmation step from starting.
 
 ## Assumptions
 
 - The feature applies to the existing public-facing client application and should fit into the current client-side navigation model.
-- A “create new account” route includes both route access and a usable registration flow on that screen.
-- Standard account-creation behavior includes preserving unaffected valid inputs when a submission fails validation.
+- The existing `/signup` route can be refined to satisfy this feature instead of introducing a second registration path.
+- A successful signup submission starts an email-confirmation flow rather than immediately granting a completed account session.

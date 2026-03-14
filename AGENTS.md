@@ -31,6 +31,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-09
 - TypeScript (ESM, ES2022 strict mode) + Preact, Hono, Vite 8, `route-event`, `ky`, `@substrate-system/radio-input`, `@substrate-system/input`, `@substrate-system/password-input`, `@simplewebauthn/browser`, `@simplewebauthn/server` (024-signup-route)
 - Cloudflare D1 auth persistence already used by the existing auth backend (024-signup-route)
 - TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, Hono shell app, Lightning CSS pipeline (025-square-cards)
+- TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, `@substrate-system/routes`, `@substrate-system/radio-input`, Hono, `ky`, `@simplewebauthn/browser`, `@simplewebauthn/server` (026-signup-route)
+- Cloudflare D1 auth tables already used for users, challenges, credentials, sessions, and auth events (026-signup-route)
 
 - TypeScript (ESM), Node.js runtime, Vite 7.x toolchain + Vite, Hono, Preact, `@cloudflare/vite-plugin`, `@hono/vite-dev-server` (001-fix-npm-start)
 
@@ -50,9 +52,9 @@ npm test && npm run lint
 TypeScript (ESM), Node.js runtime, Vite 7.x toolchain: Follow standard conventions
 
 ## Recent Changes
+- 026-signup-route: Added TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, `@substrate-system/routes`, `@substrate-system/radio-input`, Hono, `ky`, `@simplewebauthn/browser`, `@simplewebauthn/server`
 - 025-square-cards: Added TypeScript (ES2022, strict mode) and CSS via Vite 8 + Preact, `htm/preact`, `@preact/signals`, Hono shell app, Lightning CSS pipeline
 - 024-signup-route: Added TypeScript (ESM, ES2022 strict mode) + Preact, Hono, Vite 8, `route-event`, `ky`, `@substrate-system/radio-input`, `@substrate-system/input`, `@substrate-system/password-input`, `@simplewebauthn/browser`, `@simplewebauthn/server`
-- 023-passkey-auth-backend: Added TypeScript (ES2022, strict mode) + Hono, Preact, `@preact/signals`, `ky`, Wrangler, Cloudflare Workers runtime, Web Crypto APIs, browser WebAuthn APIs
 
 
 <!-- MANUAL ADDITIONS START -->

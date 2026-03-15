@@ -1,6 +1,6 @@
 import { type FunctionComponent } from 'preact'
-import { useCallback, useEffect, useState } from 'preact/hooks'
-import { useComputed } from '@preact/signals'
+import { useCallback, useEffect } from 'preact/hooks'
+import { useComputed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import {
@@ -83,18 +83,12 @@ export const ProfileRoute:FunctionComponent<{
         return state.devices.value.pending ?? false
     })
 
-    const [addDeviceName, setAddDeviceName] =
-        useState('')
-    const [addDevicePending, setAddDevicePending] =
-        useState(false)
-    const [addDeviceError, setAddDeviceError] =
-        useState<string | null>(null)
-    const [addDeviceSuccess, setAddDeviceSuccess] =
-        useState<string | null>(null)
-    const [revokePending, setRevokePending] =
-        useState<string | null>(null)
-    const [revokeError, setRevokeError] =
-        useState<string | null>(null)
+    const addDeviceName = useSignal('')
+    const addDevicePending = useSignal(false)
+    const addDeviceError = useSignal<string | null>(null)
+    const addDeviceSuccess = useSignal<string | null>(null)
+    const revokePending = useSignal<string | null>(null)
+    const revokeError = useSignal<string | null>(null)
 
     useEffect(() => {
         if (isPasskeyUser.value) {
@@ -103,37 +97,35 @@ export const ProfileRoute:FunctionComponent<{
     }, [isPasskeyUser.value])
 
     const onAddDevice = useCallback(async () => {
-        setAddDevicePending(true)
-        setAddDeviceError(null)
-        setAddDeviceSuccess(null)
+        addDevicePending.value = true
+        addDeviceError.value = null
+        addDeviceSuccess.value = null
 
         try {
             const result = await State.addDevice(
                 state,
-                addDeviceName.trim() || undefined,
+                addDeviceName.value.trim() || undefined,
             )
-            setAddDeviceName('')
+            addDeviceName.value = ''
             if (result) {
-                setAddDeviceSuccess(
+                addDeviceSuccess.value =
                     'Added "'
                     + result.device.credentialName
-                    + '"',
-                )
+                    + '"'
             }
         } catch (_err) {
             const err = _err as Error
-            setAddDeviceError(
-                err.message || 'Failed to add device.',
-            )
+            addDeviceError.value =
+                err.message || 'Failed to add device.'
         } finally {
-            setAddDevicePending(false)
+            addDevicePending.value = false
         }
-    }, [state, addDeviceName])
+    }, [state])
 
     const onRevokeDevice = useCallback(
         async (deviceId:string) => {
-            setRevokePending(deviceId)
-            setRevokeError(null)
+            revokePending.value = deviceId
+            revokeError.value = null
 
             try {
                 await State.revokeDevice(
@@ -141,21 +133,24 @@ export const ProfileRoute:FunctionComponent<{
                 )
             } catch (_err) {
                 const err = _err as Error
-                setRevokeError(
+                revokeError.value =
                     err.message
-                    || 'Failed to revoke device.',
-                )
+                    || 'Failed to revoke device.'
             } finally {
-                setRevokePending(null)
+                revokePending.value = null
             }
         },
         [state],
     )
 
-    const activeDevices = devices.value.filter(
-        (d:DeviceInfo) => !d.isRevoked,
+    const activeDevices = useComputed(() =>
+        devices.value.filter(
+            (d:DeviceInfo) => !d.isRevoked,
+        )
     )
-    const canRevoke = activeDevices.length > 1
+    const canRevoke = useComputed(
+        () => activeDevices.value.length > 1
+    )
 
     return html`<div class="route profile">
         <h2>Profile</h2>
@@ -243,45 +238,74 @@ export const ProfileRoute:FunctionComponent<{
                     </p>
                 ` : null}
 
-                ${activeDevices.length > 0 ? html`
+                ${activeDevices.value.length > 0 ? html`
                     <ul
                         class="device-list"
                         role="list"
                     >
-                        ${activeDevices.map(
+                        ${activeDevices.value.map(
                             (device:DeviceInfo) => html`
                             <li
                                 class="device-item"
                                 key=${device.deviceId}
                             >
-                                <div class="device-info" >
-                                    <span class="device-name" >
-                                        ${device.credentialName || 'Unnamed'}
+                                <div class="device-info">
+                                    <span
+                                        class="device-name"
+                                    >
+                                        ${device
+                                            .credentialName
+                                            || 'Unnamed'}
                                     </span>
-                                    <span class="device-dates">
-                                        Added ${formatDate(device.createdAt)}${
-                                            device.lastUsedAt ?
-                                                (' \u00B7 '
-                                                + 'Last used '
-                                                + formatDate(
-                                                    device
-                                                    .lastUsedAt
-                                                )) :
-                                                ''
-                                            }
+                                    <span
+                                        class="device-dates"
+                                    >
+                                        Added ${
+                                            formatDate(
+                                                device
+                                                .createdAt
+                                            )
+                                        }${
+                                            device
+                                            .lastUsedAt ?
+                                            (' \u00B7 '
+                                            + 'Last used '
+                                            + formatDate(
+                                                device
+                                                .lastUsedAt
+                                            )) :
+                                            ''
+                                        }
                                     </span>
                                 </div>
                                 <${SubstrateButton.TAG}
                                     class="device-revoke-btn"
                                     type="button"
-                                    onClick=${() => onRevokeDevice(device.deviceId)}
-                                    disabled=${!(canRevoke ||
-                                        revokePending === device.deviceId
-                                    )}
-                                    spinning=${revokePending === device.deviceId}
-                                    title=${canRevoke ?
-                                        'Revoke this device' :
-                                        'Cannot revoke your only device'
+                                    onClick=${() =>
+                                        onRevokeDevice(
+                                            device.deviceId
+                                        )
+                                    }
+                                    disabled=${
+                                        !canRevoke.value
+                                        || revokePending
+                                            .value
+                                            === device
+                                            .deviceId
+                                    }
+                                    spinning=${
+                                        revokePending
+                                            .value
+                                            === device
+                                            .deviceId
+                                    }
+                                    title=${
+                                        canRevoke.value ?
+                                            'Revoke this'
+                                            + ' device' :
+                                            'Cannot revoke'
+                                            + ' your only'
+                                            + ' device'
                                     }
                                 >
                                     Revoke
@@ -291,45 +315,64 @@ export const ProfileRoute:FunctionComponent<{
                     </ul>
                 ` : null}
 
-                ${revokeError ? html`
-                    <p class="device-error" role="status">
-                        ${revokeError}
+                ${revokeError.value ? html`
+                    <p
+                        class="device-error"
+                        role="status"
+                    >
+                        ${revokeError.value}
                     </p>
                 ` : null}
 
-                <div class="add-device-section" aria-live="polite">
+                <div
+                    class="add-device-section"
+                    aria-live="polite"
+                >
                     <label class="add-device-label">
                         <span>Device name (optional)</span>
                         <input
                             type="text"
                             class="add-device-input"
                             placeholder="e.g. Work Laptop"
-                            value=${addDeviceName}
+                            value=${addDeviceName.value}
                             onInput=${(
                                 e:Event,
-                            ) => setAddDeviceName((e.target as HTMLInputElement).value)}
-                            disabled=${addDevicePending}
+                            ) => {
+                                addDeviceName.value =
+                                    (e.target as
+                                        HTMLInputElement
+                                    ).value
+                            }}
+                            disabled=${
+                                addDevicePending.value
+                            }
                         />
                     </label>
                     <${SubstrateButton.TAG}
                         class="add-device-btn"
                         type="button"
                         onClick=${onAddDevice}
-                        spinning=${addDevicePending}
-                        disabled=${addDevicePending}
+                        spinning=${addDevicePending.value}
+                        disabled=${addDevicePending.value}
                     >
-                        ${addDevicePending ?
+                        ${addDevicePending.value ?
                             'Adding...' :
                             'Add device'}
                     <//>
-                    ${addDeviceError ? html`
-                        <p class="device-error" role="status">
-                            ${addDeviceError}
+                    ${addDeviceError.value ? html`
+                        <p
+                            class="device-error"
+                            role="status"
+                        >
+                            ${addDeviceError.value}
                         </p>
                     ` : null}
-                    ${addDeviceSuccess ? html`
-                        <p class="device-success" role="status">
-                            ${addDeviceSuccess}
+                    ${addDeviceSuccess.value ? html`
+                        <p
+                            class="device-success"
+                            role="status"
+                        >
+                            ${addDeviceSuccess.value}
                         </p>
                     ` : null}
                 </div>

@@ -106,7 +106,7 @@ export const ProfileRoute:FunctionComponent<{
         try {
             const result = await State.createInvite(
                 state,
-                addDeviceName.value.trim() || undefined,
+                addDeviceName.value.trim(),
             )
             addDeviceName.value = ''
             if (result) {

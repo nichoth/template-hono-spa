@@ -270,22 +270,19 @@ export const ProfileRoute:FunctionComponent<{
                                         onRevokeDevice(device.deviceId)
                                     }
                                     disabled=${!canRevoke.value ||
-                                        revokePending.value ===
-                                        device.deviceId}
-                                    spinning=${revokePending.value ===
-                                        device.deviceId}
+                                        revokePending.value === device.deviceId}
+                                    spinning=${revokePending.value === device.deviceId}
                                     title=${canRevoke.value ?
                                         'Revoke this device' :
                                         'Cannot revoke your only device'}
-                                    ref=${(el:Element | null) => {
+                                    ref=${(el:Element|null) => {
+                                        // this is b/c passing `disabled` via
+                                        // preact/htm doesn't work
                                         if (!el) return
-                                        const d = !canRevoke.value ||
-                                            revokePending.value ===
-                                            device.deviceId
+                                        const d = (!canRevoke.value ||
+                                            revokePending.value === device.deviceId)
                                         if (d) {
-                                            el.setAttribute(
-                                                'disabled', '',
-                                            )
+                                            el.setAttribute('disabled', '')
                                         } else {
                                             el.removeAttribute('disabled')
                                         }

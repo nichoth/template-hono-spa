@@ -145,7 +145,7 @@ Use the Nitpicker agent to review this codebase
 
 ### Superpowers
 
-A Claude plugin to make it better.
+[A Claude plugin](https://github.com/obra/superpowers) to make it better.
 
 #### Install
 
@@ -204,16 +204,16 @@ another (the "Reviewer") verifies it against the spec.
 Once installed, many of these skills activate automatically based on
 your requests:
 
-Test-Driven Development (TDD): If you ask Claude to fix a bug or add a feature,
-it is instructed to write a failing test first (Red), implement the fix (Green),
-and then cleanup (Refactor).
+**Test-Driven Development (TDD)**: If you ask Claude to fix a bug or add a
+feature, it is instructed to write a failing test first (Red), implement the
+fix (Green), and then cleanup (Refactor).
 
-Git Worktrees: Superpowers can automatically create a git worktree for a new
+**Git Worktrees**: Superpowers can automatically create a git worktree for a new
 feature. This allows you to work on multiple branches simultaneously without
 clobbering your main working directory.
 
-Systematic Debugging: Instead of guessing, Claude follows a 4-phase root cause
-analysis process to trace bugs to their source before attempting a fix.
+**Systematic Debugging**: Instead of guessing, Claude follows a 4-phase root
+cause analysis process to trace bugs to their source before attempting a fix.
 
 #### Pro-Tips for Success
 

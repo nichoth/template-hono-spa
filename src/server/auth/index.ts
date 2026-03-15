@@ -11,6 +11,7 @@ import {
 } from '@simplewebauthn/server'
 import { isoBase64URL } from '@simplewebauthn/server/helpers'
 import {
+    countActiveDevicesByUserId,
     createAuthEvent,
     createChallenge,
     createDevice,
@@ -19,6 +20,7 @@ import {
     ensureAuthSchema,
     expireSession,
     findChallengeById,
+    findDeviceById,
     findDeviceByCredentialId,
     findSessionByToken,
     findUserById,
@@ -116,6 +118,32 @@ export type AuthenticationStartResponse = {
 export type AuthenticationFinishRequest = {
     challengeReference:string;
     credential:AuthenticationResponseJSON;
+}
+
+export const MAX_DEVICES_PER_USER = 10
+
+export type DeviceRegistrationStartRequest = {
+    credentialName?:string;
+}
+
+export type DeviceRegistrationStartResponse = {
+    challengeReference:string;
+    options:PublicKeyCredentialCreationOptionsJSON;
+}
+
+export type DeviceRegistrationFinishRequest = {
+    challengeReference:string;
+    credential:RegistrationResponseJSON;
+    credentialName?:string;
+}
+
+export type DeviceRegistrationFinishResponse = {
+    status:'device_added';
+    device:{
+        deviceId:string;
+        credentialName:string;
+        createdAt:string;
+    };
 }
 
 export class AuthError extends Error {
@@ -580,6 +608,228 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         return { authenticated: false }
     }
 
+    async function startDeviceRegistration (
+        db:D1Database,
+        requestUrl:string,
+        userId:string,
+        request:DeviceRegistrationStartRequest,
+    ):Promise<DeviceRegistrationStartResponse> {
+        await ensureAuthSchema(db)
+
+        const user = await findUserById(db, userId)
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        const activeCount = await countActiveDevicesByUserId(
+            db, userId,
+        )
+        if (activeCount >= MAX_DEVICES_PER_USER) {
+            throw new AuthError(
+                409,
+                'device_limit',
+                'Maximum of '
+                    + MAX_DEVICES_PER_USER
+                    + ' devices reached.',
+            )
+        }
+
+        const existingDevices = await listActiveDevicesByUserId(
+            db, userId,
+        )
+
+        const credentialName = request.credentialName?.trim()
+            || ('Device ' + (activeCount + 1))
+
+        const rpID = deriveRpID(requestUrl)
+        const now = deps.now()
+        const options = await deps.generateRegistrationOptions({
+            rpName: AUTH_RP_NAME,
+            rpID,
+            userName: user.identifier,
+            userID: new TextEncoder().encode(userId),
+            userDisplayName:
+                user.display_name || user.identifier,
+            timeout: REGISTRATION_TIMEOUT_MS,
+            excludeCredentials: existingDevices.map(d => ({
+                id: d.credential_id,
+                transports: parseTransports(
+                    d.transports_json,
+                ),
+            })),
+        })
+
+        const challengeReference = deps.createID()
+        await createChallenge(db, {
+            id: challengeReference,
+            userID: userId,
+            identifier: user.identifier,
+            purpose: 'device_addition',
+            challengeValue: options.challenge,
+            expiresAt: now + REGISTRATION_TIMEOUT_MS,
+            now,
+            metadata: { credentialName },
+        })
+
+        return { challengeReference, options }
+    }
+
+    async function finishDeviceRegistration (
+        db:D1Database,
+        requestUrl:string,
+        userId:string,
+        request:DeviceRegistrationFinishRequest,
+    ):Promise<DeviceRegistrationFinishResponse> {
+        await ensureAuthSchema(db)
+
+        const challenge = await findChallengeById(
+            db, request.challengeReference,
+        )
+        if (
+            !challenge
+            || challenge.purpose !== 'device_addition'
+        ) {
+            throw new AuthError(
+                400,
+                'invalid_challenge',
+                'Device registration challenge '
+                    + 'was not found.',
+            )
+        }
+        if (challenge.status !== 'pending') {
+            throw new AuthError(
+                400,
+                'invalid_challenge_state',
+                'Device registration challenge '
+                    + 'can no longer be used.',
+            )
+        }
+        if (challenge.expires_at <= deps.now()) {
+            await markChallengeExpired(db, challenge.id)
+            throw new AuthError(
+                400,
+                'expired_challenge',
+                'Device registration challenge '
+                    + 'has expired.',
+            )
+        }
+
+        if (challenge.user_id !== userId) {
+            throw new AuthError(
+                403,
+                'not_owner',
+                'Challenge does not belong '
+                    + 'to your account.',
+            )
+        }
+
+        const verification =
+            await deps.verifyRegistrationResponse({
+                response: request.credential,
+                expectedChallenge:
+                    challenge.challenge_value,
+                expectedOrigin:
+                    deriveExpectedOrigin(requestUrl),
+                expectedRPID: deriveRpID(requestUrl),
+            })
+
+        if (!verification.verified) {
+            await createAuthEvent(db, {
+                id: deps.createID(),
+                userID: userId,
+                challengeID: challenge.id,
+                eventType: 'device_addition',
+                result: 'failure',
+                occurredAt: deps.now(),
+                detail: 'verification_failed',
+            })
+            throw new AuthError(
+                400,
+                'registration_failed',
+                'Passkey registration '
+                    + 'could not be verified.',
+            )
+        }
+
+        const credentialId =
+            verification.registrationInfo.credential.id
+        const duplicate = await findDeviceByCredentialId(
+            db, credentialId,
+        )
+        if (duplicate) {
+            throw new AuthError(
+                409,
+                'credential_exists',
+                'That passkey is already registered.',
+            )
+        }
+
+        const activeCount = await countActiveDevicesByUserId(
+            db, userId,
+        )
+        if (activeCount >= MAX_DEVICES_PER_USER) {
+            throw new AuthError(
+                409,
+                'device_limit',
+                'Maximum of '
+                    + MAX_DEVICES_PER_USER
+                    + ' devices reached.',
+            )
+        }
+
+        const now = deps.now()
+        const metadata = parseChallengeMetadata(challenge)
+        const credentialName =
+            request.credentialName?.trim()
+            || metadata.credentialName
+            || ('Device ' + (activeCount + 1))
+
+        const deviceId = deps.createID()
+        await createDevice(db, {
+            id: deviceId,
+            userID: userId,
+            credentialID: credentialId,
+            publicKey: isoBase64URL.fromBuffer(
+                verification.registrationInfo
+                    .credential.publicKey,
+            ),
+            counter:
+                verification.registrationInfo
+                    .credential.counter,
+            transports:
+                verification.registrationInfo
+                    .credential.transports,
+            aaguid:
+                verification.registrationInfo.aaguid,
+            credentialName,
+            now,
+        })
+
+        await markChallengeUsed(db, challenge.id, now)
+
+        await createAuthEvent(db, {
+            id: deps.createID(),
+            userID: userId,
+            challengeID: challenge.id,
+            eventType: 'device_addition',
+            result: 'success',
+            occurredAt: now,
+        })
+
+        return {
+            status: 'device_added',
+            device: {
+                deviceId,
+                credentialName,
+                createdAt: new Date(now).toISOString(),
+            },
+        }
+    }
+
     async function listRegisteredDevices (
         db:D1Database,
         userID:string,
@@ -590,9 +840,40 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
     async function revokeRegisteredDevice (
         db:D1Database,
+        userId:string,
         deviceID:string,
     ) {
         await ensureAuthSchema(db)
+
+        const device = await findDeviceById(db, deviceID)
+        if (!device) {
+            throw new AuthError(
+                404,
+                'unknown_device',
+                'Device not found.',
+            )
+        }
+        if (device.user_id !== userId) {
+            throw new AuthError(
+                403,
+                'not_owner',
+                'Device does not belong '
+                    + 'to your account.',
+            )
+        }
+
+        const activeCount = await countActiveDevicesByUserId(
+            db, userId,
+        )
+        if (activeCount <= 1) {
+            throw new AuthError(
+                409,
+                'last_device',
+                'Cannot revoke your only '
+                    + 'active device.',
+            )
+        }
+
         await revokeDevice(db, deviceID)
     }
 
@@ -604,6 +885,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         finishAuthentication,
         getCurrentSession,
         logout,
+        startDeviceRegistration,
+        finishDeviceRegistration,
         listRegisteredDevices,
         revokeRegisteredDevice,
     }

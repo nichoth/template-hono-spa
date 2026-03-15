@@ -222,27 +222,127 @@ app.post('/api/auth/passkey/login', async (c) => {
     }
 })
 
+app.post(
+    '/api/auth/passkey/devices/register/start',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+            if (session.loginMethod !== 'passkey') {
+                return c.json({
+                    error: 'not_passkey_user',
+                    message: 'Only passkey accounts '
+                        + 'can add devices.',
+                }, 403)
+            }
+
+            const body = await c.req.json<{
+                credentialName?:string;
+            }>()
+
+            const result =
+                await authService.startDeviceRegistration(
+                    c.env.AUTH_DB,
+                    c.req.url,
+                    session.user.id,
+                    body,
+                )
+
+            return c.json(result, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.post(
+    '/api/auth/passkey/devices/register/finish',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+
+            const body = await c.req.json<{
+                challengeReference:string;
+                credential:unknown;
+                credentialName?:string;
+            }>()
+
+            const result =
+                await authService.finishDeviceRegistration(
+                    c.env.AUTH_DB,
+                    c.req.url,
+                    session.user.id,
+                    body as never,
+                )
+
+            return c.json(result, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
 app.get('/api/auth/passkey/devices', async (c) => {
     try {
-        const userId = c.req.query('userId')
-        if (!userId) {
+        const sessionToken = getCookie(
+            c, AUTH_SESSION_COOKIE,
+        )
+        const session =
+            await authService.getCurrentSession(
+                c.env.AUTH_DB, sessionToken,
+            )
+        if (!session.authenticated) {
             return c.json({
-                error: 'userId query parameter is required',
-            }, 400)
+                error: 'unauthenticated',
+                message: 'Session is required.',
+            }, 401)
         }
 
-        const devices = await authService.listRegisteredDevices(
-            c.env.AUTH_DB,
-            userId,
-        )
+        const devices =
+            await authService.listRegisteredDevices(
+                c.env.AUTH_DB,
+                session.user.id,
+            )
 
         return c.json(devices.map(device => ({
             deviceId: device.id,
             credentialId: device.credential_id,
             credentialName: device.credential_name,
             aaguid: device.aaguid,
-            transports: device.transports_json ? JSON.parse(device.transports_json) : [],
-            lastUsedAt: device.last_used_at ? new Date(device.last_used_at).toISOString() : null,
+            transports: device.transports_json ?
+                JSON.parse(device.transports_json) :
+                [],
+            createdAt: new Date(
+                device.created_at,
+            ).toISOString(),
+            lastUsedAt: device.last_used_at ?
+                new Date(
+                    device.last_used_at,
+                ).toISOString() :
+                null,
             isRevoked: Boolean(device.is_revoked),
         })), 200)
     } catch (err) {
@@ -250,19 +350,37 @@ app.get('/api/auth/passkey/devices', async (c) => {
     }
 })
 
-app.patch('/api/auth/passkey/devices/:deviceId/revoke', async (c) => {
-    try {
-        const deviceId = c.req.param('deviceId')
-        await authService.revokeRegisteredDevice(
-            c.env.AUTH_DB,
-            deviceId,
-        )
+app.patch(
+    '/api/auth/passkey/devices/:deviceId/revoke',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
 
-        return c.body(null, 204)
-    } catch (err) {
-        return authErrorResponse(c, err as Error)
-    }
-})
+            const deviceId = c.req.param('deviceId')
+            await authService.revokeRegisteredDevice(
+                c.env.AUTH_DB,
+                session.user.id,
+                deviceId,
+            )
+
+            return c.body(null, 204)
+        } catch (err) {
+            return authErrorResponse(c, err as Error)
+        }
+    },
+)
 
 app.get('/api/session', async (c) => {
     try {

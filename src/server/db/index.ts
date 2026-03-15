@@ -29,7 +29,7 @@ export type AuthChallengeRecord = {
     id:string;
     user_id:string | null;
     identifier:string | null;
-    purpose:'registration'|'authentication';
+    purpose:'registration'|'authentication'|'device_addition';
     challenge_value:string;
     status:string;
     expires_at:number;
@@ -69,6 +69,7 @@ export type ConfirmationCodeRecord = {
 type ChallengeMetadata = {
     userID?:string;
     displayName?:string;
+    credentialName?:string;
 }
 
 const initializedDbs = new WeakSet<D1Database>()
@@ -229,6 +230,17 @@ export async function activateUser (
     `).bind(now, identifier).run()
 }
 
+export async function countActiveDevicesByUserId (
+    db:D1Database,
+    userId:string,
+):Promise<number> {
+    const row = await db.prepare(
+        'SELECT COUNT(*) as count FROM devices ' +
+        'WHERE user_id = ? AND is_revoked = 0'
+    ).bind(userId).first<{ count:number }>()
+    return row?.count ?? 0
+}
+
 export async function listActiveDevicesByUserId (
     db:D1Database,
     userID:string,
@@ -254,6 +266,19 @@ export async function listDevicesByUserId (
     `).bind(userID).all<DeviceRecord>()
 
     return result.results ?? []
+}
+
+export async function findDeviceById (
+    db:D1Database,
+    deviceId:string,
+):Promise<DeviceRecord | null> {
+    const result = await db.prepare(`
+        SELECT * FROM devices
+        WHERE id = ?
+        LIMIT 1
+    `).bind(deviceId).first<DeviceRecord>()
+
+    return result ?? null
 }
 
 export async function findDeviceByCredentialId (
@@ -339,7 +364,7 @@ export async function createChallenge (
         id:string;
         userID?:string;
         identifier?:string;
-        purpose:'registration'|'authentication';
+        purpose:'registration'|'authentication'|'device_addition';
         challengeValue:string;
         expiresAt:number;
         now:number;

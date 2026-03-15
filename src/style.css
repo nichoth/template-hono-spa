@@ -11,7 +11,7 @@
 
 :root {
     --color-surface-canvas: #fafafa;
-    --color-surface-card: #fff;
+    --color-surface-card: white;
     --color-surface-subtle: #e1e0e040;
     --color-surface-neutral: #f3f4f6;
     --color-surface-success: #ecfdf5;

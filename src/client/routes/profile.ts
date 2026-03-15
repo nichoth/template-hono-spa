@@ -247,7 +247,7 @@ export const ProfileRoute:FunctionComponent<{
                     <ul class="device-list" role="list">
                         ${activeDevices.value.map(
                             (device:DeviceInfo) => html`
-                            <li class="device-item" key=${device.deviceId}>
+                            <li class="device-item card" key=${device.deviceId}>
                                 <div class="device-info">
                                     <span class="device-name">
                                         ${device.credentialName || 'Unnamed'}
@@ -295,7 +295,7 @@ export const ProfileRoute:FunctionComponent<{
                         ${pendingInvitations.value.map(
                             (inv:PendingInvitation) => html`
                             <li
-                                class="invitation-item"
+                                class="invitation-item card"
                                 key=${inv.inviteCode}
                             >
                                 <div class="invitation-info">

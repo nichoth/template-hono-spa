@@ -1,6 +1,7 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import {
+    AuthError,
     createAuthService,
     type RegistrationConfirmationResult,
 } from '../src/server/auth/index.js'
@@ -715,6 +716,462 @@ describe('Integration tests', () => {
             )
             expect(response.status).toBe(404)
         })
+    })
+
+    describe('Device revocation protection', () => {
+        it('rejects revoking the only active device',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `last-device-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                const fakeCredentialId = `cred-last-${
+                    crypto.randomUUID()
+                }`
+                const fakePublicKey = new Uint8Array([
+                    20, 21, 22, 23,
+                ])
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions:
+                        async (opts) => ({
+                            challenge: 'last-dev-challenge',
+                            rp: {
+                                name: opts.rpName,
+                                id: opts.rpID,
+                            },
+                            user: {
+                                id: 'user-id-b64',
+                                name: opts.userName,
+                                displayName:
+                                    opts.userDisplayName
+                                    || '',
+                            },
+                            pubKeyCredParams: [
+                                {
+                                    type: 'public-key',
+                                    alg: -7,
+                                },
+                            ],
+                            timeout: opts.timeout,
+                            attestation: 'none',
+                            authenticatorSelection: {
+                                residentKey: 'preferred',
+                                userVerification:
+                                    'preferred',
+                            },
+                        }),
+                    verifyRegistrationResponse:
+                        async () => ({
+                            verified: true,
+                            registrationInfo: {
+                                fmt: 'none' as const,
+                                aaguid:
+                                    '00000000-0000-0000'
+                                    + '-0000-000000000000',
+                                credential: {
+                                    id: fakeCredentialId,
+                                    publicKey:
+                                        fakePublicKey,
+                                    counter: 0,
+                                    transports: [
+                                        'internal'
+                                            as const,
+                                    ],
+                                },
+                                credentialType:
+                                    'public-key'
+                                        as const,
+                                attestationObject:
+                                    new Uint8Array(0),
+                                userVerified: true,
+                                credentialDeviceType:
+                                    'multiDevice'
+                                        as const,
+                                credentialBackedUp: true,
+                                origin:
+                                    'http://localhost',
+                                rpID: 'localhost',
+                                authenticatorInfo: {
+                                    rpIdHash:
+                                        new Uint8Array(
+                                            32
+                                        ),
+                                    flags: {
+                                        up: true,
+                                        uv: true,
+                                        be: true,
+                                        bs: true,
+                                        at: true,
+                                        ed: false,
+                                        flagsInt: 0,
+                                    },
+                                    counter: 0,
+                                    aaguid:
+                                        '00000000-0000'
+                                        + '-0000-0000'
+                                        + '-000000000000',
+                                    credentialID:
+                                        new Uint8Array(
+                                            0
+                                        ),
+                                    credentialPublicKey:
+                                        new Uint8Array(
+                                            0
+                                        ),
+                                },
+                            },
+                        }),
+                    generateAuthenticationOptions:
+                        async () => ({
+                            challenge: '',
+                            rpId: '',
+                        }),
+                    verifyAuthenticationResponse:
+                        async () => ({
+                            verified: false,
+                            authenticationInfo:
+                                {} as never,
+                        }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `last-dev-id-${idCounter}`
+                    },
+                })
+
+                const startResult =
+                    await authService.startRegistration(
+                        db,
+                        'http://localhost'
+                            + '/api/auth/register/start',
+                        {
+                            identifier,
+                            displayName:
+                                'Last Device Test',
+                        },
+                    )
+
+                const finishResult =
+                    await authService.finishRegistration(
+                        db,
+                        'http://localhost'
+                            + '/api/auth/register'
+                            + '/finish',
+                        {
+                            challengeReference:
+                                startResult
+                                    .challengeReference,
+                            credential: {} as never,
+                        },
+                    )
+
+                await authService.confirmEmail(db, {
+                    code: finishResult
+                        .confirmationCode,
+                    identifier,
+                })
+
+                const user = await db.prepare(
+                    'SELECT * FROM users '
+                    + 'WHERE identifier = ?'
+                ).bind(
+                    identifier.toLowerCase()
+                ).first<{ id:string }>()
+
+                expect(user).toBeTruthy()
+
+                const device = await db.prepare(
+                    'SELECT * FROM devices '
+                    + 'WHERE user_id = ? '
+                    + 'AND is_revoked = 0'
+                ).bind(user!.id).first<{
+                    id:string;
+                }>()
+
+                expect(device).toBeTruthy()
+
+                try {
+                    await authService
+                        .revokeRegisteredDevice(
+                            db,
+                            user!.id,
+                            device!.id,
+                        )
+                    expect.fail(
+                        'Should have thrown '
+                        + 'AuthError'
+                    )
+                } catch (err) {
+                    expect(err).toBeInstanceOf(
+                        AuthError
+                    )
+                    const authErr = err as AuthError
+                    expect(authErr.status).toBe(409)
+                    expect(authErr.code)
+                        .toBe('last_device')
+                }
+            }
+        )
+
+        it('allows revoking when multiple devices exist',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `multi-device-${
+                    crypto.randomUUID()
+                }@example.com`
+
+                let credentialCounter = 0
+                let idCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions:
+                        async (opts) => ({
+                            challenge:
+                                'multi-dev-challenge',
+                            rp: {
+                                name: opts.rpName,
+                                id: opts.rpID,
+                            },
+                            user: {
+                                id: 'user-id-b64',
+                                name: opts.userName,
+                                displayName:
+                                    opts.userDisplayName
+                                    || '',
+                            },
+                            pubKeyCredParams: [
+                                {
+                                    type: 'public-key',
+                                    alg: -7,
+                                },
+                            ],
+                            timeout: opts.timeout,
+                            attestation: 'none',
+                            authenticatorSelection: {
+                                residentKey: 'preferred',
+                                userVerification:
+                                    'preferred',
+                            },
+                        }),
+                    verifyRegistrationResponse:
+                        async () => {
+                            credentialCounter++
+                            return {
+                                verified: true,
+                                registrationInfo: {
+                                    fmt: 'none'
+                                        as const,
+                                    aaguid:
+                                        '00000000-0000'
+                                        + '-0000-0000'
+                                        + '-000000000000',
+                                    credential: {
+                                        id: `cred-multi-${
+                                            credentialCounter
+                                        }`,
+                                        publicKey:
+                                            new Uint8Array(
+                                                [
+                                                    credentialCounter,
+                                                ]
+                                            ),
+                                        counter: 0,
+                                        transports: [
+                                            'internal'
+                                                as const,
+                                        ],
+                                    },
+                                    credentialType:
+                                        'public-key'
+                                            as const,
+                                    attestationObject:
+                                        new Uint8Array(
+                                            0
+                                        ),
+                                    userVerified: true,
+                                    credentialDeviceType:
+                                        'multiDevice'
+                                            as const,
+                                    credentialBackedUp:
+                                        true,
+                                    origin:
+                                        'http://localhost',
+                                    rpID: 'localhost',
+                                    authenticatorInfo: {
+                                        rpIdHash:
+                                            new Uint8Array(
+                                                32
+                                            ),
+                                        flags: {
+                                            up: true,
+                                            uv: true,
+                                            be: true,
+                                            bs: true,
+                                            at: true,
+                                            ed: false,
+                                            flagsInt: 0,
+                                        },
+                                        counter: 0,
+                                        aaguid:
+                                            '00000000'
+                                            + '-0000-0000'
+                                            + '-0000'
+                                            + '-000000000000',
+                                        credentialID:
+                                            new Uint8Array(
+                                                0
+                                            ),
+                                        credentialPublicKey:
+                                            new Uint8Array(
+                                                0
+                                            ),
+                                    },
+                                },
+                            }
+                        },
+                    generateAuthenticationOptions:
+                        async () => ({
+                            challenge: '',
+                            rpId: '',
+                        }),
+                    verifyAuthenticationResponse:
+                        async () => ({
+                            verified: false,
+                            authenticationInfo:
+                                {} as never,
+                        }),
+                    now: () => Date.now(),
+                    createID: () => {
+                        idCounter++
+                        return `multi-dev-id-${
+                            idCounter
+                        }`
+                    },
+                })
+
+                const startResult =
+                    await authService.startRegistration(
+                        db,
+                        'http://localhost'
+                            + '/api/auth/register/start',
+                        {
+                            identifier,
+                            displayName:
+                                'Multi Device Test',
+                        },
+                    )
+
+                const finishResult =
+                    await authService.finishRegistration(
+                        db,
+                        'http://localhost'
+                            + '/api/auth/register'
+                            + '/finish',
+                        {
+                            challengeReference:
+                                startResult
+                                    .challengeReference,
+                            credential: {} as never,
+                        },
+                    )
+
+                await authService.confirmEmail(db, {
+                    code: finishResult
+                        .confirmationCode,
+                    identifier,
+                })
+
+                const user = await db.prepare(
+                    'SELECT * FROM users '
+                    + 'WHERE identifier = ?'
+                ).bind(
+                    identifier.toLowerCase()
+                ).first<{ id:string }>()
+
+                expect(user).toBeTruthy()
+
+                const devStart =
+                    await authService
+                        .startDeviceRegistration(
+                            db,
+                            'http://localhost'
+                                + '/api/auth/passkey'
+                                + '/devices/register'
+                                + '/start',
+                            user!.id,
+                            {
+                                credentialName:
+                                    'Second Device',
+                            },
+                        )
+
+                await authService
+                    .finishDeviceRegistration(
+                        db,
+                        'http://localhost'
+                            + '/api/auth/passkey'
+                            + '/devices/register'
+                            + '/finish',
+                        user!.id,
+                        {
+                            challengeReference:
+                                devStart
+                                    .challengeReference,
+                            credential: {} as never,
+                            credentialName:
+                                'Second Device',
+                        },
+                    )
+
+                const devices = await db.prepare(
+                    'SELECT * FROM devices '
+                    + 'WHERE user_id = ? '
+                    + 'AND is_revoked = 0 '
+                    + 'ORDER BY created_at ASC'
+                ).bind(user!.id).all<{
+                    id:string;
+                }>()
+
+                expect(devices.results.length)
+                    .toBe(2)
+
+                const firstDeviceId =
+                    devices.results[0].id
+
+                await authService
+                    .revokeRegisteredDevice(
+                        db,
+                        user!.id,
+                        firstDeviceId,
+                    )
+
+                const remaining = await db.prepare(
+                    'SELECT COUNT(*) as count '
+                    + 'FROM devices '
+                    + 'WHERE user_id = ? '
+                    + 'AND is_revoked = 0'
+                ).bind(user!.id).first<{
+                    count:number;
+                }>()
+
+                expect(remaining!.count).toBe(1)
+            }
+        )
     })
 
     describe('API endpoints', () => {

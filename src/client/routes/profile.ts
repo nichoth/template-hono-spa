@@ -4,6 +4,7 @@ import { useComputed } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import { type AppState, State } from '../state.js'
+import { formatSessionExpiration, type SessionExpirationResult } from '../utils/session-expiration.js'
 import './profile.css'
 
 export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ state }) {
@@ -17,20 +18,7 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
 
         const user = session.user
         const expires = session.session?.expiresAt
-        let expiresLabel = 'Expires: Unknown'
-        let expiresHint:string|null = null
-
-        if (expires) {
-            const parsed = new Date(expires)
-            if (Number.isNaN(parsed.getTime())) {
-                console.warn('Profile route: session.expiresAt is malformed', expires)
-                expiresHint = 'Session expiration timestamp is malformed.'
-            } else {
-                expiresLabel = parsed.toISOString()
-            }
-        } else {
-            expiresHint = 'Session expiration timestamp is unavailable.'
-        }
+        const sessionExpires:SessionExpirationResult = formatSessionExpiration(expires)
 
         const rawLoginMethod = session.loginMethod ?? user?.login_method ?? null
         const loginMethodLabel = formatLoginMethodLabel(rawLoginMethod)
@@ -43,8 +31,7 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
             displayName: user?.displayName ?? '(not set)',
             loginMethodLabel,
             loginMethodHint,
-            expiresLabel,
-            expiresHint,
+            sessionExpires,
         }
     })
 
@@ -89,12 +76,12 @@ export const ProfileRoute:FunctionComponent<{ state:AppState }> = function ({ st
                         <dt>Session expires</dt>
                         <dd
                             class="profile-field-value"
-                            aria-live=${profileView.value.expiresHint ? 'polite' : undefined}
+                            aria-live=${profileView.value.sessionExpires.hint ? 'polite' : undefined}
                         >
-                            ${profileView.value.expiresLabel}
-                            ${profileView.value.expiresHint ? html`
+                            ${profileView.value.sessionExpires.label}
+                            ${profileView.value.sessionExpires.hint ? html`
                                 <span class="profile-sr-only">
-                                    ${profileView.value.expiresHint}
+                                    ${profileView.value.sessionExpires.hint}
                                 </span>` : null}
                         </dd>
                     </div>

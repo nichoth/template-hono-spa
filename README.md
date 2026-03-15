@@ -236,3 +236,9 @@ you can ask Claude:
 ```
 @/Users/yourname/.claude/plugins/cache/Superpowers/skills/test-driven-development/SKILL.md (the path may vary by OS).
 ```
+
+#### The deprecated commands
+
+```
+Execute the plan
+```

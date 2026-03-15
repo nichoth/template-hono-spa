@@ -783,19 +783,16 @@ describe('Integration tests', () => {
                                         fakePublicKey,
                                     counter: 0,
                                     transports: [
-                                        'internal'
-                                            as const,
+                                        'internal' as const,
                                     ],
                                 },
                                 credentialType:
-                                    'public-key'
-                                        as const,
+                                    'public-key' as const,
                                 attestationObject:
                                     new Uint8Array(0),
                                 userVerified: true,
                                 credentialDeviceType:
-                                    'multiDevice'
-                                        as const,
+                                    'multiDevice' as const,
                                 credentialBackedUp: true,
                                 origin:
                                     'http://localhost',
@@ -974,8 +971,7 @@ describe('Integration tests', () => {
                             return {
                                 verified: true,
                                 registrationInfo: {
-                                    fmt: 'none'
-                                        as const,
+                                    fmt: 'none' as const,
                                     aaguid:
                                         '00000000-0000'
                                         + '-0000-0000'
@@ -992,21 +988,18 @@ describe('Integration tests', () => {
                                             ),
                                         counter: 0,
                                         transports: [
-                                            'internal'
-                                                as const,
+                                            'internal' as const,
                                         ],
                                     },
                                     credentialType:
-                                        'public-key'
-                                            as const,
+                                        'public-key' as const,
                                     attestationObject:
                                         new Uint8Array(
                                             0
                                         ),
                                     userVerified: true,
                                     credentialDeviceType:
-                                        'multiDevice'
-                                            as const,
+                                        'multiDevice' as const,
                                     credentialBackedUp:
                                         true,
                                     origin:
@@ -1238,19 +1231,16 @@ describe('Integration tests', () => {
                                             ),
                                         counter: 0,
                                         transports: [
-                                            'internal'
-                                                as const,
+                                            'internal' as const,
                                         ],
                                     },
                                     credentialType:
-                                        'public-key'
-                                            as const,
+                                        'public-key' as const,
                                     attestationObject:
                                         new Uint8Array(0),
                                     userVerified: true,
                                     credentialDeviceType:
-                                        'multiDevice'
-                                            as const,
+                                        'multiDevice' as const,
                                     credentialBackedUp:
                                         true,
                                 },
@@ -1455,6 +1445,100 @@ describe('Integration tests', () => {
                 authenticated: false,
             })
         })
+    })
+
+    describe('Device invitation name', () => {
+        it(
+            'creates an invitation with the provided device name',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const authService = createAuthService()
+                const userId = crypto.randomUUID()
+
+                await db.prepare(
+                    'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  status, created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    userId,
+                    'invite-name-handle',
+                    'invite-name@example.com',
+                    'active',
+                    Date.now(),
+                    Date.now(),
+                ).run()
+
+                const inv =
+                    await authService.createDeviceInvitation(
+                        db,
+                        'http://localhost/add',
+                        userId,
+                        'My Laptop',
+                    )
+
+                expect(inv.deviceName).toBe('My Laptop')
+
+                const invites =
+                    await authService.listDeviceInvitations(
+                        db, userId,
+                    )
+                expect(invites.length).toBe(1)
+                expect(invites[0].deviceName)
+                    .toBe('My Laptop')
+            }
+        )
+
+        it(
+            'creates an unnamed invitation when no name is given',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const authService = createAuthService()
+                const userId = crypto.randomUUID()
+
+                await db.prepare(
+                    'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  status, created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    userId,
+                    'invite-noname-handle',
+                    'invite-noname@example.com',
+                    'active',
+                    Date.now(),
+                    Date.now(),
+                ).run()
+
+                const inv =
+                    await authService.createDeviceInvitation(
+                        db,
+                        'http://localhost/add',
+                        userId,
+                    )
+
+                expect(inv.deviceName).toBeFalsy()
+
+                const invites =
+                    await authService.listDeviceInvitations(
+                        db, userId,
+                    )
+                expect(invites.length).toBe(1)
+                expect(invites[0].deviceName).toBeFalsy()
+            }
+        )
     })
 
     describe('CORS configuration', () => {

@@ -348,6 +348,11 @@ export const ProfileRoute:FunctionComponent<{
                             id="device-name"
                             placeholder="My work laptop"
                             value=${addDeviceName.value}
+                            onInput=${(event:InputEvent) => {
+                                addDeviceName.value =
+                                    (event.target as
+                                        HTMLInputElement).value
+                            }}
                         ><//>
                     </label>
                     <${SubstrateButton.TAG}

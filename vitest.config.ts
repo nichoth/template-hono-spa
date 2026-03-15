@@ -1,24 +1,13 @@
-import { defineWorkersConfig } from '@cloudflare/vitest-pool-workers/config'
+import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
+import { defineConfig } from 'vitest/config'
 
-export default defineWorkersConfig({
-    ssr: {
-        noExternal: [
-            '@simplewebauthn/browser',
-            '@simplewebauthn/server',
-            '@peculiar/x509',
-            'tsyringe',
-            'tslib',
-        ],
-    },
-    test: {
-        poolOptions: {
-            workers: {
-                main: './src/server/index.ts',
-                wrangler: { configPath: './wrangler.test.jsonc' },
-                miniflare: {
-                    d1Databases: ['AUTH_DB'],
-                },
-            },
+export default defineConfig({
+    plugins: [cloudflareTest({
+        main: './src/server/index.ts',
+        wrangler: { configPath: './wrangler.test.jsonc' },
+        miniflare: {
+            d1Databases: ['AUTH_DB'],
         },
-    },
+    })],
+    test: {},
 })

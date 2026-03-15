@@ -222,89 +222,6 @@ app.post('/api/auth/passkey/login', async (c) => {
     }
 })
 
-app.post(
-    '/api/auth/passkey/devices/register/start',
-    async (c) => {
-        try {
-            const sessionToken = getCookie(
-                c, AUTH_SESSION_COOKIE,
-            )
-            const session =
-                await authService.getCurrentSession(
-                    c.env.AUTH_DB, sessionToken,
-                )
-            if (!session.authenticated) {
-                return c.json({
-                    error: 'unauthenticated',
-                    message: 'Session is required.',
-                }, 401)
-            }
-            if (session.loginMethod !== 'passkey') {
-                return c.json({
-                    error: 'not_passkey_user',
-                    message: 'Only passkey accounts '
-                        + 'can add devices.',
-                }, 403)
-            }
-
-            const body = await c.req.json<{
-                credentialName?:string;
-            }>()
-
-            const result =
-                await authService.startDeviceRegistration(
-                    c.env.AUTH_DB,
-                    c.req.url,
-                    session.user.id,
-                    body,
-                )
-
-            return c.json(result, 200)
-        } catch (err) {
-            return authErrorResponse(c, err)
-        }
-    },
-)
-
-app.post(
-    '/api/auth/passkey/devices/register/finish',
-    async (c) => {
-        try {
-            const sessionToken = getCookie(
-                c, AUTH_SESSION_COOKIE,
-            )
-            const session =
-                await authService.getCurrentSession(
-                    c.env.AUTH_DB, sessionToken,
-                )
-            if (!session.authenticated) {
-                return c.json({
-                    error: 'unauthenticated',
-                    message: 'Session is required.',
-                }, 401)
-            }
-
-            const body = await c.req.json<{
-                challengeReference:string;
-                credential:unknown;
-                credentialName?:string;
-            }>()
-
-            const result =
-                await authService.finishDeviceRegistration(
-                    c.env.AUTH_DB,
-                    c.req.url,
-                    session.user.id,
-                    body as never,
-                )
-
-            return c.json(result, 200)
-        } catch (err) {
-            return authErrorResponse(c, err)
-        }
-    },
-)
-
 app.get('/api/auth/passkey/devices', async (c) => {
     try {
         const sessionToken = getCookie(
@@ -378,6 +295,157 @@ app.patch(
             return c.body(null, 204)
         } catch (err) {
             return authErrorResponse(c, err as Error)
+        }
+    },
+)
+
+app.post('/api/auth/passkey/devices/invite', async (c) => {
+    try {
+        const sessionToken = getCookie(
+            c, AUTH_SESSION_COOKIE,
+        )
+        const session =
+            await authService.getCurrentSession(
+                c.env.AUTH_DB, sessionToken,
+            )
+        if (!session.authenticated) {
+            return c.json({
+                error: 'unauthenticated',
+                message: 'Session is required.',
+            }, 401)
+        }
+        if (session.loginMethod !== 'passkey') {
+            return c.json({
+                error: 'not_passkey_user',
+                message: 'Only passkey accounts '
+                    + 'can add devices.',
+            }, 403)
+        }
+
+        const body = await c.req.json<{
+            deviceName?:string;
+        }>()
+
+        const result =
+            await authService.createDeviceInvitation(
+                c.env.AUTH_DB,
+                c.req.url,
+                session.user.id,
+                body.deviceName,
+            )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.get(
+    '/api/auth/passkey/devices/invites',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+
+            const invitations =
+                await authService
+                    .listDeviceInvitations(
+                        c.env.AUTH_DB,
+                        session.user.id,
+                    )
+
+            return c.json(invitations, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.delete(
+    '/api/auth/passkey/devices/invite/:inviteCode',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+
+            const inviteCode =
+                c.req.param('inviteCode')
+            await authService
+                .cancelDeviceInvitation(
+                    c.env.AUTH_DB,
+                    session.user.id,
+                    inviteCode,
+                )
+
+            return c.body(null, 204)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.post(
+    '/api/auth/passkey/devices/invite/:code/claim/start',
+    async (c) => {
+        try {
+            const code = c.req.param('code')
+            const result =
+                await authService.startInviteClaim(
+                    c.env.AUTH_DB,
+                    c.req.url,
+                    code,
+                )
+
+            return c.json(result, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.post(
+    '/api/auth/passkey/devices/invite/:code/claim/finish',
+    async (c) => {
+        try {
+            const code = c.req.param('code')
+            const body = await c.req.json<{
+                challengeReference:string;
+                credential:unknown;
+            }>()
+
+            const result =
+                await authService.finishInviteClaim(
+                    c.env.AUTH_DB,
+                    c.req.url,
+                    code,
+                    body as never,
+                )
+
+            return c.json(result, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
         }
     },
 )

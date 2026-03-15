@@ -5,6 +5,7 @@ import { LoginRoute } from './login.js'
 import { ProfileRoute } from './profile.js'
 import { SignupRoute } from './signup.js'
 import { ConfirmRoute } from './confirm.js'
+import { ClaimDeviceRoute } from './claim-device.js'
 import { type AppState } from '../state.js'
 
 export type AppRoute = {
@@ -58,6 +59,10 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
         return ConfirmRoute
     })
 
+    router.addRoute('/:handle/add/:code', () => {
+        return ClaimDeviceRoute
+    })
+
     return router
 }
 
@@ -71,5 +76,8 @@ export function isKnownClientRoute (path:string):boolean {
     if (knownClientRoutes.has(path)) return true
     if (path === '/confirm' || path === '/confirm/') return true
     if (path.startsWith('/confirm/')) return true
+    // /:handle/add/:code pattern
+    const parts = path.split('/').filter(Boolean)
+    if (parts.length === 3 && parts[1] === 'add') return true
     return false
 }

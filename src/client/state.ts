@@ -121,6 +121,21 @@ export type DeviceAddedResponse = {
     };
 }
 
+export type DeviceInvitation = {
+    inviteCode:string;
+    inviteUrl:string;
+    deviceName:string | null;
+    expiresAt:string;
+}
+
+export type PendingInvitation = {
+    inviteCode:string;
+    deviceName:string | null;
+    status:string;
+    expiresAt:string;
+    createdAt:string;
+}
+
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
@@ -132,6 +147,9 @@ export type AppState = {
     >>;
     devices:Signal<RequestFor<
         DeviceInfo[], HTTPError|Error
+    >>;
+    invitations:Signal<RequestFor<
+        PendingInvitation[], HTTPError|Error
     >>;
     logoutInProgress:Signal<boolean>;
     logoutError:Signal<string | null>;
@@ -151,6 +169,9 @@ export function State ():AppState {
         >>(RequestState()),
         devices: signal<RequestFor<
             DeviceInfo[], HTTPError|Error
+        >>(RequestState()),
+        invitations: signal<RequestFor<
+            PendingInvitation[], HTTPError|Error
         >>(RequestState()),
         count: signal<number>(0),
         logoutInProgress: signal<boolean>(false),
@@ -340,45 +361,6 @@ State.listDevices = async function (state:AppState) {
     }
 }
 
-State.addDevice = async function (
-    state:AppState,
-    credentialName?:string,
-):Promise<DeviceAddedResponse | undefined> {
-    try {
-        const startResponse = await ky.post(
-            '/api/auth/passkey/devices/register/start',
-            {
-                json: { credentialName },
-            },
-        ).json<{
-            challengeReference:string;
-            options:PublicKeyCredentialCreationOptionsJSON;
-        }>()
-
-        const credential = await beginBrowserRegistration({
-            optionsJSON: startResponse.options,
-        })
-
-        const result = await ky.post(
-            '/api/auth/passkey/devices/register/finish',
-            {
-                json: {
-                    challengeReference:
-                        startResponse.challengeReference,
-                    credential,
-                    credentialName,
-                },
-            },
-        ).json<DeviceAddedResponse>()
-
-        await State.listDevices(state)
-        return result
-    } catch (_err) {
-        const err = _err as HTTPError|Error
-        throw err
-    }
-}
-
 State.revokeDevice = async function (
     state:AppState,
     deviceId:string,
@@ -392,6 +374,84 @@ State.revokeDevice = async function (
         const err = _err as HTTPError|Error
         throw err
     }
+}
+
+State.createInvite = async function (
+    state:AppState,
+    deviceName?:string,
+):Promise<DeviceInvitation | undefined> {
+    try {
+        const result = await ky.post(
+            '/api/auth/passkey/devices/invite',
+            { json: { deviceName } },
+        ).json<DeviceInvitation & { status:string }>()
+
+        await State.listInvites(state)
+        return result
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.listInvites = async function (state:AppState) {
+    start(state.invitations)
+
+    try {
+        const invites = await ky.get(
+            '/api/auth/passkey/devices/invites',
+        ).json<PendingInvitation[]>()
+        set(state.invitations, invites)
+        return invites
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.invitations, err)
+    }
+}
+
+State.cancelInvite = async function (
+    state:AppState,
+    inviteCode:string,
+) {
+    try {
+        await ky.delete(
+            `/api/auth/passkey/devices/invite/${inviteCode}`,
+        )
+        await State.listInvites(state)
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.claimInvite = async function (
+    code:string,
+):Promise<DeviceAddedResponse> {
+    const startResponse = await ky.post(
+        `/api/auth/passkey/devices/invite/${code}/claim/start`,
+    ).json<{
+        challengeReference:string;
+        options:PublicKeyCredentialCreationOptionsJSON;
+        deviceName:string | null;
+        handle:string;
+    }>()
+
+    const credential = await beginBrowserRegistration({
+        optionsJSON: startResponse.options,
+    })
+
+    const result = await ky.post(
+        `/api/auth/passkey/devices/invite/${code}/claim/finish`,
+        {
+            json: {
+                challengeReference:
+                    startResponse.challengeReference,
+                credential,
+            },
+        },
+    ).json<DeviceAddedResponse>()
+
+    return result
 }
 
 State.fetch = Object.assign(

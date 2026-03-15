@@ -378,7 +378,7 @@ State.revokeDevice = async function (
 
 State.createInvite = async function (
     state:AppState,
-    deviceName?:string,
+    deviceName:string,
 ):Promise<DeviceInvitation | undefined> {
     try {
         const result = await ky.post(

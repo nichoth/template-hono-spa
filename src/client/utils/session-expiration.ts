@@ -5,12 +5,12 @@ export type SessionExpirationResult = {
 }
 
 function formatFriendlyDate (date: Date): string {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    const rawHour = date.getHours()
+    const year = date.getUTCFullYear()
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+    const day = String(date.getUTCDate()).padStart(2, '0')
+    const rawHour = date.getUTCHours()
     const hour = rawHour % 12 === 0 ? 12 : rawHour % 12
-    const minute = String(date.getMinutes()).padStart(2, '0')
+    const minute = String(date.getUTCMinutes()).padStart(2, '0')
     const period = rawHour >= 12 ? 'pm' : 'am'
 
     return `${year}-${month}-${day}, ${hour}:${minute}${period}`

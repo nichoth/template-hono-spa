@@ -1098,38 +1098,32 @@ describe('Integration tests', () => {
 
                 expect(user).toBeTruthy()
 
-                const devStart =
+                const inv =
                     await authService
-                        .startDeviceRegistration(
+                        .createDeviceInvitation(
                             db,
-                            'http://localhost'
-                                + '/api/auth/passkey'
-                                + '/devices/register'
-                                + '/start',
+                            'http://localhost/add',
                             user!.id,
-                            {
-                                credentialName:
-                                    'Second Device',
-                            },
+                            'Second Device',
                         )
 
-                await authService
-                    .finishDeviceRegistration(
+                const claimStart =
+                    await authService.startInviteClaim(
                         db,
-                        'http://localhost'
-                            + '/api/auth/passkey'
-                            + '/devices/register'
-                            + '/finish',
-                        user!.id,
-                        {
-                            challengeReference:
-                                devStart
-                                    .challengeReference,
-                            credential: {} as never,
-                            credentialName:
-                                'Second Device',
-                        },
+                        'http://localhost/add',
+                        inv.inviteCode,
                     )
+
+                await authService.finishInviteClaim(
+                    db,
+                    'http://localhost/add',
+                    inv.inviteCode,
+                    {
+                        challengeReference:
+                            claimStart.challengeReference,
+                        credential: {} as never,
+                    },
+                )
 
                 const devices = await db.prepare(
                     'SELECT * FROM devices '
@@ -1246,6 +1240,18 @@ describe('Integration tests', () => {
                                 },
                             }
                         },
+                    generateAuthenticationOptions:
+                        async () => ({
+                            challenge: '',
+                            rpId: '',
+                        }),
+                    verifyAuthenticationResponse:
+                        async () => ({
+                            verified: true,
+                            authenticationInfo: {} as never,
+                        }),
+                    now: () => Date.now(),
+                    createID: () => crypto.randomUUID(),
                 })
 
                 // Register and confirm user
@@ -1285,8 +1291,8 @@ describe('Integration tests', () => {
                         db, userId,
                     )
                 expect(devicesWithOne.length).toBe(1)
-                expect(devicesWithOne[0].isRevoked)
-                    .toBe(false)
+                expect(devicesWithOne[0].is_revoked)
+                    .toBe(0)
 
                 // Add second device via invitation
                 const inv =
@@ -1322,15 +1328,15 @@ describe('Integration tests', () => {
 
                 // Revoke one: list drops to 1
                 await authService.revokeRegisteredDevice(
-                    db, userId, devicesWithTwo[0].deviceId,
+                    db, userId, devicesWithTwo[0].id,
                 )
                 const devicesAfterRevoke =
                     await authService.listRegisteredDevices(
                         db, userId,
                     )
                 expect(devicesAfterRevoke.length).toBe(1)
-                expect(devicesAfterRevoke[0].isRevoked)
-                    .toBe(false)
+                expect(devicesAfterRevoke[0].is_revoked)
+                    .toBe(0)
             }
         )
     })
@@ -1496,7 +1502,7 @@ describe('Integration tests', () => {
         )
 
         it(
-            'creates an unnamed invitation when no name is given',
+            'rejects creating an invitation without a device name',
             async () => {
                 const db = env.AUTH_DB
                 await db.batch(
@@ -1522,21 +1528,83 @@ describe('Integration tests', () => {
                     Date.now(),
                 ).run()
 
-                const inv =
-                    await authService.createDeviceInvitation(
+                await expect(
+                    authService.createDeviceInvitation(
                         db,
                         'http://localhost/add',
                         userId,
                     )
+                ).rejects.toMatchObject({
+                    status: 400,
+                    code: 'missing_device_name',
+                })
+            }
+        )
 
-                expect(inv.deviceName).toBeFalsy()
-
-                const invites =
-                    await authService.listDeviceInvitations(
-                        db, userId,
+        it(
+            'POST /api/auth/passkey/devices/invite returns 400 '
+            + 'when deviceName is missing',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
                     )
-                expect(invites.length).toBe(1)
-                expect(invites[0].deviceName).toBeFalsy()
+                )
+
+                const userId = crypto.randomUUID()
+                const sessionToken = crypto.randomUUID()
+                const now = Date.now()
+
+                await db.prepare(
+                    'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  login_method, status,'
+                    + '  created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    userId,
+                    'route-noname-handle',
+                    'route-noname@example.com',
+                    'passkey',
+                    'active',
+                    now,
+                    now,
+                ).run()
+
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                ).run()
+
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/invite',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Cookie: `auth_session=${sessionToken}`,
+                        },
+                        body: JSON.stringify({}),
+                    },
+                )
+
+                expect(res.status).toBe(400)
+                const body =
+                    await res.json<{ error:string }>()
+                expect(body.error).toBe('missing_device_name')
             }
         )
     })

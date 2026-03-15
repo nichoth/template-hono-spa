@@ -137,6 +137,108 @@ npm test
 
 ## Claude
 
+### Example
+
 ```
 Use the Nitpicker agent to review this codebase 
+```
+
+### Superpowers
+
+[A Claude plugin](https://github.com/obra/superpowers) to make it better.
+
+#### Install
+
+```
+/plugin marketplace add obra/superpowers-marketplace
+```
+
+```
+/plugin install superpowers@superpowers-marketplace
+```
+
+#### How to Use
+
+Highly recommended to use these slash commands in order:
+
+##### Phase 1: Brainstorming (`/superpowers:brainstorm`)
+
+Instead of writing code immediately, Claude acts as a Socratic architect.
+
+How to use: `/superpowers:brainstorm`
+
+```
+"I want to add a user authentication system"
+```
+
+What happens: Claude will ask clarifying questions
+(database choice, edge cases, auth providers) until it has enough information
+to create a Design Document.
+
+##### Phase 2: Planning (`/superpowers:write-plan`)
+
+Once the design is approved, you convert it into a concrete checklist.
+
+How to use: /superpowers:write-plan
+
+What happens: Claude generates a PLAN.md with micro-tasks
+(usually 2–5 minutes each). In recent versions (Claude Code v2.1.16+),
+this integrates with native task management so you can see a progress bar.
+
+##### Phase 3: Execution (`/superpowers:execute-plan`)
+
+This is where the actual coding happens.
+
+How to use:
+
+```
+/superpowers:execute-plan
+```
+
+What happens: Claude iterates through the plan. It often spawns sub-agents to
+implement individual tasks, ensuring that one agent writes the code while
+another (the "Reviewer") verifies it against the spec.
+
+#### Key "Superpower" Skills
+
+Once installed, many of these skills activate automatically based on
+your requests:
+
+**Test-Driven Development (TDD)**: If you ask Claude to fix a bug or add a
+feature, it is instructed to write a failing test first (Red), implement the
+fix (Green), and then cleanup (Refactor).
+
+**Git Worktrees**: Superpowers can automatically create a git worktree for a new
+feature. This allows you to work on multiple branches simultaneously without
+clobbering your main working directory.
+
+**Systematic Debugging**: Instead of guessing, Claude follows a 4-phase root
+cause analysis process to trace bugs to their source before attempting a fix.
+
+#### Pro-Tips for Success
+
+The Session Start Hook: When you start a session, look for a message saying
+`<session-start-hook>`. This confirms Superpowers is active. If Claude seems to
+be ignoring the rules, remind it: "Use your superpowers for this task."
+
+Reviewing Work: Because Superpowers often uses worktrees, the code might be in
+a different folder than where you started. Use git worktree list to see where
+Claude is currently working.
+
+Manual Override: If a task is extremely simple and the "brainstorming" feels
+like overkill, you can tell Claude: "Skip the brainstorm for this,
+it's a one-line fix."
+
+Check the Docs: The skill definitions are stored in markdown files.
+If you want to see exactly how a skill works (e.g., the TDD rules),
+you can ask Claude:
+
+```
+@/Users/yourname/.claude/plugins/cache/Superpowers/skills/test-driven-development/SKILL.md (the path may vary by OS).
+```
+
+#### The deprecated commands
+
+```
+Execute the plan
 ```

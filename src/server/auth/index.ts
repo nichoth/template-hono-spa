@@ -633,7 +633,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         userID:string,
     ) {
         await ensureAuthSchema(db)
-        return listDevicesByUserId(db, userID)
+        return listActiveDevicesByUserId(db, userID)
     }
 
     async function revokeRegisteredDevice (
@@ -682,6 +682,14 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         deviceName?:string,
     ):Promise<InvitationResponse> {
         await ensureAuthSchema(db)
+
+        if (!deviceName || !deviceName.trim()) {
+            throw new AuthError(
+                400,
+                'missing_device_name',
+                'Device name is required.',
+            )
+        }
 
         const user = await findUserById(db, userId)
         if (!user || user.status !== 'active') {

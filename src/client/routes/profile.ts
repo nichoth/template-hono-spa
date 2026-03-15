@@ -106,7 +106,7 @@ export const ProfileRoute:FunctionComponent<{
         try {
             const result = await State.createInvite(
                 state,
-                addDeviceName.value.trim() || undefined,
+                addDeviceName.value.trim(),
             )
             addDeviceName.value = ''
             if (result) {
@@ -270,22 +270,19 @@ export const ProfileRoute:FunctionComponent<{
                                         onRevokeDevice(device.deviceId)
                                     }
                                     disabled=${!canRevoke.value ||
-                                        revokePending.value ===
-                                        device.deviceId}
-                                    spinning=${revokePending.value ===
-                                        device.deviceId}
+                                        revokePending.value === device.deviceId}
+                                    spinning=${revokePending.value === device.deviceId}
                                     title=${canRevoke.value ?
                                         'Revoke this device' :
                                         'Cannot revoke your only device'}
-                                    ref=${(el:Element | null) => {
+                                    ref=${(el:Element|null) => {
+                                        // this is b/c passing `disabled` via
+                                        // preact/htm doesn't work
                                         if (!el) return
-                                        const d = !canRevoke.value ||
-                                            revokePending.value ===
-                                            device.deviceId
+                                        const d = (!canRevoke.value ||
+                                            revokePending.value === device.deviceId)
                                         if (d) {
-                                            el.setAttribute(
-                                                'disabled', '',
-                                            )
+                                            el.setAttribute('disabled', '')
                                         } else {
                                             el.removeAttribute('disabled')
                                         }
@@ -342,7 +339,7 @@ export const ProfileRoute:FunctionComponent<{
                 <h3>Add Device</h3>
                 <div class="add-device-section" aria-live="polite">
                     <label class="add-device-label">
-                        <span>Device name (optional)</span>
+                        <span>Device name</span>
                         <${SubstrateInput.TAG}
                             name="device-name"
                             id="device-name"
@@ -360,7 +357,18 @@ export const ProfileRoute:FunctionComponent<{
                         type="button"
                         onClick=${onAddDevice}
                         spinning=${addDevicePending.value}
-                        disabled=${addDevicePending.value}
+                        disabled=${addDevicePending.value ||
+                            addDeviceName.value.trim() === ''}
+                        ref=${(el:Element | null) => {
+                            if (!el) return
+                            const d = addDevicePending.value ||
+                                addDeviceName.value.trim() === ''
+                            if (d) {
+                                el.setAttribute('disabled', '')
+                            } else {
+                                el.removeAttribute('disabled')
+                            }
+                        }}
                     >
                         ${addDevicePending.value ?
                             `Creating${ELLIPSIS}` :

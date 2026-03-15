@@ -406,6 +406,23 @@ app.delete(
     },
 )
 
+app.get(
+    '/api/auth/passkey/devices/invite/:code',
+    async (c) => {
+        try {
+            const { code } = c.req.param()
+            const invitation =
+                await authService.getInvitationInfo(
+                    c.env.AUTH_DB,
+                    code,
+                )
+            return c.json(invitation, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
 app.post(
     '/api/auth/passkey/devices/invite/:code/claim/start',
     async (c) => {

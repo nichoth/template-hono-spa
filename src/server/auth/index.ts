@@ -141,7 +141,7 @@ export type InviteClaimStartResponse = {
     challengeReference:string;
     options:PublicKeyCredentialCreationOptionsJSON;
     deviceName:string | null;
-    handle:string;
+    userIdentifier:string;
 }
 
 export type InviteClaimFinishRequest = {
@@ -715,10 +715,24 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             )
         }
 
-        const inviteCode = generateInviteCode()
         const expiresAt =
             now + DEVICE_INVITATION_TTL_MS
         const id = deps.createID()
+
+        let inviteCode = generateInviteCode()
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const existing = await findInvitationByCode(
+                db, inviteCode,
+            )
+            if (
+                !existing
+                || existing.status !== 'pending'
+                || existing.expires_at <= now
+            ) {
+                break
+            }
+            inviteCode = generateInviteCode()
+        }
 
         await createInvitation(db, {
             id,
@@ -729,8 +743,8 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             now,
         })
 
-        const inviteUrl =
-            `/${user.handle}/add/${inviteCode}`
+        const origin = new URL(requestUrl).origin
+        const inviteUrl = `${origin}/add/${inviteCode}`
 
         return {
             status: 'invitation_created',
@@ -739,6 +753,63 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             deviceName: deviceName || null,
             expiresAt: new Date(expiresAt)
                 .toISOString(),
+        }
+    }
+
+    async function getInvitationInfo (
+        db:D1Database,
+        inviteCode:string,
+    ):Promise<{
+        deviceName:string | null;
+        userIdentifier:string;
+    }> {
+        await ensureAuthSchema(db)
+
+        const invitation =
+            await findInvitationByCode(db, inviteCode)
+        if (!invitation) {
+            throw new AuthError(
+                404,
+                'unknown_invite',
+                'Invitation not found.',
+            )
+        }
+        if (invitation.status === 'consumed') {
+            throw new AuthError(
+                409,
+                'already_consumed',
+                'This invitation has already been used.',
+            )
+        }
+        if (invitation.status !== 'pending') {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation is no longer valid.',
+            )
+        }
+        if (invitation.expires_at <= deps.now()) {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation has expired.',
+            )
+        }
+
+        const user = await findUserById(
+            db, invitation.user_id,
+        )
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        return {
+            deviceName: invitation.device_name,
+            userIdentifier: user.identifier,
         }
     }
 
@@ -846,7 +917,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             challengeReference,
             options,
             deviceName: invitation.device_name,
-            handle: user.handle,
+            userIdentifier: user.identifier,
         }
     }
 
@@ -1088,6 +1159,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         listRegisteredDevices,
         revokeRegisteredDevice,
         createDeviceInvitation,
+        getInvitationInfo,
         startInviteClaim,
         finishInviteClaim,
         cancelDeviceInvitation,

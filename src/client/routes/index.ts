@@ -59,7 +59,7 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
         return ConfirmRoute
     })
 
-    router.addRoute('/:handle/add/:code', () => {
+    router.addRoute('/add/:code', () => {
         return ClaimDeviceRoute
     })
 
@@ -76,8 +76,6 @@ export function isKnownClientRoute (path:string):boolean {
     if (knownClientRoutes.has(path)) return true
     if (path === '/confirm' || path === '/confirm/') return true
     if (path.startsWith('/confirm/')) return true
-    // /:handle/add/:code pattern
-    const parts = path.split('/').filter(Boolean)
-    if (parts.length === 3 && parts[1] === 'add') return true
+    if (path.startsWith('/add/')) return true
     return false
 }

@@ -1,7 +1,13 @@
 @import url("../../_variables.css");
+@import url("@substrate-system/copy-button/css");
 
 .route.profile {
     min-height: 60vh;
+
+    & copy-button {
+        width: 2rem;
+        height: 2rem;
+    }
 
     & h2 {
         margin-top: 0;
@@ -120,18 +126,8 @@
         width: 100%;
     }
 
-    & .invite-result {
-        width: 100%;
-        margin-top: 0.75rem;
-        padding: 1rem;
-        background-color: var(--color-bg-subtle, #f8f9fa);
-        border: 1px solid var(--color-border, #dee2e6);
-        border-radius: 4px;
-    }
-
     & .invite-url-label {
         margin: 0 0 0.5rem;
-        font-size: 0.9rem;
     }
 
     & .invite-url-row {
@@ -144,16 +140,12 @@
         flex: 1;
         padding: 0.5rem 0.75rem;
         background-color: white;
-        border: 1px solid var(--color-border, #dee2e6);
-        border-radius: 3px;
-        font-size: 0.85rem;
         word-break: break-all;
         user-select: all;
     }
 
     & .invite-expires {
         margin: 0.5rem 0 0;
-        font-size: 0.8rem;
         color: var(--color-text-muted, #6c757d);
     }
 
@@ -188,7 +180,6 @@
     }
 
     & .invitation-expires {
-        font-size: 0.8rem;
         color: var(--color-text-muted, #6c757d);
     }
 

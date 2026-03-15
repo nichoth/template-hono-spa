@@ -1,5 +1,5 @@
 import { type FunctionComponent } from 'preact'
-import { useCallback } from 'preact/hooks'
+import { useCallback, useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
@@ -7,52 +7,92 @@ import { type AppState, State } from '../state.js'
 import './claim-device.css'
 import { ELLIPSIS } from '../constants.js'
 
-function parseClaimPath (path:string):{
-    handle:string;
-    code:string;
-} | null {
+function parseClaimPath (path:string):string | null {
     const normalized = path.replace(/\/+$/, '')
-    const match = normalized.match(
-        /^\/([^/]+)\/add\/([^/]+)$/,
-    )
+    const match = normalized.match(/^\/add\/([^/]+)$/)
     if (!match) return null
     try {
-        return {
-            handle: decodeURIComponent(match[1]),
-            code: decodeURIComponent(match[2]),
-        }
+        return decodeURIComponent(match[1])
     } catch {
-        return null
+        return match[1]
     }
 }
 
 export const ClaimDeviceRoute:FunctionComponent<{
     state:AppState;
 }> = function ({ state }) {
-    const params = parseClaimPath(state.route.value)
+    const code = parseClaimPath(state.route.value)
     const pending = useSignal(false)
     const errorMsg = useSignal<string | null>(null)
     const success = useSignal(false)
+    const successDeviceName = useSignal<string | null>(null)
     const deviceName = useSignal<string | null>(null)
+    const userIdentifier = useSignal<string | null>(null)
+    const infoLoading = useSignal(true)
+    const infoError = useSignal<string | null>(null)
 
-    if (!params) {
-        return html`<div class="route claim-device">
-            <h2>Invalid Link</h2>
-            <p>This invitation link is not valid.</p>
-        </div>`
-    }
+    useEffect(() => {
+        if (!code) {
+            infoLoading.value = false
+            return
+        }
+
+        const controller = new AbortController()
+        fetch(
+            `/api/auth/passkey/devices/invite/${code}`,
+            { signal: controller.signal },
+        ).then(async res => {
+            if (!res.ok) {
+                const data = await res.json().catch(
+                    () => ({}),
+                ) as { message?:string }
+                if (res.status === 410) {
+                    infoError.value =
+                        'This invitation has expired '
+                        + 'or is no longer valid.'
+                } else if (res.status === 409) {
+                    infoError.value =
+                        'This invitation has already '
+                        + 'been used.'
+                } else if (res.status === 404) {
+                    infoError.value =
+                        'This invitation was not found.'
+                } else {
+                    infoError.value = (
+                        data.message || res.statusText
+                    )
+                }
+                infoLoading.value = false
+                return
+            }
+            const data = await res.json() as {
+                deviceName:string | null;
+                userIdentifier:string;
+            }
+            deviceName.value = data.deviceName
+            userIdentifier.value = data.userIdentifier
+            infoLoading.value = false
+        }).catch(err => {
+            if ((err as Error).name === 'AbortError') return
+            infoError.value = (
+                (err as Error).message
+                || 'Failed to load invitation.'
+            )
+            infoLoading.value = false
+        })
+
+        return () => controller.abort()
+    }, [code])
 
     const onClaim = useCallback(async () => {
-        if (!params) return
+        if (!code) return
         pending.value = true
         errorMsg.value = null
 
         try {
-            const result = await State.claimInvite(
-                params.code,
-            )
+            const result = await State.claimInvite(code)
             success.value = true
-            deviceName.value = (
+            successDeviceName.value = (
                 result.device.credentialName || null
             )
         } catch (_err) {
@@ -61,16 +101,23 @@ export const ClaimDeviceRoute:FunctionComponent<{
             if (msg.includes('expired')) {
                 errorMsg.value =
                     'This invitation has expired.'
-            } else if (msg.includes('consumed')
-                || msg.includes('already')) {
+            } else if (
+                msg.includes('consumed')
+                || msg.includes('already')
+            ) {
                 errorMsg.value =
                     'This invitation has already been used.'
-            } else if (msg.includes('cancelled')
-                || msg.includes('canceled')) {
+            } else if (
+                msg.includes('cancelled')
+                || msg.includes('canceled')
+                || msg.includes('no longer')
+            ) {
                 errorMsg.value =
                     'This invitation is no longer valid.'
-            } else if (msg.includes('not found')
-                || msg.includes('Not Found')) {
+            } else if (
+                msg.includes('not found')
+                || msg.includes('Not Found')
+            ) {
                 errorMsg.value =
                     'This invitation was not found.'
             } else {
@@ -81,17 +128,41 @@ export const ClaimDeviceRoute:FunctionComponent<{
         } finally {
             pending.value = false
         }
-    }, [params?.code])
+    }, [code])
+
+    if (!code) {
+        return html`<div class="route claim-device">
+            <h2>Invalid Link</h2>
+            <p>This invitation link is not valid.</p>
+        </div>`
+    }
+
+    if (infoLoading.value) {
+        return html`<div class="route claim-device">
+            <p class="claim-loading">
+                Loading${ELLIPSIS}
+            </p>
+        </div>`
+    }
+
+    if (infoError.value) {
+        return html`<div class="route claim-device">
+            <h2>Invitation Unavailable</h2>
+            <p class="claim-error" role="status">
+                ${infoError.value}
+            </p>
+        </div>`
+    }
 
     if (success.value) {
         return html`<div class="route claim-device">
             <div class="claim-success">
                 <h2>Device Added</h2>
                 <p>
-                    ${deviceName.value ?
-                        html`Your device
-                            "<strong>${deviceName.value}</strong>"
-                            has been registered.` :
+                    ${successDeviceName.value ?
+                        html`"<strong>
+                            ${successDeviceName.value}
+                        </strong>" has been registered.` :
                         'Your device has been registered.'
                     }
                 </p>
@@ -110,9 +181,24 @@ export const ClaimDeviceRoute:FunctionComponent<{
 
     return html`<div class="route claim-device">
         <h2>Add Device</h2>
-        <p>
-            Register a passkey on this device for
-            <strong>${params.handle}</strong>.
+        <div class="claim-info">
+            ${userIdentifier.value ? html`
+                <p class="claim-account">
+                    Account:
+                    <strong>${userIdentifier.value}</strong>
+                </p>
+            ` : null}
+            ${deviceName.value ? html`
+                <p class="claim-device-name">
+                    Device name:
+                    <strong>${deviceName.value}</strong>
+                </p>
+            ` : null}
+        </div>
+
+        <p class="claim-confirm">
+            Register a passkey on this device to connect
+            to the account above.
         </p>
 
         <${SubstrateButton.TAG}

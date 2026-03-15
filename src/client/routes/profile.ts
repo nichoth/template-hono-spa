@@ -358,12 +358,11 @@ export const ProfileRoute:FunctionComponent<{
                                 new device:
                             </p>
                             <div class="invite-url-row">
-                                <code class="invite-url">
+                                <code class="invite-url card">
                                     ${lastInvite.value.inviteUrl}
                                 </code>
                                 <${CopyButton.TAG}
-                                    payload=${lastInvite.value
-                                        .inviteUrl}
+                                    payload=${lastInvite.value.inviteUrl}
                                 ><//>
                             </div>
                             <p class="invite-expires">

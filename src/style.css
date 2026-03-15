@@ -49,6 +49,10 @@
     min-width: 0;
 }
 
+hr {
+    margin: 2rem 0;
+}
+
 .controls {
     text-align: right;
 }

@@ -3,6 +3,7 @@ import { useCallback, useEffect } from 'preact/hooks'
 import { useComputed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
+import { SubstrateInput } from '@substrate-system/input'
 import {
     type AppState,
     type DeviceInfo,
@@ -13,6 +14,7 @@ import {
     type SessionExpirationResult,
 } from '../utils/session-expiration.js'
 import './profile.css'
+import { ELLIPSIS } from '../constants.js'
 
 export const ProfileRoute:FunctionComponent<{
     state:AppState;
@@ -257,17 +259,12 @@ export const ProfileRoute:FunctionComponent<{
                 <div class="add-device-section" aria-live="polite" >
                     <label class="add-device-label">
                         <span>Device name (optional)</span>
-                        <input
-                            type="text"
-                            class="add-device-input"
-                            placeholder="e.g. Work Laptop"
+                        <${SubstrateInput.TAG}
+                            name="device-name"
+                            id="device-name"
+                            placeholder="My work laptop"
                             value=${addDeviceName.value}
-                            onInput=${(ev:Event) => {
-                                const input = ev.target as HTMLInputElement
-                                addDeviceName.value = (input).value
-                            }}
-                            disabled=${addDevicePending.value}
-                        />
+                        ><//>
                     </label>
                     <${SubstrateButton.TAG}
                         class="add-device-btn"
@@ -281,18 +278,12 @@ export const ProfileRoute:FunctionComponent<{
                             'Add device'}
                     <//>
                     ${addDeviceError.value ? html`
-                        <p
-                            class="device-error"
-                            role="status"
-                        >
+                        <p class="device-error" role="status">
                             ${addDeviceError.value}
                         </p>
                     ` : null}
                     ${addDeviceSuccess.value ? html`
-                        <p
-                            class="device-success"
-                            role="status"
-                        >
+                        <p class="device-success" role="status">
                             ${addDeviceSuccess.value}
                         </p>
                     ` : null}
@@ -301,6 +292,7 @@ export const ProfileRoute:FunctionComponent<{
         ` : null}
 
         ${isAuthenticated.value ? html`
+            <hr />
             <div class="controls" aria-live="polite">
                 <${SubstrateButton.TAG}
                     class="profile-logout-button"
@@ -309,15 +301,10 @@ export const ProfileRoute:FunctionComponent<{
                     spinning=${logoutPending.value}
                     disabled=${logoutPending.value}
                 >
-                    ${logoutPending.value ?
-                        'Logging out\u2026' :
-                        'Logout'}
+                    ${logoutPending.value ? `Logging out${ELLIPSIS}` : 'Logout'}
                 <//>
                 ${logoutError.value ? html`
-                    <p
-                        class="profile-logout-error"
-                        role="status"
-                    >
+                    <p class="profile-logout-error" role="status">
                         ${logoutError.value}
                     </p>` : null}
             </div>` : null}
@@ -346,3 +333,17 @@ function formatDate (iso:string):string {
         return iso
     }
 }
+
+//     <input
+//         id="new-device-name"
+//         name="new-device-name"
+//         type="text"
+//         class="add-device-input"
+//         placeholder="e.g. Work Laptop"
+//         value=${addDeviceName.value}
+//         onInput=${(ev:Event) => {
+//             const input = ev.target as HTMLInputElement
+//             addDeviceName.value = (input).value
+//         }}
+//         disabled=${addDevicePending.value}
+//     />

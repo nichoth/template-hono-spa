@@ -81,11 +81,6 @@
         white-space: nowrap;
     }
 
-    & .device-dates {
-        font-size: 0.8rem;
-        opacity: 0.7;
-    }
-
     & .device-revoke-btn {
         flex-shrink: 0;
     }
@@ -102,7 +97,6 @@
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
-        font-size: 0.85rem;
     }
 
     & .add-device-input {
@@ -125,10 +119,5 @@
         font-size: 0.85rem;
         margin: 0.5rem 0 0;
         width: 100%;
-    }
-
-    & .devices-loading {
-        font-size: 0.9rem;
-        opacity: 0.7;
     }
 }

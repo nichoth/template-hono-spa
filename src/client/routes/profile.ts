@@ -74,7 +74,7 @@ export const ProfileRoute:FunctionComponent<{
         await State.logout(state)
     }, [state])
 
-    // -- Device management state --
+    // -- device management state --
     const devices = useComputed(() => {
         return state.devices.value.data ?? []
     })
@@ -254,63 +254,34 @@ export const ProfileRoute:FunctionComponent<{
                                 class="device-item"
                                 key=${device.deviceId}
                             >
-                                <div
-                                    class="device-info"
-                                >
-                                    <span
-                                        class="device-name"
-                                    >
-                                        ${device
-                                            .credentialName
-                                            || 'Unnamed'}
+                                <div class="device-info" >
+                                    <span class="device-name" >
+                                        ${device.credentialName || 'Unnamed'}
                                     </span>
-                                    <span
-                                        class="device-dates"
-                                    >
-                                        Added ${
-                                            formatDate(
-                                                device
-                                                .createdAt
-                                            )
-                                        }${
-                                            device
-                                            .lastUsedAt ?
-                                            (' \u00B7 '
-                                            + 'Last used '
-                                            + formatDate(
-                                                device
-                                                .lastUsedAt
-                                            )) :
-                                            ''
-                                        }
+                                    <span class="device-dates">
+                                        Added ${formatDate(device.createdAt)}${
+                                            device.lastUsedAt ?
+                                                (' \u00B7 '
+                                                + 'Last used '
+                                                + formatDate(
+                                                    device
+                                                    .lastUsedAt
+                                                )) :
+                                                ''
+                                            }
                                     </span>
                                 </div>
                                 <${SubstrateButton.TAG}
                                     class="device-revoke-btn"
                                     type="button"
-                                    onClick=${() =>
-                                        onRevokeDevice(
-                                            device.deviceId
-                                        )
-                                    }
-                                    disabled=${
-                                        !canRevoke
-                                        || revokePending
-                                            === device
-                                            .deviceId
-                                    }
-                                    spinning=${
-                                        revokePending
-                                            === device
-                                            .deviceId
-                                    }
-                                    title=${
-                                        canRevoke ?
-                                            'Revoke this'
-                                            + ' device' :
-                                            'Cannot revoke'
-                                            + ' your only'
-                                            + ' device'
+                                    onClick=${() => onRevokeDevice(device.deviceId)}
+                                    disabled=${!(canRevoke ||
+                                        revokePending === device.deviceId
+                                    )}
+                                    spinning=${revokePending === device.deviceId}
+                                    title=${canRevoke ?
+                                        'Revoke this device' :
+                                        'Cannot revoke your only device'
                                     }
                                 >
                                     Revoke
@@ -321,18 +292,12 @@ export const ProfileRoute:FunctionComponent<{
                 ` : null}
 
                 ${revokeError ? html`
-                    <p
-                        class="device-error"
-                        role="status"
-                    >
+                    <p class="device-error" role="status">
                         ${revokeError}
                     </p>
                 ` : null}
 
-                <div
-                    class="add-device-section"
-                    aria-live="polite"
-                >
+                <div class="add-device-section" aria-live="polite">
                     <label class="add-device-label">
                         <span>Device name (optional)</span>
                         <input
@@ -342,11 +307,7 @@ export const ProfileRoute:FunctionComponent<{
                             value=${addDeviceName}
                             onInput=${(
                                 e:Event,
-                            ) => setAddDeviceName(
-                                (e.target as
-                                    HTMLInputElement
-                                ).value,
-                            )}
+                            ) => setAddDeviceName((e.target as HTMLInputElement).value)}
                             disabled=${addDevicePending}
                         />
                     </label>
@@ -362,18 +323,12 @@ export const ProfileRoute:FunctionComponent<{
                             'Add device'}
                     <//>
                     ${addDeviceError ? html`
-                        <p
-                            class="device-error"
-                            role="status"
-                        >
+                        <p class="device-error" role="status">
                             ${addDeviceError}
                         </p>
                     ` : null}
                     ${addDeviceSuccess ? html`
-                        <p
-                            class="device-success"
-                            role="status"
-                        >
+                        <p class="device-success" role="status">
                             ${addDeviceSuccess}
                         </p>
                     ` : null}

@@ -4,9 +4,12 @@ import { useComputed, useSignal } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import { SubstrateInput } from '@substrate-system/input'
+import { CopyButton } from '@substrate-system/copy-button'
 import {
     type AppState,
     type DeviceInfo,
+    type DeviceInvitation,
+    type PendingInvitation,
     State,
 } from '../state.js'
 import {
@@ -82,38 +85,66 @@ export const ProfileRoute:FunctionComponent<{
     const addDeviceName = useSignal('')
     const addDevicePending = useSignal(false)
     const addDeviceError = useSignal<string | null>(null)
-    const addDeviceSuccess = useSignal<string | null>(null)
+    const lastInvite = useSignal<DeviceInvitation | null>(null)
     const revokePending = useSignal<string | null>(null)
     const revokeError = useSignal<string | null>(null)
+    const cancelPending = useSignal<string | null>(null)
+
+    const pendingInvitations = useComputed(() => {
+        return state.invitations.value.data ?? []
+    })
 
     useEffect(() => {
         if (isPasskeyUser.value) {
             State.listDevices(state)
+            State.listInvites(state)
         }
     }, [isPasskeyUser.value])
 
     const onAddDevice = useCallback(async () => {
         addDevicePending.value = true
         addDeviceError.value = null
-        addDeviceSuccess.value = null
-        debug('adding device...')
+        lastInvite.value = null
+        debug('creating device invitation...')
 
         try {
-            const result = await State.addDevice(
+            const result = await State.createInvite(
                 state,
                 addDeviceName.value.trim() || undefined,
             )
             addDeviceName.value = ''
             if (result) {
-                addDeviceSuccess.value = `Added "${result.device.credentialName}"`
+                lastInvite.value = result
             }
         } catch (_err) {
             const err = _err as Error
-            addDeviceError.value = err.message || 'Failed to add device.'
+            addDeviceError.value = (
+                err.message || 'Failed to create invitation.'
+            )
         } finally {
             addDevicePending.value = false
         }
     }, [state])
+
+    const onCancelInvite = useCallback(
+        async (inviteCode:string) => {
+            cancelPending.value = inviteCode
+            try {
+                await State.cancelInvite(state, inviteCode)
+                if (lastInvite.value?.inviteCode === inviteCode) {
+                    lastInvite.value = null
+                }
+            } catch (_err) {
+                const err = _err as Error
+                revokeError.value = (
+                    err.message || 'Failed to cancel invitation.'
+                )
+            } finally {
+                cancelPending.value = null
+            }
+        },
+        [state],
+    )
 
     const onRevokeDevice = useCallback(
         async (deviceId:string) => {
@@ -258,8 +289,43 @@ export const ProfileRoute:FunctionComponent<{
                     </p>
                 ` : null}
 
+                ${pendingInvitations.value.length > 0 ? html`
+                    <h3>Pending Invitations</h3>
+                    <ul class="invitation-list" role="list">
+                        ${pendingInvitations.value.map(
+                            (inv:PendingInvitation) => html`
+                            <li
+                                class="invitation-item"
+                                key=${inv.inviteCode}
+                            >
+                                <div class="invitation-info">
+                                    <span class="invitation-name">
+                                        ${inv.deviceName || 'Unnamed'}
+                                    </span>
+                                    <span class="invitation-expires">
+                                        Expires ${formatDate(inv.expiresAt)}
+                                    </span>
+                                </div>
+                                <${SubstrateButton.TAG}
+                                    class="invitation-cancel-btn"
+                                    type="button"
+                                    onClick=${() =>
+                                        onCancelInvite(inv.inviteCode)
+                                    }
+                                    disabled=${cancelPending.value ===
+                                        inv.inviteCode}
+                                    spinning=${cancelPending.value ===
+                                        inv.inviteCode}
+                                >
+                                    Cancel
+                                <//>
+                            </li>`,
+                        )}
+                    </ul>
+                ` : null}
+
                 <h3>Add Device</h3>
-                <div class="add-device-section" aria-live="polite" >
+                <div class="add-device-section" aria-live="polite">
                     <label class="add-device-label">
                         <span>Device name (optional)</span>
                         <${SubstrateInput.TAG}
@@ -277,7 +343,7 @@ export const ProfileRoute:FunctionComponent<{
                         disabled=${addDevicePending.value}
                     >
                         ${addDevicePending.value ?
-                            'Adding...' :
+                            `Creating${ELLIPSIS}` :
                             'Add device'}
                     <//>
                     ${addDeviceError.value ? html`
@@ -285,10 +351,27 @@ export const ProfileRoute:FunctionComponent<{
                             ${addDeviceError.value}
                         </p>
                     ` : null}
-                    ${addDeviceSuccess.value ? html`
-                        <p class="device-success" role="status">
-                            ${addDeviceSuccess.value}
-                        </p>
+                    ${lastInvite.value ? html`
+                        <div class="invite-result" role="status">
+                            <p class="invite-url-label">
+                                Share this link with your
+                                new device:
+                            </p>
+                            <div class="invite-url-row">
+                                <code class="invite-url">
+                                    ${lastInvite.value.inviteUrl}
+                                </code>
+                                <${CopyButton.TAG}
+                                    payload=${lastInvite.value
+                                        .inviteUrl}
+                                ><//>
+                            </div>
+                            <p class="invite-expires">
+                                Expires ${formatDate(
+                                    lastInvite.value.expiresAt
+                                )}
+                            </p>
+                        </div>
                     ` : null}
                 </div>
             </section>
@@ -336,17 +419,3 @@ function formatDate (iso:string):string {
         return iso
     }
 }
-
-//     <input
-//         id="new-device-name"
-//         name="new-device-name"
-//         type="text"
-//         class="add-device-input"
-//         placeholder="e.g. Work Laptop"
-//         value=${addDeviceName.value}
-//         onInput=${(ev:Event) => {
-//             const input = ev.target as HTMLInputElement
-//             addDeviceName.value = (input).value
-//         }}
-//         disabled=${addDevicePending.value}
-//     />

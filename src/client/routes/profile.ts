@@ -362,6 +362,16 @@ export const ProfileRoute:FunctionComponent<{
                         spinning=${addDevicePending.value}
                         disabled=${addDevicePending.value ||
                             addDeviceName.value.trim() === ''}
+                        ref=${(el:Element | null) => {
+                            if (!el) return
+                            const d = addDevicePending.value ||
+                                addDeviceName.value.trim() === ''
+                            if (d) {
+                                el.setAttribute('disabled', '')
+                            } else {
+                                el.removeAttribute('disabled')
+                            }
+                        }}
                     >
                         ${addDevicePending.value ?
                             `Creating${ELLIPSIS}` :

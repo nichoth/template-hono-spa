@@ -1496,7 +1496,7 @@ describe('Integration tests', () => {
         )
 
         it(
-            'creates an unnamed invitation when no name is given',
+            'rejects creating an invitation without a device name',
             async () => {
                 const db = env.AUTH_DB
                 await db.batch(
@@ -1522,21 +1522,16 @@ describe('Integration tests', () => {
                     Date.now(),
                 ).run()
 
-                const inv =
-                    await authService.createDeviceInvitation(
+                await expect(
+                    authService.createDeviceInvitation(
                         db,
                         'http://localhost/add',
                         userId,
                     )
-
-                expect(inv.deviceName).toBeFalsy()
-
-                const invites =
-                    await authService.listDeviceInvitations(
-                        db, userId,
-                    )
-                expect(invites.length).toBe(1)
-                expect(invites[0].deviceName).toBeFalsy()
+                ).rejects.toMatchObject({
+                    status: 400,
+                    code: 'missing_device_name',
+                })
             }
         )
     })

@@ -683,6 +683,14 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
     ):Promise<InvitationResponse> {
         await ensureAuthSchema(db)
 
+        if (!deviceName || !deviceName.trim()) {
+            throw new AuthError(
+                400,
+                'missing_device_name',
+                'Device name is required.',
+            )
+        }
+
         const user = await findUserById(db, userId)
         if (!user || user.status !== 'active') {
             throw new AuthError(

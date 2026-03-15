@@ -342,7 +342,7 @@ export const ProfileRoute:FunctionComponent<{
                 <h3>Add Device</h3>
                 <div class="add-device-section" aria-live="polite">
                     <label class="add-device-label">
-                        <span>Device name (optional)</span>
+                        <span>Device name</span>
                         <${SubstrateInput.TAG}
                             name="device-name"
                             id="device-name"
@@ -360,7 +360,8 @@ export const ProfileRoute:FunctionComponent<{
                         type="button"
                         onClick=${onAddDevice}
                         spinning=${addDevicePending.value}
-                        disabled=${addDevicePending.value}
+                        disabled=${addDevicePending.value ||
+                            addDeviceName.value.trim() === ''}
                     >
                         ${addDevicePending.value ?
                             `Creating${ELLIPSIS}` :

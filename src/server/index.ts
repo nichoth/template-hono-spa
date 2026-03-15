@@ -323,7 +323,7 @@ app.post('/api/auth/passkey/devices/invite', async (c) => {
         }
 
         const body = await c.req.json<{
-            deviceName?:string;
+            deviceName:string;
         }>()
 
         const result =

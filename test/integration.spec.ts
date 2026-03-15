@@ -1534,6 +1534,73 @@ describe('Integration tests', () => {
                 })
             }
         )
+
+        it(
+            'POST /api/auth/passkey/devices/invite returns 400 '
+            + 'when deviceName is missing',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const userId = crypto.randomUUID()
+                const sessionToken = crypto.randomUUID()
+                const now = Date.now()
+
+                await db.prepare(
+                    'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  login_method, status,'
+                    + '  created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    userId,
+                    'route-noname-handle',
+                    'route-noname@example.com',
+                    'passkey',
+                    'active',
+                    now,
+                    now,
+                ).run()
+
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                ).run()
+
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/invite',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Cookie: `auth_session=${sessionToken}`,
+                        },
+                        body: JSON.stringify({}),
+                    },
+                )
+
+                expect(res.status).toBe(400)
+                const body =
+                    await res.json<{ error:string }>()
+                expect(body.error).toBe('missing_device_name')
+            }
+        )
     })
 
     describe('CORS configuration', () => {

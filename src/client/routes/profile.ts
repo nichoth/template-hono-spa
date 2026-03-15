@@ -74,10 +74,6 @@ export const ProfileRoute:FunctionComponent<{
     }, [state])
 
     // -- device management state --
-    const devices = useComputed(() => {
-        return state.devices.value.data ?? []
-    })
-
     const devicesLoading = useComputed(() => {
         return state.devices.value.pending ?? false
     })
@@ -164,11 +160,15 @@ export const ProfileRoute:FunctionComponent<{
     )
 
     const activeDevices = useComputed(() => {
-        return devices.value.filter((d:DeviceInfo) => !d.isRevoked)
+        const data = state.devices.value.data ?? []
+        return data.filter((d:DeviceInfo) => !d.isRevoked)
     })
-    const canRevoke = useComputed(
-        () => activeDevices.value.length > 1
-    )
+    const canRevoke = useComputed(() => {
+        const data = state.devices.value.data ?? []
+        return data.filter(
+            (d:DeviceInfo) => !d.isRevoked
+        ).length > 1
+    })
 
     return html`<div class="route profile">
         <h2>Profile</h2>
@@ -270,11 +270,26 @@ export const ProfileRoute:FunctionComponent<{
                                         onRevokeDevice(device.deviceId)
                                     }
                                     disabled=${!canRevoke.value ||
-                                        revokePending.value === device.deviceId}
-                                    spinning=${revokePending.value === device.deviceId}
+                                        revokePending.value ===
+                                        device.deviceId}
+                                    spinning=${revokePending.value ===
+                                        device.deviceId}
                                     title=${canRevoke.value ?
                                         'Revoke this device' :
                                         'Cannot revoke your only device'}
+                                    ref=${(el:Element | null) => {
+                                        if (!el) return
+                                        const d = !canRevoke.value ||
+                                            revokePending.value ===
+                                            device.deviceId
+                                        if (d) {
+                                            el.setAttribute(
+                                                'disabled', '',
+                                            )
+                                        } else {
+                                            el.removeAttribute('disabled')
+                                        }
+                                    }}
                                 >
                                     Revoke
                                 <//>

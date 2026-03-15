@@ -1172,6 +1172,177 @@ describe('Integration tests', () => {
                 expect(remaining!.count).toBe(1)
             }
         )
+
+        it(
+            'listDevices returns only active devices'
+            + ' (drives revoke-button disable logic)',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier = `list-dev-${
+                    crypto.randomUUID()
+                }@example.com`
+                let credentialCounter = 0
+
+                const authService = createAuthService({
+                    generateRegistrationOptions:
+                        async (opts) => ({
+                            challenge:
+                                'list-dev-challenge',
+                            rp: {
+                                name: opts.rpName,
+                                id: opts.rpID,
+                            },
+                            user: {
+                                id: 'user-id-b64',
+                                name: opts.userName,
+                                displayName: '',
+                            },
+                            pubKeyCredParams: [
+                                { type: 'public-key',
+                                    alg: -7 },
+                            ],
+                            timeout: opts.timeout,
+                            attestation: 'none',
+                            authenticatorSelection: {
+                                residentKey: 'preferred',
+                                userVerification:
+                                    'preferred',
+                            },
+                        }),
+                    verifyRegistrationResponse:
+                        async () => {
+                            credentialCounter++
+                            return {
+                                verified: true,
+                                registrationInfo: {
+                                    fmt: 'none' as const,
+                                    aaguid:
+                                        '00000000-0000'
+                                        + '-0000-0000'
+                                        + '-000000000000',
+                                    credential: {
+                                        id: `cred-list-${
+                                            credentialCounter
+                                        }`,
+                                        publicKey:
+                                            new Uint8Array(
+                                                [
+                                                    credentialCounter,
+                                                ]
+                                            ),
+                                        counter: 0,
+                                        transports: [
+                                            'internal'
+                                                as const,
+                                        ],
+                                    },
+                                    credentialType:
+                                        'public-key'
+                                            as const,
+                                    attestationObject:
+                                        new Uint8Array(0),
+                                    userVerified: true,
+                                    credentialDeviceType:
+                                        'multiDevice'
+                                            as const,
+                                    credentialBackedUp:
+                                        true,
+                                },
+                            }
+                        },
+                })
+
+                // Register and confirm user
+                const startResult =
+                    await authService.startRegistration(
+                        db,
+                        'http://localhost/register/start',
+                        { identifier },
+                    )
+                const finishResult =
+                    await authService.finishRegistration(
+                        db,
+                        'http://localhost/register/finish',
+                        {
+                            challengeReference:
+                                startResult
+                                    .challengeReference,
+                            credential: {} as never,
+                        },
+                    )
+                await authService.confirmEmail(db, {
+                    code: finishResult.confirmationCode,
+                    identifier,
+                })
+
+                const userRow = await db.prepare(
+                    'SELECT id FROM users'
+                    + ' WHERE identifier = ?'
+                ).bind(
+                    identifier.toLowerCase()
+                ).first<{ id:string }>()
+                const userId = userRow!.id
+
+                // 1 device: list should have 1 entry
+                const devicesWithOne =
+                    await authService.listRegisteredDevices(
+                        db, userId,
+                    )
+                expect(devicesWithOne.length).toBe(1)
+                expect(devicesWithOne[0].isRevoked)
+                    .toBe(false)
+
+                // Add second device via invitation
+                const inv =
+                    await authService.createDeviceInvitation(
+                        db,
+                        'http://localhost/add',
+                        userId,
+                        'Second Device',
+                    )
+                const claimStart =
+                    await authService.startInviteClaim(
+                        db,
+                        'http://localhost/add',
+                        inv.inviteCode,
+                    )
+                await authService.finishInviteClaim(
+                    db,
+                    'http://localhost/add',
+                    inv.inviteCode,
+                    {
+                        challengeReference:
+                            claimStart.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+
+                // 2 devices: list should have 2
+                const devicesWithTwo =
+                    await authService.listRegisteredDevices(
+                        db, userId,
+                    )
+                expect(devicesWithTwo.length).toBe(2)
+
+                // Revoke one: list drops to 1
+                await authService.revokeRegisteredDevice(
+                    db, userId, devicesWithTwo[0].deviceId,
+                )
+                const devicesAfterRevoke =
+                    await authService.listRegisteredDevices(
+                        db, userId,
+                    )
+                expect(devicesAfterRevoke.length).toBe(1)
+                expect(devicesAfterRevoke[0].isRevoked)
+                    .toBe(false)
+            }
+        )
     })
 
     describe('API endpoints', () => {

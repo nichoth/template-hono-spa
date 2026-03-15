@@ -18,16 +18,13 @@ export const ProfileRoute:FunctionComponent<{
     state:AppState;
 }> = function ({ state }) {
     const isAuthenticated = useComputed(() => {
-        return state.user.value.data
-            ?.authenticated === true
+        return state.user.value.data?.authenticated === true
     })
 
     const isPasskeyUser = useComputed(() => {
         const session = state.user.value.data
         if (session?.authenticated !== true) return false
-        const method = session.loginMethod
-            ?? session.user?.login_method
-            ?? null
+        const method = session.loginMethod ?? session.user?.login_method ?? null
         return method === 'passkey'
     })
 
@@ -37,19 +34,14 @@ export const ProfileRoute:FunctionComponent<{
 
         const user = session.user
         const expires = session.session?.expiresAt
-        const sessionExpires:SessionExpirationResult =
-            formatSessionExpiration(expires)
+        const sessionExpires:SessionExpirationResult = formatSessionExpiration(expires)
 
-        const rawLoginMethod =
-            session.loginMethod
-            ?? user?.login_method
-            ?? null
+        const rawLoginMethod = session.loginMethod ?? user?.login_method ?? null
         const loginMethodLabel =
             formatLoginMethodLabel(rawLoginMethod)
         const loginMethodHint =
             loginMethodLabel === 'Unknown method' ?
-                'Login method is not recorded '
-                + 'for this account.' :
+                'Login method is not recorded for this account.' :
                 null
 
         return {
@@ -108,15 +100,11 @@ export const ProfileRoute:FunctionComponent<{
             )
             addDeviceName.value = ''
             if (result) {
-                addDeviceSuccess.value =
-                    'Added "'
-                    + result.device.credentialName
-                    + '"'
+                addDeviceSuccess.value = `Added "${result.device.credentialName}"`
             }
         } catch (_err) {
             const err = _err as Error
-            addDeviceError.value =
-                err.message || 'Failed to add device.'
+            addDeviceError.value = err.message || 'Failed to add device.'
         } finally {
             addDevicePending.value = false
         }
@@ -128,14 +116,10 @@ export const ProfileRoute:FunctionComponent<{
             revokeError.value = null
 
             try {
-                await State.revokeDevice(
-                    state, deviceId,
-                )
+                await State.revokeDevice(state, deviceId)
             } catch (_err) {
                 const err = _err as Error
-                revokeError.value =
-                    err.message
-                    || 'Failed to revoke device.'
+                revokeError.value = err.message || 'Failed to revoke device.'
             } finally {
                 revokePending.value = null
             }
@@ -143,11 +127,9 @@ export const ProfileRoute:FunctionComponent<{
         [state],
     )
 
-    const activeDevices = useComputed(() =>
-        devices.value.filter(
-            (d:DeviceInfo) => !d.isRevoked,
-        )
-    )
+    const activeDevices = useComputed(() => {
+        return devices.value.filter((d:DeviceInfo) => !d.isRevoked)
+    })
     const canRevoke = useComputed(
         () => activeDevices.value.length > 1
     )
@@ -173,23 +155,16 @@ export const ProfileRoute:FunctionComponent<{
                         <dt>Login method</dt>
                         <dd
                             class="profile-field-value"
-                            aria-live=${
-                                profileView.value
-                                    .loginMethodHint ?
-                                    'polite' :
-                                    undefined
+                            aria-live=${profileView.value.loginMethodHint ?
+                                'polite' :
+                                undefined
                             }
                         >
-                            ${profileView.value
-                                .loginMethodLabel}
-                            ${profileView.value
-                                .loginMethodHint ?
+                            ${profileView.value.loginMethodLabel}
+                            ${profileView.value.loginMethodHint ?
                                 html`
-                                <span
-                                    class="profile-sr-only"
-                                >
-                                    ${profileView.value
-                                        .loginMethodHint}
+                                <span class="profile-sr-only">
+                                    ${profileView.value.loginMethodHint}
                                 </span>` : null}
                         </dd>
                     </div>
@@ -197,26 +172,20 @@ export const ProfileRoute:FunctionComponent<{
                         <dt>Session expires</dt>
                         <dd
                             class="profile-field-value"
-                            aria-live=${
-                                profileView.value
-                                    .sessionExpires
-                                    .hint ?
-                                    'polite' :
-                                    undefined
+                            aria-live=${profileView.value.sessionExpires.hint ?
+                                'polite' :
+                                undefined
                             }
                         >
-                            ${profileView.value
-                                .sessionExpires.label}
-                            ${profileView.value
-                                .sessionExpires.hint ?
-                                html`
-                                <span
-                                    class="profile-sr-only"
-                                >
+                            ${profileView.value.sessionExpires.label}
+                            ${profileView.value.sessionExpires.hint ?
+                                html`<span class="profile-sr-only">
                                     ${profileView.value
                                         .sessionExpires
                                         .hint}
-                                </span>` : null}
+                                </span>` :
+                                null
+                            }
                         </dd>
                     </div>
                 </dl>
@@ -239,42 +208,22 @@ export const ProfileRoute:FunctionComponent<{
                 ` : null}
 
                 ${activeDevices.value.length > 0 ? html`
-                    <ul
-                        class="device-list"
-                        role="list"
-                    >
+                    <ul class="device-list" role="list">
                         ${activeDevices.value.map(
                             (device:DeviceInfo) => html`
-                            <li
-                                class="device-item"
-                                key=${device.deviceId}
-                            >
+                            <li class="device-item" key=${device.deviceId}>
                                 <div class="device-info">
-                                    <span
-                                        class="device-name"
-                                    >
-                                        ${device
-                                            .credentialName
-                                            || 'Unnamed'}
+                                    <span class="device-name">
+                                        ${device.credentialName || 'Unnamed'}
                                     </span>
                                     <span
                                         class="device-dates"
                                     >
-                                        Added ${
-                                            formatDate(
-                                                device
-                                                .createdAt
-                                            )
-                                        }${
-                                            device
-                                            .lastUsedAt ?
-                                            (' \u00B7 '
-                                            + 'Last used '
-                                            + formatDate(
-                                                device
-                                                .lastUsedAt
-                                            )) :
-                                            ''
+                                        Added ${formatDate(device.createdAt)}${
+                                            device.lastUsedAt ?
+                                                (' \u00B7 Last used ' +
+                                                    formatDate(device.lastUsedAt)) :
+                                                ''
                                         }
                                     </span>
                                 </div>
@@ -282,31 +231,14 @@ export const ProfileRoute:FunctionComponent<{
                                     class="device-revoke-btn"
                                     type="button"
                                     onClick=${() =>
-                                        onRevokeDevice(
-                                            device.deviceId
-                                        )
+                                        onRevokeDevice(device.deviceId)
                                     }
-                                    disabled=${
-                                        !canRevoke.value
-                                        || revokePending
-                                            .value
-                                            === device
-                                            .deviceId
-                                    }
-                                    spinning=${
-                                        revokePending
-                                            .value
-                                            === device
-                                            .deviceId
-                                    }
-                                    title=${
-                                        canRevoke.value ?
-                                            'Revoke this'
-                                            + ' device' :
-                                            'Cannot revoke'
-                                            + ' your only'
-                                            + ' device'
-                                    }
+                                    disabled=${!canRevoke.value ||
+                                        revokePending.value === device.deviceId}
+                                    spinning=${revokePending.value === device.deviceId}
+                                    title=${canRevoke.value ?
+                                        'Revoke this device' :
+                                        'Cannot revoke your only device'}
                                 >
                                     Revoke
                                 <//>
@@ -316,10 +248,7 @@ export const ProfileRoute:FunctionComponent<{
                 ` : null}
 
                 ${revokeError.value ? html`
-                    <p
-                        class="device-error"
-                        role="status"
-                    >
+                    <p class="device-error" role="status">
                         ${revokeError.value}
                     </p>
                 ` : null}
@@ -335,17 +264,11 @@ export const ProfileRoute:FunctionComponent<{
                             class="add-device-input"
                             placeholder="e.g. Work Laptop"
                             value=${addDeviceName.value}
-                            onInput=${(
-                                e:Event,
-                            ) => {
-                                addDeviceName.value =
-                                    (e.target as
-                                        HTMLInputElement
-                                    ).value
+                            onInput=${(ev:Event) => {
+                                const input = ev.target as HTMLInputElement
+                                addDeviceName.value = (input).value
                             }}
-                            disabled=${
-                                addDevicePending.value
-                            }
+                            disabled=${addDevicePending.value}
                         />
                     </label>
                     <${SubstrateButton.TAG}

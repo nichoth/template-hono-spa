@@ -7,9 +7,10 @@
         margin-top: 0;
     }
 
-    & .profile-card {
+    & .profile-card, .device-list {
         margin: 1rem 0;
         padding: 1.5rem;
+        background-color: white;
         box-shadow: 0 4px 12px #21212114;
     }
 

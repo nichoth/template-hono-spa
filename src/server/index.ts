@@ -454,6 +454,7 @@ function setSessionCookie (
     c:Context<{ Bindings:Bindings }>,
     sessionToken:string,
 ) {
+    // 1 month
     const ttlSeconds = Number(c.env.AUTH_SESSION_TTL_SECONDS || '2592000')
 
     setCookie(c, AUTH_SESSION_COOKIE, sessionToken, {

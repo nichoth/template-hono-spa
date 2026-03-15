@@ -101,11 +101,38 @@ export type PasskeyRegistrationValues = {
     displayName?:string;
 }
 
+export type DeviceInfo = {
+    deviceId:string;
+    credentialId:string;
+    credentialName:string | null;
+    aaguid:string | null;
+    transports:string[];
+    createdAt:string;
+    lastUsedAt:string | null;
+    isRevoked:boolean;
+}
+
+export type DeviceAddedResponse = {
+    status:'device_added';
+    device:{
+        deviceId:string;
+        credentialName:string;
+        createdAt:string;
+    };
+}
+
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    user:Signal<RequestFor<SessionResponse, HTTPError|Error>>;
-    response:Signal<RequestFor<{ message:string }, HTTPError|Error>>;
+    user:Signal<RequestFor<
+        SessionResponse, HTTPError|Error
+    >>;
+    response:Signal<RequestFor<
+        { message:string }, HTTPError|Error
+    >>;
+    devices:Signal<RequestFor<
+        DeviceInfo[], HTTPError|Error
+    >>;
     logoutInProgress:Signal<boolean>;
     logoutError:Signal<string | null>;
     _setRoute?:(path:string) => void;
@@ -116,8 +143,15 @@ const { start, set, error } = RequestState
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
-        user: signal<RequestFor<SessionResponse, HTTPError|Error>>(RequestState()),
-        response: signal<RequestFor<{ message:string }, HTTPError|Error>>(RequestState()),
+        user: signal<RequestFor<
+            SessionResponse, HTTPError|Error
+        >>(RequestState()),
+        response: signal<RequestFor<
+            { message:string }, HTTPError|Error
+        >>(RequestState()),
+        devices: signal<RequestFor<
+            DeviceInfo[], HTTPError|Error
+        >>(RequestState()),
         count: signal<number>(0),
         logoutInProgress: signal<boolean>(false),
         logoutError: signal<string | null>(null),
@@ -288,6 +322,75 @@ State.login = async function (state:AppState, credentials:LoginCredentials) {
     } catch (_err) {
         const err = _err as HTTPError|Error
         error(state.user, err)
+    }
+}
+
+State.listDevices = async function (state:AppState) {
+    start(state.devices)
+
+    try {
+        const devices = await ky.get(
+            '/api/auth/passkey/devices',
+        ).json<DeviceInfo[]>()
+        set(state.devices, devices)
+        return devices
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.devices, err)
+    }
+}
+
+State.addDevice = async function (
+    state:AppState,
+    credentialName?:string,
+):Promise<DeviceAddedResponse | undefined> {
+    try {
+        const startResponse = await ky.post(
+            '/api/auth/passkey/devices/register/start',
+            {
+                json: { credentialName },
+            },
+        ).json<{
+            challengeReference:string;
+            options:PublicKeyCredentialCreationOptionsJSON;
+        }>()
+
+        const credential = await beginBrowserRegistration({
+            optionsJSON: startResponse.options,
+        })
+
+        const result = await ky.post(
+            '/api/auth/passkey/devices/register/finish',
+            {
+                json: {
+                    challengeReference:
+                        startResponse.challengeReference,
+                    credential,
+                    credentialName,
+                },
+            },
+        ).json<DeviceAddedResponse>()
+
+        await State.listDevices(state)
+        return result
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.revokeDevice = async function (
+    state:AppState,
+    deviceId:string,
+) {
+    try {
+        await ky.patch(
+            `/api/auth/passkey/devices/${deviceId}/revoke`,
+        )
+        await State.listDevices(state)
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
     }
 }
 

@@ -23,7 +23,7 @@
     "@simplewebauthn/server": "^13.3.0",
     "@substrate-system/a11y": "^0.0.17",
     "@substrate-system/blur-hash": "^0.0.35",
-    "@substrate-system/button": "^0.0.35",
+    "@substrate-system/button": "^0.0.36",
     "@substrate-system/copy-button": "^0.5.24",
     "@substrate-system/css-normalize": "^0.0.13",
     "@substrate-system/hamburger-two": "^0.0.13",

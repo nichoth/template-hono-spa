@@ -1098,38 +1098,32 @@ describe('Integration tests', () => {
 
                 expect(user).toBeTruthy()
 
-                const devStart =
+                const inv =
                     await authService
-                        .startDeviceRegistration(
+                        .createDeviceInvitation(
                             db,
-                            'http://localhost'
-                                + '/api/auth/passkey'
-                                + '/devices/register'
-                                + '/start',
+                            'http://localhost/add',
                             user!.id,
-                            {
-                                credentialName:
-                                    'Second Device',
-                            },
+                            'Second Device',
                         )
 
-                await authService
-                    .finishDeviceRegistration(
+                const claimStart =
+                    await authService.startInviteClaim(
                         db,
-                        'http://localhost'
-                            + '/api/auth/passkey'
-                            + '/devices/register'
-                            + '/finish',
-                        user!.id,
-                        {
-                            challengeReference:
-                                devStart
-                                    .challengeReference,
-                            credential: {} as never,
-                            credentialName:
-                                'Second Device',
-                        },
+                        'http://localhost/add',
+                        inv.inviteCode,
                     )
+
+                await authService.finishInviteClaim(
+                    db,
+                    'http://localhost/add',
+                    inv.inviteCode,
+                    {
+                        challengeReference:
+                            claimStart.challengeReference,
+                        credential: {} as never,
+                    },
+                )
 
                 const devices = await db.prepare(
                     'SELECT * FROM devices '
@@ -1246,6 +1240,18 @@ describe('Integration tests', () => {
                                 },
                             }
                         },
+                    generateAuthenticationOptions:
+                        async () => ({
+                            challenge: '',
+                            rpId: '',
+                        }),
+                    verifyAuthenticationResponse:
+                        async () => ({
+                            verified: true,
+                            authenticationInfo: {} as never,
+                        }),
+                    now: () => Date.now(),
+                    createID: () => crypto.randomUUID(),
                 })
 
                 // Register and confirm user
@@ -1285,8 +1291,8 @@ describe('Integration tests', () => {
                         db, userId,
                     )
                 expect(devicesWithOne.length).toBe(1)
-                expect(devicesWithOne[0].isRevoked)
-                    .toBe(false)
+                expect(devicesWithOne[0].is_revoked)
+                    .toBe(0)
 
                 // Add second device via invitation
                 const inv =
@@ -1322,15 +1328,15 @@ describe('Integration tests', () => {
 
                 // Revoke one: list drops to 1
                 await authService.revokeRegisteredDevice(
-                    db, userId, devicesWithTwo[0].deviceId,
+                    db, userId, devicesWithTwo[0].id,
                 )
                 const devicesAfterRevoke =
                     await authService.listRegisteredDevices(
                         db, userId,
                     )
                 expect(devicesAfterRevoke.length).toBe(1)
-                expect(devicesAfterRevoke[0].isRevoked)
-                    .toBe(false)
+                expect(devicesAfterRevoke[0].is_revoked)
+                    .toBe(0)
             }
         )
     })

@@ -633,7 +633,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         userID:string,
     ) {
         await ensureAuthSchema(db)
-        return listDevicesByUserId(db, userID)
+        return listActiveDevicesByUserId(db, userID)
     }
 
     async function revokeRegisteredDevice (

@@ -7,7 +7,7 @@ import '@substrate-system/password-input'
 import '@substrate-system/radio-input'
 import { html } from 'htm/preact'
 import { createRouter } from './routes/index.js'
-import type { AppState, SessionResponse } from './state.js'
+import type { AppState } from './state.js'
 import { State } from './state.js'
 import { NotFound } from './not-found.js'
 import { Nav } from './components/nav.js'
@@ -42,8 +42,11 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
         return router.match(path)
     })
 
-    const loginLabel = useComputed(() => {
-        return formatLoginStatus(state.user.value.data ?? null)
+    const loginLabel = useComputed<string>(() => {
+        if (!state.user.value.data?.authenticated) return 'anonymouse'
+
+        const identifier = state.user.value.data?.user.identifier
+        return `Logged in as ${identifier}`
     })
 
     if (!match.value || !match.value.action) {
@@ -82,17 +85,4 @@ const root = document.getElementById('root')
 
 if (root) {
     render(html`<${App} state=${state} />`, root)
-}
-
-export function formatLoginStatus (session?:SessionResponse|null):string {
-    if (session?.authenticated === true) {
-        const user = session.user
-        const identifier = user?.identifier
-
-        if (identifier) {
-            return `logged in as ${identifier}`
-        }
-    }
-
-    return ''
 }

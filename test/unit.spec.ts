@@ -57,6 +57,20 @@ vi.mock('@substrate-system/radio-input', () => ({
     },
 }))
 
+vi.mock('@substrate-system/input', () => ({
+    SubstrateInput: {
+        TAG: 'substrate-input',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/copy-button', () => ({
+    CopyButton: {
+        TAG: 'copy-button',
+        define: () => {},
+    },
+}))
+
 const sourceFiles = import.meta.glob('/src/**/*.ts', {
     query: '?raw',
     import: 'default',

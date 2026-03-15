@@ -253,10 +253,8 @@ export const ProfileRoute:FunctionComponent<{
                     </p>
                 ` : null}
 
-                <div
-                    class="add-device-section"
-                    aria-live="polite"
-                >
+                <h3>Add Device</h3>
+                <div class="add-device-section" aria-live="polite" >
                     <label class="add-device-label">
                         <span>Device name (optional)</span>
                         <input

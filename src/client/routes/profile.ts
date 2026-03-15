@@ -15,6 +15,8 @@ import {
 } from '../utils/session-expiration.js'
 import './profile.css'
 import { ELLIPSIS } from '../constants.js'
+import Debug from '@substrate-system/debug'
+const debug = Debug('template:view')
 
 export const ProfileRoute:FunctionComponent<{
     state:AppState;
@@ -94,6 +96,7 @@ export const ProfileRoute:FunctionComponent<{
         addDevicePending.value = true
         addDeviceError.value = null
         addDeviceSuccess.value = null
+        debug('adding device...')
 
         try {
             const result = await State.addDevice(

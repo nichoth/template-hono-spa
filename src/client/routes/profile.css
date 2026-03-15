@@ -82,10 +82,10 @@
     & .add-device-section {
         display: flex;
         justify-content: space-between;
-        flex-wrap: wrap;
         align-items: flex-end;
         gap: 0.75rem;
         margin-top: 1rem;
+        flex-wrap: wrap;
     }
 
     & .add-device-label {

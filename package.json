@@ -35,6 +35,8 @@
     "hono": "^4.12.8",
     "htm": "^3.1.1",
     "ky": "^1.14.3",
+    "nanoid": "^5.1.6",
+    "nanoid-dictionary": "^5.0.0",
     "preact": "^10.28.3",
     "route-event": "^7.4.0"
   },

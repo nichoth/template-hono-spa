@@ -315,7 +315,7 @@ export const ProfileRoute:FunctionComponent<{
                                         ${inv.deviceName || 'Unnamed'}
                                     </span>
                                     <span class="invitation-expires">
-                                        Expires ${formatDate(inv.expiresAt)}
+                                        Expires ${formatExpiration(inv.expiresAt)}
                                     </span>
                                 </div>
                                 <${SubstrateButton.TAG}
@@ -394,7 +394,7 @@ export const ProfileRoute:FunctionComponent<{
                                 ><//>
                             </div>
                             <p class="invite-expires">
-                                Expires ${formatDate(
+                                Expires ${formatExpiration(
                                     lastInvite.value.expiresAt
                                 )}
                             </p>
@@ -434,14 +434,37 @@ function formatLoginMethodLabel (
 
 function formatDate (iso:string):string {
     try {
-        return new Date(iso).toLocaleDateString(
+        return new Date(iso).toLocaleString(
             undefined,
             {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
             },
         )
+    } catch {
+        return iso
+    }
+}
+
+function formatExpiration (iso:string):string {
+    try {
+        const date = new Date(iso)
+        const now = new Date()
+        const isToday = (
+            date.getFullYear() === now.getFullYear() &&
+            date.getMonth() === now.getMonth() &&
+            date.getDate() === now.getDate()
+        )
+        const time = date.toLocaleTimeString(
+            undefined,
+            { hour: 'numeric', minute: '2-digit' },
+        )
+        return isToday ?
+            `today, ${time}` :
+            formatDate(iso)
     } catch {
         return iso
     }

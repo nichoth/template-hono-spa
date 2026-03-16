@@ -13,7 +13,7 @@ import { NotFound } from './not-found.js'
 import { Nav } from './components/nav.js'
 import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
-const debug = Debug('template')
+const debug = Debug('template:view')
 
 BlurHash.define()
 

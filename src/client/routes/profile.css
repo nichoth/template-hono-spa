@@ -136,12 +136,8 @@
         gap: 0.5rem;
     }
 
-    & .invite-url {
-        flex: 1;
-        padding: 0.5rem 0.75rem;
-        background-color: white;
+    & code.invite-url {
         word-break: break-all;
-        user-select: all;
     }
 
     & .invite-expires {
@@ -159,6 +155,12 @@
     }
 
     & .invitation-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    & .invitation-header {
         display: flex;
         align-items: center;
         justify-content: space-between;

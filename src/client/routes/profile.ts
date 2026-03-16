@@ -310,27 +310,37 @@ export const ProfileRoute:FunctionComponent<{
                                 class="invitation-item card"
                                 key=${inv.inviteCode}
                             >
-                                <div class="invitation-info">
-                                    <span class="invitation-name">
-                                        ${inv.deviceName || 'Unnamed'}
-                                    </span>
-                                    <span class="invitation-expires">
-                                        Expires ${formatExpiration(inv.expiresAt)}
-                                    </span>
+                                <div class="invitation-header">
+                                    <div class="invitation-info">
+                                        <span class="invitation-name">
+                                            ${inv.deviceName || 'Unnamed'}
+                                        </span>
+                                        <span class="invitation-expires">
+                                            Expires ${formatExpiration(inv.expiresAt)}
+                                        </span>
+                                    </div>
+                                    <${SubstrateButton.TAG}
+                                        class="invitation-cancel-btn"
+                                        type="button"
+                                        onClick=${() =>
+                                            onCancelInvite(inv.inviteCode)
+                                        }
+                                        disabled=${cancelPending.value ===
+                                            inv.inviteCode}
+                                        spinning=${cancelPending.value ===
+                                            inv.inviteCode}
+                                    >
+                                        Cancel
+                                    <//>
                                 </div>
-                                <${SubstrateButton.TAG}
-                                    class="invitation-cancel-btn"
-                                    type="button"
-                                    onClick=${() =>
-                                        onCancelInvite(inv.inviteCode)
-                                    }
-                                    disabled=${cancelPending.value ===
-                                        inv.inviteCode}
-                                    spinning=${cancelPending.value ===
-                                        inv.inviteCode}
-                                >
-                                    Cancel
-                                <//>
+                                <div class="invite-url-row">
+                                    <code class="invite-url">
+                                        ${location.origin}/add/${inv.inviteCode}
+                                    </code>
+                                    <${CopyButton.TAG}
+                                        payload=${`${location.origin}/add/${inv.inviteCode}`}
+                                    ><//>
+                                </div>
                             </li>`,
                         )}
                     </ul>

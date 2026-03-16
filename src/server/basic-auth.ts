@@ -39,6 +39,17 @@ export function parseBasicAuthHeader (
     }
 }
 
+function timingSafeStringEqual (a:string, b:string):boolean {
+    const encoder = new TextEncoder()
+    const aBytes = encoder.encode(a)
+    const bBytes = encoder.encode(b)
+    if (aBytes.byteLength !== bBytes.byteLength) {
+        crypto.subtle.timingSafeEqual(aBytes, aBytes)
+        return false
+    }
+    return crypto.subtle.timingSafeEqual(aBytes, bBytes)
+}
+
 export function credentialsMatch (
     credential:BasicAuthCredential,
     expectedUsername:string|undefined,
@@ -47,6 +58,11 @@ export function credentialsMatch (
     if (credential.isMalformed) return false
     if (!expectedUsername || !expectedPassword) return false
 
-    return credential.username === expectedUsername
-        && credential.password === expectedPassword
+    return timingSafeStringEqual(
+        credential.username ?? '',
+        expectedUsername
+    ) && timingSafeStringEqual(
+        credential.password ?? '',
+        expectedPassword
+    )
 }

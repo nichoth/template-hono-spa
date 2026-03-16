@@ -3,6 +3,10 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from 'cloudflare:test'
+import {
+    parseBasicAuthHeader,
+    credentialsMatch,
+} from '../src/server/basic-auth.js'
 import { signal } from '@preact/signals'
 import {
     type RequestFor,
@@ -812,7 +816,166 @@ describe('Hono worker', () => {
             expect(Object.keys(tsxFiles)).toEqual([])
         })
     })
+})
 
+describe('Basic Auth', () => {
+    describe('credentialsMatch — valid credentials', () => {
+        it('returns true for correct username and password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(true)
+        })
+
+        it('returns false for case-sensitive username mismatch', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('Admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for case-sensitive password mismatch', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:Secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+    })
+
+    describe('credentialsMatch — invalid credentials', () => {
+        it('returns false for correct username with wrong password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:wrong')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for wrong username with correct password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('other:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false when both username and password are wrong', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('other:wrong')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for empty string username', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa(':secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for empty string password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false when expectedUsername is undefined', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, undefined, 'secret')).toBe(false)
+        })
+
+        it('returns false when expectedPassword is undefined', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', undefined)).toBe(false)
+        })
+
+        it('returns false when submitted and expected values differ in byte length', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:short')
+            )
+            expect(
+                credentialsMatch(cred, 'admin', 'muchlongerpassword')
+            ).toBe(false)
+        })
+    })
+
+    describe('parseBasicAuthHeader', () => {
+        it('returns null credentials for missing header', () => {
+            const cred = parseBasicAuthHeader(undefined)
+            expect(cred).toEqual({
+                username: null,
+                password: null,
+                isMalformed: false,
+            })
+        })
+
+        it('returns null credentials for empty string', () => {
+            const cred = parseBasicAuthHeader('')
+            expect(cred).toEqual({
+                username: null,
+                password: null,
+                isMalformed: false,
+            })
+        })
+
+        it('marks header as malformed when scheme is not Basic', () => {
+            const cred = parseBasicAuthHeader('Bearer some-token')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed when encoded part is missing', () => {
+            const cred = parseBasicAuthHeader('Basic')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed for invalid base64', () => {
+            const cred = parseBasicAuthHeader('Basic !!!notbase64!!!')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed when no colon separator exists', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('nocolon')
+            )
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('parses a well-formed Basic Auth header', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('user:pass')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass',
+                isMalformed: false,
+            })
+        })
+
+        it('allows colons in the password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('user:pass:with:colons')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass:with:colons',
+                isMalformed: false,
+            })
+        })
+
+        it('accepts Basic scheme in any case', () => {
+            const cred = parseBasicAuthHeader(
+                'BASIC ' + btoa('user:pass')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass',
+                isMalformed: false,
+            })
+        })
+    })
 })
 
 describe('nav routes helper', () => {

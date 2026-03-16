@@ -13,11 +13,12 @@
         margin-top: 0;
     }
 
-    & .profile-card, .device-list {
+    & .profile-card {
         margin: 1rem 0;
         padding: 1.5rem;
         background-color: white;
-        box-shadow: 0 4px 12px #21212114;
+        /* box-shadow: 0 4px 12px #21212114; */
+        box-shadow: var(--card-shadow);
     }
 
     & .profile-fields {
@@ -66,7 +67,8 @@
 
     & .card {
         flex-direction: row;
-        box-shadow: 0 2px 6px #21212110;
+        /* box-shadow: 0 2px 6px #21212110; */
+        box-shadow: var(--card-shadow);
         padding: 0.75rem 1rem;
     }
 

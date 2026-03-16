@@ -20,7 +20,7 @@ the browser by Preact.
 - [Use](#use)
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
-- [Cloduflare](#cloduflare)
+- [Cloudflare](#cloudflare)
   * [D1](#d1)
   * [Websockets](#websockets)
 - [Local Dev](#local-dev)
@@ -34,6 +34,7 @@ the browser by Preact.
   * [Superpowers](#superpowers)
 - [openspec](#openspec)
   * [1. `openspec init`](#1-openspec-init)
+- [Some links](#some-links)
 
 <!-- tocstop -->
 
@@ -59,6 +60,41 @@ Start a Vite server at `localhost:8888`.
 
 ```sh
 npm start
+```
+
+## Passwordlessness
+
+We do passwordless via passkeys, aka the device's _biometric_ auth.
+
+See the `passkey_credentials` table:
+
+```js
+{
+    "id": "uuid (primary key)",
+    "user_id": "uuid (foreign key → users)",
+    "credential_id": "unique string from the authenticator",
+    "public_key": "base64-encoded public key",
+    "counter": 0,
+
+    // a hint from the authenticator about how it communicates
+    // The values come from the WebAuthn spec
+    //
+    // internal: built into the device
+    //   (Touch ID, Face ID, Windows Hello, Android fingerprint)  
+    // hybrid — cross-device auth via QR code / BLE
+    //   (e.g. using your phone to authenticate on a desktop)
+    //
+    // Other possible values: usb, nfc, ble, smart-card
+    "transports_json": "[\"internal\", \"hybrid\"]",
+
+    // the WebAuthn concept of whether the passkey is tied to one device
+    "device_type": "singleDevice | multiDevice",
+
+    "backed_up": 0,  // a SQLite integer boolean (0/1)
+    "status": "active",
+    "created_at": 1710000000,
+    "last_used_at": 1710001000
+  }
 ```
 
 ## Cloudflare

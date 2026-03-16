@@ -5,7 +5,7 @@ import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import { type AppState, State } from '../state.js'
 import './claim-device.css'
-import { ELLIPSIS } from '../constants.js'
+import { ELLIPSIS, NBSP } from '../constants.js'
 
 function parseClaimPath (path:string):string | null {
     const normalized = path.replace(/\/+$/, '')
@@ -184,13 +184,13 @@ export const ClaimDeviceRoute:FunctionComponent<{
         <div class="claim-info">
             ${userIdentifier.value ? html`
                 <p class="claim-account">
-                    Account:
+                    Account:${NBSP}
                     <strong>${userIdentifier.value}</strong>
                 </p>
             ` : null}
             ${deviceName.value ? html`
                 <p class="claim-device-name">
-                    Device name:
+                    Device name:${NBSP}
                     <strong>${deviceName.value}</strong>
                 </p>
             ` : null}

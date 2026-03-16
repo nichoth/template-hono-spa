@@ -251,3 +251,5 @@ Execute the plan
 ## [openspec](https://github.com/Fission-AI/OpenSpec/)
 
 > We recommend Opus 4.5 and GPT 5.2 for both planning and implementation.
+
+### 1. `openspec init`

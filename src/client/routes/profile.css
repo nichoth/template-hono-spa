@@ -1,5 +1,6 @@
 @import url("../../_variables.css");
 @import url("@substrate-system/copy-button/css");
+@import url("@substrate-system/dialog/css");
 
 .route.profile {
     min-height: 60vh;
@@ -186,5 +187,18 @@
 
     & .invitation-cancel-btn {
         flex-shrink: 0;
+    }
+
+    & .device-current {
+        font-size: 0.8em;
+        color: var(--color-text-muted, #6c757d);
+        margin-left: 0.4em;
+    }
+
+    & .dialog-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
     }
 }

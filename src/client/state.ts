@@ -34,6 +34,7 @@ export type SessionResponse = {
         expiresAt:string;
     };
     loginMethod:'passkey'|'password' | null;
+    currentDeviceId?:string | null;
 }
 
 export type SignupConfirmationResponse = {

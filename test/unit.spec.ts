@@ -7,6 +7,10 @@ import {
     parseBasicAuthHeader,
     credentialsMatch,
 } from '../src/server/basic-auth.js'
+import {
+    createAuthService,
+    AuthError,
+} from '../src/server/auth/index.js'
 import { signal } from '@preact/signals'
 import {
     type RequestFor,
@@ -70,6 +74,13 @@ vi.mock('@substrate-system/input', () => ({
 vi.mock('@substrate-system/copy-button', () => ({
     CopyButton: {
         TAG: 'copy-button',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/dialog', () => ({
+    ModalWindow: {
+        TAG: 'modal-window',
         define: () => {},
     },
 }))
@@ -992,5 +1003,70 @@ describe('nav routes helper', () => {
 
         expect(visible.some(route => route.text === 'Login')).toBe(true)
         expect(visible.some(route => route.text === 'Create Account')).toBe(true)
+    })
+})
+
+describe('revokeRegisteredDevice', () => {
+    function makeMockDb ():D1Database {
+        return {
+            exec: () => Promise.resolve({
+                count: 0, duration: 0,
+            }),
+            batch: () => Promise.resolve([]),
+            prepare: (sql:string) => ({
+                bind: (..._args:unknown[]) => ({
+                    first: () => {
+                        if (sql.includes('WHERE id = ?')) {
+                            return Promise.resolve({
+                                id: 'device-1',
+                                user_id: 'user-1',
+                                credential_id: 'cred-1',
+                                public_key: 'pk',
+                                counter: 0,
+                                is_revoked: 0,
+                                created_at: Date.now(),
+                            })
+                        }
+                        return Promise.resolve({ count: 2 })
+                    },
+                    run: () => Promise.resolve({ success: true }),
+                    all: () => Promise.resolve({ results: [] }),
+                }),
+                run: () => Promise.resolve({ success: true }),
+                first: () => Promise.resolve(null),
+                all: () => Promise.resolve({ results: [] }),
+            }),
+        } as unknown as D1Database
+    }
+
+    it('rejects revocation of the current session device with 403', async () => {
+        const authService = createAuthService()
+        const db = makeMockDb()
+        let thrown:unknown
+
+        try {
+            await authService.revokeRegisteredDevice(
+                db, 'user-1', 'device-1', 'device-1',
+            )
+        } catch (err) {
+            thrown = err
+        }
+
+        expect(thrown).toBeInstanceOf(AuthError)
+        const authErr = thrown as AuthError
+        expect(authErr.status).toBe(403)
+        expect(authErr.code).toBe('self_revoke')
+    })
+
+    it('allows revoking a different device', async () => {
+        const authService = createAuthService()
+        const db = makeMockDb()
+
+        // Should not throw — device-1 is not the current session device
+        await expect(
+            authService.revokeRegisteredDevice(
+                db, 'user-1', 'device-1', 'device-2',
+            )
+        ).resolves.toBeUndefined()
     })
 })

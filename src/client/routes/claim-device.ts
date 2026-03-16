@@ -6,6 +6,7 @@ import { SubstrateButton } from '@substrate-system/button'
 import { type AppState, State } from '../state.js'
 import './claim-device.css'
 import { ELLIPSIS, NBSP } from '../constants.js'
+import { type HTTPError } from 'ky'
 
 function parseClaimPath (path:string):string | null {
     const normalized = path.replace(/\/+$/, '')
@@ -96,35 +97,30 @@ export const ClaimDeviceRoute:FunctionComponent<{
                 result.device.credentialName || null
             )
         } catch (_err) {
-            const err = _err as Error
+            const err = _err as HTTPError
             const msg = err.message || ''
-            if (msg.includes('expired')) {
-                errorMsg.value =
-                    'This invitation has expired.'
-            } else if (
-                msg.includes('consumed')
-                || msg.includes('already')
-            ) {
-                errorMsg.value =
-                    'This invitation has already been used.'
-            } else if (
-                msg.includes('cancelled')
-                || msg.includes('canceled')
-                || msg.includes('no longer')
-            ) {
-                errorMsg.value =
-                    'This invitation is no longer valid.'
-            } else if (
-                msg.includes('not found')
-                || msg.includes('Not Found')
-            ) {
-                errorMsg.value =
-                    'This invitation was not found.'
-            } else {
-                errorMsg.value = (
-                    msg || 'Failed to register device.'
-                )
-            }
+            errorMsg.value = 'This invitation does not exist.'
+            // if (msg.includes('expired')) {
+            //     errorMsg.value = 'This invitation has expired.'
+            // } else if (
+            //     msg.includes('consumed') ||
+            //     msg.includes('already')
+            // ) {
+            //     errorMsg.value = 'This invitation has already been used.'
+            // } else if (
+            //     msg.includes('cancelled') ||
+            //     msg.includes('canceled') ||
+            //     msg.includes('no longer')
+            // ) {
+            //     errorMsg.value = 'This invitation is no longer valid.'
+            // } else if (
+            //     msg.includes('not found') ||
+            //     msg.includes('Not Found')
+            // ) {
+            //     errorMsg.value = 'This invitation was not found.'
+            // } else {
+            //     errorMsg.value = (msg || 'Failed to register device.')
+            // }
         } finally {
             pending.value = false
         }

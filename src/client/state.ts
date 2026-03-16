@@ -424,9 +424,7 @@ State.cancelInvite = async function (
     }
 }
 
-State.claimInvite = async function (
-    code:string,
-):Promise<DeviceAddedResponse> {
+State.claimInvite = async function (code:string):Promise<DeviceAddedResponse> {
     const startResponse = await ky.post(
         `/api/auth/passkey/devices/invite/${code}/claim/start`,
     ).json<{
@@ -444,8 +442,7 @@ State.claimInvite = async function (
         `/api/auth/passkey/devices/invite/${code}/claim/finish`,
         {
             json: {
-                challengeReference:
-                    startResponse.challengeReference,
+                challengeReference: startResponse.challengeReference,
                 credential,
             },
         },
@@ -454,6 +451,9 @@ State.claimInvite = async function (
     return result
 }
 
+/**
+ * This is just for demonstration purposes in the template.
+ */
 State.fetch = Object.assign(
     async function (state:AppState) {
         try {

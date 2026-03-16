@@ -20,12 +20,17 @@ the browser by Preact.
 - [Use](#use)
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
-  * [Local Dev](#local-dev)
+- [Cloduflare](#cloduflare)
+  * [D1](#d1)
+  * [Websockets](#websockets)
+- [Local Dev](#local-dev)
 - [Deploy](#deploy)
   * [Staging Password Protection](#staging-password-protection)
 - [Test](#test)
   * [Run tests](#run-tests)
-- [Rendering](#rendering)
+- [Claude](#claude)
+  * [Example](#example)
+  * [Superpowers](#superpowers)
 
 <!-- tocstop -->
 
@@ -242,3 +247,7 @@ you can ask Claude:
 ```
 Execute the plan
 ```
+
+## [openspec](https://github.com/Fission-AI/OpenSpec/)
+
+> We recommend Opus 4.5 and GPT 5.2 for both planning and implementation.

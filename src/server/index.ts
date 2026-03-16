@@ -28,6 +28,7 @@ type Bindings = {
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
     AUTH_SESSION_TTL_SECONDS?:string
+    INVITE_RATE_LIMIT?:RateLimit
 }
 
 let cachedAssets:AssetPaths|null = null
@@ -363,9 +364,21 @@ app.delete(
     },
 )
 
+async function checkInviteRateLimit (
+    c:Context<{ Bindings:Bindings }>,
+):Promise<boolean> {
+    if (!c.env.INVITE_RATE_LIMIT) return true
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
+    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
+    return success
+}
+
 app.get(
     '/api/auth/passkey/devices/invite/:code',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const { code } = c.req.param()
             const invitation =
@@ -383,6 +396,9 @@ app.get(
 app.post(
     '/api/auth/passkey/devices/invite/:code/claim/start',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const code = c.req.param('code')
             const result =
@@ -402,6 +418,9 @@ app.post(
 app.post(
     '/api/auth/passkey/devices/invite/:code/claim/finish',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const code = c.req.param('code')
             const body = await c.req.json<{

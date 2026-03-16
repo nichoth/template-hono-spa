@@ -71,6 +71,7 @@
 			],
 			"vars": {
 				"NODE_ENV": "production",
+				"DOMAIN": "staging-template-hono-spa.nichoth.workers.dev",
 				"MAIN_BRANCH": "main",
 				// Only the staging branch deploy is password protected.
 				"DEPLOY_BRANCH": "staging",

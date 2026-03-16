@@ -21,6 +21,7 @@ type Bindings = {
     ASSETS?:Fetcher
     AUTH_DB:D1Database
     NODE_ENV?:string
+    DOMAIN?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_USERNAME?:string
@@ -68,7 +69,12 @@ app.use('*', async (c, next) => {
     return unauthorizedBasicAuthResponse(c.env?.BASIC_AUTH_REALM)
 })
 
-app.use('/api/*', cors())
+app.use('/api/*', async (c, next) => {
+    const origin = c.env.DOMAIN ?
+        `https://${c.env.DOMAIN}` :
+        'http://localhost:9999'
+    return cors({ origin, credentials: true })(c, next)
+})
 
 app.get('/api/health', (c) => {
     return c.json({

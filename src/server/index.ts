@@ -125,31 +125,6 @@ app.post('/api/auth/register/finish', async (c) => {
     }
 })
 
-app.post('/api/auth/passkey/register', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishRegistration(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        logLocalConfirmUrl(
-            c.req.url,
-            result.response.identifier,
-            result.confirmationCode,
-        )
-
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err as Error)
-    }
-})
-
 app.post('/api/confirm', async (c) => {
     try {
         const body = await c.req.json<EmailConfirmationRequest>()
@@ -202,35 +177,11 @@ app.post('/api/auth/login/finish', async (c) => {
     }
 })
 
-app.post('/api/auth/passkey/login', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishAuthentication(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        setSessionCookie(c, result.sessionToken)
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err)
-    }
-})
-
 app.get('/api/auth/passkey/devices', async (c) => {
     try {
-        const sessionToken = getCookie(
-            c, AUTH_SESSION_COOKIE,
-        )
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
         const session =
-            await authService.getCurrentSession(
-                c.env.AUTH_DB, sessionToken,
-            )
+            await authService.getCurrentSession(c.env.AUTH_DB, sessionToken)
         if (!session.authenticated) {
             return c.json({
                 error: 'unauthenticated',

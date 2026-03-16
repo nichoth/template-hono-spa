@@ -74,6 +74,7 @@ export type SessionResponse = {
     user:AuthUser;
     session:SessionSummary;
     loginMethod:'passkey'|'password' | null;
+    currentDeviceId:string | null;
 }
 
 export type RegistrationStartRequest = {
@@ -554,6 +555,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             sessionToken: buildSessionToken(),
             expiresAt: sessionNow + DEFAULT_SESSION_TTL_MS,
             now: sessionNow,
+            deviceId: device.id,
         })
 
         await createAuthEvent(db, {
@@ -568,7 +570,11 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
         return {
             sessionToken: session.session_token,
-            response: makeAuthenticatedSessionResponse(user, session.expires_at),
+            response: makeAuthenticatedSessionResponse(
+                user,
+                session.expires_at,
+                device.id,
+            ),
         }
     }
 
@@ -612,6 +618,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 expiresAt: new Date(session.expires_at).toISOString(),
             },
             loginMethod: session.login_method ?? null,
+            currentDeviceId: session.device_id ?? null,
         }
     }
 
@@ -640,6 +647,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         userId:string,
         deviceID:string,
+        currentSessionDeviceId:string | null,
     ) {
         await ensureAuthSchema(db)
 
@@ -657,6 +665,17 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 'not_owner',
                 'Device does not belong '
                     + 'to your account.',
+            )
+        }
+        if (
+            currentSessionDeviceId !== null &&
+            deviceID === currentSessionDeviceId
+        ) {
+            throw new AuthError(
+                403,
+                'self_revoke',
+                'Cannot revoke the device '
+                    + 'you are currently using.',
             )
         }
 
@@ -1200,8 +1219,14 @@ function parseTransports (
 }
 
 function makeAuthenticatedSessionResponse (
-    user:{ id:string; identifier:string; display_name:string | null; login_method:'passkey'|'password' | null },
+    user:{
+        id:string;
+        identifier:string;
+        display_name:string | null;
+        login_method:'passkey'|'password' | null;
+    },
     expiresAt:number,
+    deviceId:string | null,
 ):SessionResponse {
     return {
         authenticated: true,
@@ -1215,6 +1240,7 @@ function makeAuthenticatedSessionResponse (
             expiresAt: new Date(expiresAt).toISOString(),
         },
         loginMethod: user.login_method ?? null,
+        currentDeviceId: deviceId,
     }
 }
 

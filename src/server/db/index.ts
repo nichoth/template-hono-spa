@@ -47,6 +47,7 @@ export type SessionRecord = {
     expires_at:number;
     revoked_at:number | null;
     last_seen_at:number;
+    device_id:string | null;
 }
 
 export type SessionWithUserRecord = SessionRecord & {
@@ -94,6 +95,13 @@ export async function ensureAuthSchema (db:D1Database):Promise<void> {
     await db.batch(
         AUTH_SCHEMA_STATEMENTS.map(statement => db.prepare(statement))
     )
+    try {
+        await db.prepare(
+            'ALTER TABLE sessions ADD COLUMN device_id TEXT'
+        ).run()
+    } catch {
+        // column already exists — ignore
+    }
     initializedDbs.add(db)
 }
 
@@ -456,13 +464,15 @@ export async function createSession (
         sessionToken:string;
         expiresAt:number;
         now:number;
+        deviceId?:string;
     }
 ):Promise<SessionRecord> {
     await db.prepare(`
         INSERT INTO sessions (
-            id, user_id, session_token, status, created_at, expires_at, last_seen_at
+            id, user_id, session_token, status,
+            created_at, expires_at, last_seen_at, device_id
         )
-        VALUES (?, ?, ?, 'active', ?, ?, ?)
+        VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
     `).bind(
         params.id,
         params.userID,
@@ -470,6 +480,7 @@ export async function createSession (
         params.now,
         params.expiresAt,
         params.now,
+        params.deviceId ?? null,
     ).run()
 
     return {
@@ -481,6 +492,7 @@ export async function createSession (
         expires_at: params.expiresAt,
         revoked_at: null,
         last_seen_at: params.now,
+        device_id: params.deviceId ?? null,
     }
 }
 

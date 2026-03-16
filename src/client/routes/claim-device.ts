@@ -6,6 +6,9 @@ import { SubstrateButton } from '@substrate-system/button'
 import { type AppState, State } from '../state.js'
 import './claim-device.css'
 import { ELLIPSIS, NBSP } from '../constants.js'
+import { type HTTPError } from 'ky'
+import Debug from '@substrate-system/debug'
+const debug = Debug('template:view')
 
 function parseClaimPath (path:string):string | null {
     const normalized = path.replace(/\/+$/, '')
@@ -96,34 +99,13 @@ export const ClaimDeviceRoute:FunctionComponent<{
                 result.device.credentialName || null
             )
         } catch (_err) {
-            const err = _err as Error
-            const msg = err.message || ''
-            if (msg.includes('expired')) {
-                errorMsg.value =
-                    'This invitation has expired.'
-            } else if (
-                msg.includes('consumed')
-                || msg.includes('already')
-            ) {
-                errorMsg.value =
-                    'This invitation has already been used.'
-            } else if (
-                msg.includes('cancelled')
-                || msg.includes('canceled')
-                || msg.includes('no longer')
-            ) {
-                errorMsg.value =
-                    'This invitation is no longer valid.'
-            } else if (
-                msg.includes('not found')
-                || msg.includes('Not Found')
-            ) {
-                errorMsg.value =
-                    'This invitation was not found.'
+            const err = _err as HTTPError
+            const msg = await err.response.text()
+            debug('errrr', msg, err.response.status)
+            if (err.response.status < 500) {
+                errorMsg.value = 'This invitation does not exist.'
             } else {
-                errorMsg.value = (
-                    msg || 'Failed to register device.'
-                )
+                errorMsg.value = msg
             }
         } finally {
             pending.value = false

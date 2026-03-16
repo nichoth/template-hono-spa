@@ -10,6 +10,11 @@ Auto-generated from all feature plans. Last updated: 2026-03-16
 - TypeScript (ES2022) + Preact + @preact/signals, htm/preac (043-require-device-name)
 - N/A — no storage changes (043-require-device-name)
 - TypeScript (ES2022) + ESM + Hono (server framework), Web Crypto API (`crypto.subtle`) (044-timing-safe-basic-auth)
+- TypeScript (ES2022) + Hono (server), Preact + Signals (frontend), (045-indicate-current-device)
+- Cloudflare D1; one new nullable column `device_id TEXT` on (045-indicate-current-device)
+- Cloudflare D1 — one new nullable column `device_id TEXT` on (045-indicate-current-device)
+- TypeScript (ES2022) + Hono (server), Preact + Signals (client) (046-prevent-self-revoke)
+- Cloudflare D1 (SQLite) — no schema changes required (046-prevent-self-revoke)
 
 - TypeScript (ESM) + Hono (server), Preact + Signals (040-add-passkey-device)
 
@@ -29,9 +34,9 @@ npm test && npm run lint
 TypeScript (ESM): Follow standard conventions
 
 ## Recent Changes
-- 044-timing-safe-basic-auth: Added TypeScript (ES2022) + ESM + Hono (server framework), Web Crypto API (`crypto.subtle`)
-- 043-require-device-name: Added TypeScript (ES2022) + Preact + @preact/signals, htm/preac
-- 042-fix-device-name: Added TypeScript (ES2022 target) + Preact + Signals (frontend), Hono (server)
+- 046-prevent-self-revoke: Added TypeScript (ES2022) + Hono (server), Preact + Signals (client)
+- 045-indicate-current-device: Added TypeScript (ES2022) + Hono (server), Preact + Signals (frontend),
+- 045-indicate-current-device: Added TypeScript (ES2022) + Hono (server), Preact + Signals (frontend),
 
 
 <!-- MANUAL ADDITIONS START -->

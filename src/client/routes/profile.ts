@@ -85,6 +85,11 @@ export const ProfileRoute:FunctionComponent<{
     const revokePending = useSignal<string | null>(null)
     const revokeError = useSignal<string | null>(null)
     const cancelPending = useSignal<string | null>(null)
+    const currentDeviceId = useComputed(() => {
+        const data = state.user.value.data
+        if (!data || data.authenticated !== true) return null
+        return data.currentDeviceId ?? null
+    })
 
     const pendingInvitations = useComputed(() => {
         return state.invitations.value.data ?? []
@@ -251,6 +256,13 @@ export const ProfileRoute:FunctionComponent<{
                                 <div class="device-info">
                                     <span class="device-name">
                                         ${device.credentialName || 'Unnamed'}
+                                        ${device.deviceId ===
+                                            currentDeviceId.value ?
+                                            html`<span
+                                                class="device-current"
+                                            >(current device)</span>` :
+                                            null
+                                        }
                                     </span>
                                     <span
                                         class="device-dates"
@@ -266,21 +278,35 @@ export const ProfileRoute:FunctionComponent<{
                                 <${SubstrateButton.TAG}
                                     class="device-revoke-btn"
                                     type="button"
-                                    onClick=${() =>
+                                    onClick=${() => {
                                         onRevokeDevice(device.deviceId)
-                                    }
+                                    }}
                                     disabled=${!canRevoke.value ||
+                                        device.deviceId ===
+                                            currentDeviceId.value ||
                                         revokePending.value === device.deviceId}
                                     spinning=${revokePending.value === device.deviceId}
-                                    title=${canRevoke.value ?
-                                        'Revoke this device' :
-                                        'Cannot revoke your only device'}
+                                    title=${
+                                        device.deviceId ===
+                                            currentDeviceId.value ?
+                                            'Cannot revoke the device'
+                                                + ' you are using' :
+                                            canRevoke.value ?
+                                                'Revoke this device' :
+                                                'Cannot revoke your'
+                                                    + ' only device'
+                                    }
                                     ref=${(el:Element|null) => {
                                         // this is b/c passing `disabled` via
                                         // preact/htm doesn't work
                                         if (!el) return
-                                        const d = (!canRevoke.value ||
-                                            revokePending.value === device.deviceId)
+                                        const d = (
+                                            !canRevoke.value ||
+                                            device.deviceId ===
+                                                currentDeviceId.value ||
+                                            revokePending.value ===
+                                                device.deviceId
+                                        )
                                         if (d) {
                                             el.setAttribute('disabled', '')
                                         } else {

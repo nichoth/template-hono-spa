@@ -9,37 +9,6 @@
 @import url("@substrate-system/blur-hash/css");
 @import url("./client/components/card.css");
 
-:root {
-    --color-surface-canvas: #fafafa;
-    --color-surface-card: white;
-    --color-surface-subtle: #e1e0e040;
-    --color-surface-neutral: #f3f4f6;
-    --color-surface-success: #ecfdf5;
-    --color-surface-warning: #fef3c7;
-    --color-surface-inverse: #000;
-    --color-text-base: #000;
-    --color-text-muted: #000;
-    --color-text-heading: #000;
-    --color-text-inverse: #fff;
-    --color-action-primary: #2563eb;
-    --color-action-primary-strong: #1d4ed8;
-    --color-border-default: #9b9b9b;
-    --color-border-inverse: #fff;
-    --color-shadow-soft: rgb(0 0 0 / 10%);
-    --color-status-success: #059669;
-    --color-status-warning: #fde68a;
-    --color-border-warning: #f59e0b;
-    --color-status-error: #b42318;
-    --color-transparent: transparent;
-    --layout-main-max-width: min(96vw, 40rem);
-    --layout-main-padding-inline: clamp(0.75rem, 3vw, 1.25rem);
-    --layout-main-padding-block: clamp(0.5rem, 1.5vw, 1rem);
-    --layout-grid-gap: clamp(0.75rem, 1.4vw, 1.5rem);
-    --layout-card-min-width: clamp(14rem, 28vw, 18rem);
-    --layout-card-row-min-height: 28rem;
-    --layout-measure: 70ch;
-}
-
 .route {
     max-width: var(--layout-main-max-width);
     margin: 0 auto;

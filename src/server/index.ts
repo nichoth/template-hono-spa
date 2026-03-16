@@ -248,6 +248,7 @@ app.patch(
                 c.env.AUTH_DB,
                 session.user.id,
                 deviceId,
+                session.currentDeviceId ?? null,
             )
 
             return c.body(null, 204)

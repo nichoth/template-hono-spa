@@ -25,7 +25,6 @@
 
     & .claim-confirm {
         margin: 1rem 0;
-        font-size: 0.9rem;
     }
 
     & .claim-btn {
@@ -34,7 +33,6 @@
 
     & .claim-error {
         color: var(--color-error, #c00);
-        font-size: 0.85rem;
         margin: 0.75rem 0 0;
     }
 

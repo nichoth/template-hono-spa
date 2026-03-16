@@ -20,7 +20,7 @@ the browser by Preact.
 - [Use](#use)
   * [Open a browser with visual test results](#open-a-browser-with-visual-test-results)
 - [Develop](#develop)
-- [Cloduflare](#cloduflare)
+- [Cloudflare](#cloudflare)
   * [D1](#d1)
   * [Websockets](#websockets)
 - [Local Dev](#local-dev)
@@ -34,6 +34,7 @@ the browser by Preact.
   * [Superpowers](#superpowers)
 - [openspec](#openspec)
   * [1. `openspec init`](#1-openspec-init)
+- [Some links](#some-links)
 
 <!-- tocstop -->
 
@@ -59,6 +60,41 @@ Start a Vite server at `localhost:8888`.
 
 ```sh
 npm start
+```
+
+## Passwordlessness
+
+We do passwordless via passkeys, aka the device's _biometric_ auth.
+
+See the `passkey_credentials` table:
+
+```js
+{
+    "id": "uuid (primary key)",
+    "user_id": "uuid (foreign key → users)",
+    "credential_id": "unique string from the authenticator",
+    "public_key": "base64-encoded public key",
+    "counter": 0,
+
+    // a hint from the authenticator about how it communicates
+    // The values come from the WebAuthn spec
+    //
+    // internal: built into the device
+    //   (Touch ID, Face ID, Windows Hello, Android fingerprint)  
+    // hybrid — cross-device auth via QR code / BLE
+    //   (e.g. using your phone to authenticate on a desktop)
+    //
+    // Other possible values: usb, nfc, ble, smart-card
+    "transports_json": "[\"internal\", \"hybrid\"]",
+
+    // the WebAuthn concept of whether the passkey is tied to one device
+    "device_type": "singleDevice | multiDevice",
+
+    "backed_up": 0,  // a SQLite integer boolean (0/1)
+    "status": "active",
+    "created_at": 1710000000,
+    "last_used_at": 1710001000
+  }
 ```
 
 ## Cloudflare
@@ -266,7 +302,40 @@ Execute the plan
 ### 1. `openspec init`
 
 
+
+---
+
+
+## Superpowers
+
+[An agentic skills framework & software development methodology that works.](https://github.com/obra/superpowers)
+
+### The Basic Superpowers Workflow
+
+1. **brainstorming** - Activates before writing code. Refines rough ideas
+   through questions, explores alternatives, presents design in sections for
+   validation. Saves design document.
+2. **using-git-worktrees** - Activates after design approval. Creates isolated
+   workspace on new branch, runs project setup, verifies clean test baseline.
+3. **writing-plans** - Activates with approved design. Breaks work into
+   bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
+4. **subagent-driven-development** or **executing-plans** - Activates with plan.
+   Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
+5. **test-driven-development** - Activates during implementation. Enforces
+   RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
+6. **requesting-code-review** - Activates between tasks. Reviews against plan,
+   reports issues by severity. Critical issues block progress.
+7. **finishing-a-development-branch** - Activates when tasks complete.
+   Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
+
+**The agent checks for relevant skills before any task.** Mandatory workflows,
+not suggestions.
+
+
+---
+
+
 ## Some links
 
 * [Verification-Driven Development (VDD)](https://gist.github.com/dollspace-gay/45c95ebfb5a3a3bae84d8bebd662cc25)
-  (using `nitpicker` agent for this)
+  (using `nitpicker` agent in Claude for this)

@@ -44,6 +44,7 @@ export const AUTH_SCHEMA_STATEMENTS = [
         expires_at INTEGER NOT NULL,
         revoked_at INTEGER,
         last_seen_at INTEGER NOT NULL,
+        device_id TEXT,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
     `CREATE TABLE IF NOT EXISTS auth_events (

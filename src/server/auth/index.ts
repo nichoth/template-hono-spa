@@ -54,7 +54,7 @@ export const AUTH_SESSION_COOKIE = 'auth_session'
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 export const AUTH_RP_NAME = 'Template Hono SPA'
 export const EMAIL_CONFIRMATION_TTL_MS = 1000 * 60 * 60 * 24
-export const DEVICE_INVITATION_TTL_MS = 15 * 60 * 1000
+export const DEVICE_INVITATION_TTL_MS = 5 * 60 * 1000
 
 export type AuthUser = {
     id:string;

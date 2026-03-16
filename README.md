@@ -140,6 +140,12 @@ This is both unit tests and integration tests.
 npm test
 ```
 
+### Testing passkeys
+
+"Incognito" windows don't really work as a second device. You can use a
+different chrome profile though.
+
+
 ## Claude
 
 ### Example

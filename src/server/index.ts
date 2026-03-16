@@ -21,12 +21,14 @@ type Bindings = {
     ASSETS?:Fetcher
     AUTH_DB:D1Database
     NODE_ENV?:string
+    DOMAIN?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_USERNAME?:string
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
     AUTH_SESSION_TTL_SECONDS?:string
+    INVITE_RATE_LIMIT?:RateLimit
 }
 
 let cachedAssets:AssetPaths|null = null
@@ -68,7 +70,12 @@ app.use('*', async (c, next) => {
     return unauthorizedBasicAuthResponse(c.env?.BASIC_AUTH_REALM)
 })
 
-app.use('/api/*', cors())
+app.use('/api/*', async (c, next) => {
+    const origin = c.env.DOMAIN ?
+        `https://${c.env.DOMAIN}` :
+        'http://localhost:9999'
+    return cors({ origin, credentials: true })(c, next)
+})
 
 app.get('/api/health', (c) => {
     return c.json({
@@ -125,31 +132,6 @@ app.post('/api/auth/register/finish', async (c) => {
     }
 })
 
-app.post('/api/auth/passkey/register', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishRegistration(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        logLocalConfirmUrl(
-            c.req.url,
-            result.response.identifier,
-            result.confirmationCode,
-        )
-
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err as Error)
-    }
-})
-
 app.post('/api/confirm', async (c) => {
     try {
         const body = await c.req.json<EmailConfirmationRequest>()
@@ -202,35 +184,11 @@ app.post('/api/auth/login/finish', async (c) => {
     }
 })
 
-app.post('/api/auth/passkey/login', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishAuthentication(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        setSessionCookie(c, result.sessionToken)
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err)
-    }
-})
-
 app.get('/api/auth/passkey/devices', async (c) => {
     try {
-        const sessionToken = getCookie(
-            c, AUTH_SESSION_COOKIE,
-        )
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
         const session =
-            await authService.getCurrentSession(
-                c.env.AUTH_DB, sessionToken,
-            )
+            await authService.getCurrentSession(c.env.AUTH_DB, sessionToken)
         if (!session.authenticated) {
             return c.json({
                 error: 'unauthenticated',
@@ -406,9 +364,21 @@ app.delete(
     },
 )
 
+async function checkInviteRateLimit (
+    c:Context<{ Bindings:Bindings }>,
+):Promise<boolean> {
+    if (!c.env.INVITE_RATE_LIMIT) return true
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
+    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
+    return success
+}
+
 app.get(
     '/api/auth/passkey/devices/invite/:code',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const { code } = c.req.param()
             const invitation =
@@ -426,6 +396,9 @@ app.get(
 app.post(
     '/api/auth/passkey/devices/invite/:code/claim/start',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const code = c.req.param('code')
             const result =
@@ -445,6 +418,9 @@ app.post(
 app.post(
     '/api/auth/passkey/devices/invite/:code/claim/finish',
     async (c) => {
+        if (!await checkInviteRateLimit(c)) {
+            return c.json({ error: 'rate_limited' }, 429)
+        }
         try {
             const code = c.req.param('code')
             const body = await c.req.json<{

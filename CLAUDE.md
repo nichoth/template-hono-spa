@@ -1,6 +1,6 @@
 # template-hono-spa Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-03-15
+Auto-generated from all feature plans. Last updated: 2026-03-16
 
 ## Active Technologies
 - TypeScript (ES2022 target) + Hono (server), Preact + Signals (041-device-invite-link)
@@ -9,6 +9,7 @@ Auto-generated from all feature plans. Last updated: 2026-03-15
 - Cloudflare D1 (SQLite) — no schema changes needed (042-fix-device-name)
 - TypeScript (ES2022) + Preact + @preact/signals, htm/preac (043-require-device-name)
 - N/A — no storage changes (043-require-device-name)
+- TypeScript (ES2022) + ESM + Hono (server framework), Web Crypto API (`crypto.subtle`) (044-timing-safe-basic-auth)
 
 - TypeScript (ESM) + Hono (server), Preact + Signals (040-add-passkey-device)
 
@@ -28,9 +29,9 @@ npm test && npm run lint
 TypeScript (ESM): Follow standard conventions
 
 ## Recent Changes
+- 044-timing-safe-basic-auth: Added TypeScript (ES2022) + ESM + Hono (server framework), Web Crypto API (`crypto.subtle`)
 - 043-require-device-name: Added TypeScript (ES2022) + Preact + @preact/signals, htm/preac
 - 042-fix-device-name: Added TypeScript (ES2022 target) + Preact + Signals (frontend), Hono (server)
-- 041-device-invite-link: Added TypeScript (ES2022 target) + Hono (server), Preact + Signals
 
 
 <!-- MANUAL ADDITIONS START -->

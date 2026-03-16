@@ -28,9 +28,12 @@ the browser by Preact.
   * [Staging Password Protection](#staging-password-protection)
 - [Test](#test)
   * [Run tests](#run-tests)
+  * [Testing passkeys](#testing-passkeys)
 - [Claude](#claude)
   * [Example](#example)
   * [Superpowers](#superpowers)
+- [openspec](#openspec)
+  * [1. `openspec init`](#1-openspec-init)
 
 <!-- tocstop -->
 
@@ -58,7 +61,7 @@ Start a Vite server at `localhost:8888`.
 npm start
 ```
 
-## Cloduflare
+## Cloudflare
 
 This uses Cloudflare as web host and for some infratructure.
 
@@ -153,6 +156,8 @@ different chrome profile though.
 ```
 Use the Nitpicker agent to review this codebase 
 ```
+
+or mention specific "agents" with the `@` symbol, ie `@Nitpciker
 
 ### Superpowers
 
@@ -259,3 +264,9 @@ Execute the plan
 > We recommend Opus 4.5 and GPT 5.2 for both planning and implementation.
 
 ### 1. `openspec init`
+
+
+## Some links
+
+* [Verification-Driven Development (VDD)](https://gist.github.com/dollspace-gay/45c95ebfb5a3a3bae84d8bebd662cc25)
+  (using `nitpicker` agent for this)

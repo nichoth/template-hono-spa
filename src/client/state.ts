@@ -143,8 +143,8 @@ export type AppState = {
     devices:Signal<RequestFor<DeviceInfo[], HTTPError|Error>>;
     invitations:Signal<RequestFor<PendingInvitation[], HTTPError|Error>>;
     logoutInProgress:Signal<boolean>;
-    logoutError:Signal<string | null>;
-    _setRoute?:(path:string) => void;
+    logoutError:Signal<string|null>;
+    _setRoute?:(path:string)=>void;
 }
 
 const { start, set, error } = RequestState

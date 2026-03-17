@@ -28,7 +28,7 @@ const knownClientRoutes = new Set([
     '/confirm',
 ])
 
-export function createRouter (_state?:AppState):InstanceType<typeof Router> {
+export function createRouter (state:AppState):InstanceType<typeof Router> {
     const router = new Router()
 
     router.addRoute('/', () => {
@@ -48,6 +48,15 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
     })
 
     router.addRoute('/profile', () => {
+        if (
+            state?.user.value.pending === false &&
+            state.user.value.data?.authenticated === false
+        ) {
+            // not a user, or not logged in
+            // so redirect
+            state._setRoute!('/')
+        }
+
         return ProfileRoute
     })
 

@@ -283,7 +283,7 @@ export const ProfileRoute:FunctionComponent<{
                                     <span class="device-name">
                                         ${device.credentialName || 'Unnamed'}
                                         ${device.isRevoked ? html`
-                                            <span class="device-revoked-label">
+                                            <span class="device-revoked-label small-caps">
                                                 Revoked
                                             </span>` : null}
                                         ${device.deviceId ===

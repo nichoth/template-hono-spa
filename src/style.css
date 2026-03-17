@@ -18,6 +18,12 @@
     min-width: 0;
 }
 
+.small-caps {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 button {
     cursor: pointer;
 }

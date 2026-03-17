@@ -204,4 +204,15 @@
         justify-content: flex-end;
         margin-top: 1.5rem;
     }
+
+    & .dialog-revoke-btn button {
+        background: var(--color-danger, #c00);
+        color: #fff;
+        border-color: var(--color-danger, #c00);
+    }
+
+    & .dialog-revoke-btn button:hover {
+        background: var(--color-danger-hover, #a00);
+        border-color: var(--color-danger-hover, #a00);
+    }
 }

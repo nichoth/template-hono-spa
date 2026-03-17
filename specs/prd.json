@@ -1,0 +1,40 @@
+{
+  "project": "Tests for SSR preact apps",
+  "description": "Write tests that validate serverside rendering and client-side rendering. Need to write the tests and then run them in node. Add the tests as a script in package.json.",
+  "status": "in-progress",
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Verify serverside rendering",
+      "description": "Verify that the server renders HTML strings from initial state.",
+      "acceptance_criteria": [
+        "Server returns HTML string with full content rendered.",
+        "There is a test for this that runs in Node",
+        "Typecheck passes",
+        "tests for SSR pass"
+      ],
+      "effort_label": "medium",
+      "effort": 0,
+      "priority": 1,
+      "dependencies": [],
+      "passes": true
+    },
+    {
+        "id": "TASK-002",
+        "title": "Client side rendering",
+        "description": "Client side re-renders the app, starting with server-provided state",
+        "acceptance_criteria": [
+            "Tests that run in a browser environment",
+            "Tests check that the client does not re-render everything at the beginning",
+            "Tests check that the app is re-rendered client-side when state/signals are updated",
+            "types are valid",
+            "tests pass"
+        ],
+        "effort_label": "medium",
+        "effort": 0,
+        "priority": 1,
+        "dependencies": ["TASK-001"],
+        "passes": true
+    }
+  ]
+}

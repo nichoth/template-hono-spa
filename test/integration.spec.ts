@@ -1191,8 +1191,10 @@ describe('Integration tests', () => {
                                 displayName: '',
                             },
                             pubKeyCredParams: [
-                                { type: 'public-key',
-                                    alg: -7 },
+                                {
+                                    type: 'public-key',
+                                    alg: -7
+                                },
                             ],
                             timeout: opts.timeout,
                             attestation: 'none',
@@ -1925,4 +1927,352 @@ describe('Integration tests', () => {
             }
         )
     })
+
+    // T005: confirm flow — PATCH endpoint behaviour
+    describe('PATCH /api/auth/passkey/devices/:deviceId/revoke'
+        + ' (confirm flow)', () => {
+        async function setupRevokeFixture (db:D1Database) {
+            const now = Date.now()
+            const userId = crypto.randomUUID()
+            const sessionToken = crypto.randomUUID()
+            const device1Id = crypto.randomUUID()
+            const device2Id = crypto.randomUUID()
+
+            await db.prepare(
+                'INSERT INTO users'
+                + ' (id, handle, identifier, login_method,'
+                + '  status, created_at, updated_at)'
+                + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).bind(
+                userId,
+                `confirm-handle-${userId}`,
+                `confirm-${userId}@example.com`,
+                'passkey',
+                'active',
+                now,
+                now,
+            ).run()
+
+            await db.prepare(
+                'INSERT INTO sessions'
+                + ' (id, user_id, session_token, status,'
+                + '  created_at, expires_at, last_seen_at,'
+                + '  device_id)'
+                + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            ).bind(
+                crypto.randomUUID(),
+                userId,
+                sessionToken,
+                'active',
+                now,
+                now + 86400000,
+                now,
+                device1Id,
+            ).run()
+
+            await db.prepare(
+                'INSERT INTO devices'
+                + ' (id, user_id, credential_id, public_key,'
+                + '  counter, credential_name, created_at,'
+                + '  is_revoked)'
+                + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            ).bind(
+                device1Id,
+                userId,
+                `cred-1-${userId}`,
+                'pk1',
+                0,
+                'Primary Device',
+                now,
+                0,
+            ).run()
+
+            await db.prepare(
+                'INSERT INTO devices'
+                + ' (id, user_id, credential_id, public_key,'
+                + '  counter, credential_name, created_at,'
+                + '  is_revoked)'
+                + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            ).bind(
+                device2Id,
+                userId,
+                `cred-2-${userId}`,
+                'pk2',
+                0,
+                'Secondary Device',
+                now,
+                0,
+            ).run()
+
+            return { userId, sessionToken, device1Id, device2Id }
+        }
+
+        it(
+            'returns 204 when revoking a non-current device'
+            + ' (confirm flow: "Revoke this device" succeeds)',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+                const {
+                    sessionToken,
+                    device2Id,
+                } = await setupRevokeFixture(db)
+
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/'
+                    + device2Id
+                    + '/revoke',
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            Cookie: `auth_session=${sessionToken}`,
+                        },
+                    },
+                )
+
+                expect(res.status).toBe(204)
+            }
+        )
+
+        it(
+            'returns 403 with self_revoke when current device'
+            + ' is targeted (modal error case)',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+                const {
+                    sessionToken,
+                    device1Id,
+                } = await setupRevokeFixture(db)
+
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/'
+                    + device1Id
+                    + '/revoke',
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            Cookie: `auth_session=${sessionToken}`,
+                        },
+                    },
+                )
+
+                expect(res.status).toBe(403)
+                const body =
+                    await res.json<{ error:string }>()
+                expect(body.error).toBe('self_revoke')
+            }
+        )
+
+        it(
+            'returns 409 with last_device when only device'
+            + ' is targeted (modal error case)',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+                // Single-device user setup
+                const now = Date.now()
+                const userId = crypto.randomUUID()
+                const sessionToken = crypto.randomUUID()
+                const deviceId = crypto.randomUUID()
+
+                await db.prepare(
+                    'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  login_method, status,'
+                    + '  created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    userId,
+                    `last-handle-${userId}`,
+                    `last-${userId}@example.com`,
+                    'passkey',
+                    'active',
+                    now,
+                    now,
+                ).run()
+
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                ).run()
+
+                await db.prepare(
+                    'INSERT INTO devices'
+                    + ' (id, user_id, credential_id,'
+                    + '  public_key, counter,'
+                    + '  credential_name, created_at,'
+                    + '  is_revoked)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    deviceId,
+                    userId,
+                    `cred-only-${userId}`,
+                    'pk-only',
+                    0,
+                    'Only Device',
+                    now,
+                    0,
+                ).run()
+
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/'
+                    + deviceId
+                    + '/revoke',
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            Cookie: `auth_session=${sessionToken}`,
+                        },
+                    },
+                )
+
+                expect(res.status).toBe(409)
+                const body =
+                    await res.json<{ error:string }>()
+                expect(body.error).toBe('last_device')
+            }
+        )
+
+        it(
+            'returns 401 when unauthenticated'
+            + ' (no session cookie)',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+                const res = await SELF.fetch(
+                    'http://localhost'
+                    + '/api/auth/passkey/devices/'
+                    + crypto.randomUUID()
+                    + '/revoke',
+                    { method: 'PATCH' },
+                )
+
+                expect(res.status).toBe(401)
+            }
+        )
+    })
+
+    // T006: cancel paths — device list unchanged when no
+    // PATCH request is made (server-side assertion)
+    describe('Device list stability (cancel path support)',
+        () => {
+            it(
+                'device list is unchanged when no revoke'
+            + ' request is made (cancel path)',
+                async () => {
+                    const db = env.AUTH_DB
+                    await db.batch(
+                        AUTH_SCHEMA_STATEMENTS.map(
+                            s => db.prepare(s)
+                        )
+                    )
+                    const now = Date.now()
+                    const userId = crypto.randomUUID()
+                    const sessionToken = crypto.randomUUID()
+                    const deviceId = crypto.randomUUID()
+
+                    await db.prepare(
+                        'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  login_method, status,'
+                    + '  created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        userId,
+                    `cancel-handle-${userId}`,
+                    `cancel-${userId}@example.com`,
+                    'passkey',
+                    'active',
+                    now,
+                    now,
+                    ).run()
+
+                    await db.prepare(
+                        'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        crypto.randomUUID(),
+                        userId,
+                        sessionToken,
+                        'active',
+                        now,
+                        now + 86400000,
+                        now,
+                    ).run()
+
+                    await db.prepare(
+                        'INSERT INTO devices'
+                    + ' (id, user_id, credential_id,'
+                    + '  public_key, counter,'
+                    + '  credential_name, created_at,'
+                    + '  is_revoked)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        deviceId,
+                        userId,
+                    `cred-cancel-${userId}`,
+                    'pk-cancel',
+                    0,
+                    'My Device',
+                    now,
+                    0,
+                    ).run()
+
+                    // No PATCH call (user cancelled) — verify
+                    // device list is unchanged via GET
+                    const res = await SELF.fetch(
+                        'http://localhost'
+                    + '/api/auth/passkey/devices',
+                        {
+                            headers: {
+                                Cookie: `auth_session=${sessionToken}`,
+                            },
+                        },
+                    )
+
+                    expect(res.status).toBe(200)
+                    const body =
+                    await res.json<{ deviceId:string }[]>()
+                    expect(
+                        body.some(
+                            d => d.deviceId === deviceId
+                        )
+                    ).toBe(true)
+                }
+            )
+        })
 })

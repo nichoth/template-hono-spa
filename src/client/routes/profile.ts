@@ -20,6 +20,8 @@ import {
 import './profile.css'
 import { ELLIPSIS } from '../constants.js'
 import Debug from '@substrate-system/debug'
+import '@substrate-system/button/css'
+
 const debug = Debug('template:view')
 
 export const ProfileRoute:FunctionComponent<{
@@ -161,27 +163,24 @@ export const ProfileRoute:FunctionComponent<{
         [state],
     )
 
-    const onConfirmRevoke = useCallback(
-        async () => {
-            const device = revokeTarget.value
-            if (!device) return
-            revokePending.value = device.deviceId
-            revokeDialogError.value = null
+    const onConfirmRevoke = useCallback(async () => {
+        const device = revokeTarget.value
+        if (!device) return
+        revokePending.value = device.deviceId
+        revokeDialogError.value = null
 
-            try {
-                await State.revokeDevice(state, device.deviceId)
-                revokeTarget.value = null
-            } catch (_err) {
-                const err = _err as Error
-                revokeDialogError.value = (
-                    err.message || 'Failed to revoke device.'
-                )
-            } finally {
-                revokePending.value = null
-            }
-        },
-        [state],
-    )
+        try {
+            await State.revokeDevice(state, device.deviceId)
+            revokeTarget.value = null
+        } catch (_err) {
+            const err = _err as Error
+            revokeDialogError.value = (
+                err.message || 'Failed to revoke device.'
+            )
+        } finally {
+            revokePending.value = null
+        }
+    }, [state])
 
     const activeDevices = useComputed(() => {
         const data = state.devices.value.data ?? []
@@ -249,16 +248,11 @@ export const ProfileRoute:FunctionComponent<{
                         </dd>
                     </div>
                 </dl>
-            </section>` : html`
-            <p>
-                Profile data goes here.
-            </p>`}
+            </section>` :
+            html`<p>Profile data goes here.</p>`}
 
         ${isPasskeyUser.value ? html`
-            <section
-                class="device-management"
-                aria-label="Registered devices"
-            >
+            <section class="device-management" aria-label="Registered devices">
                 <h3>Devices</h3>
 
                 ${devicesLoading.value ? html`
@@ -349,9 +343,9 @@ export const ProfileRoute:FunctionComponent<{
                     noclick=${revokePending.value !== null || undefined}
                 >
                     <h2>
-                        Remove device ${
+                        Remove device <code>${
                             revokeTarget.value?.credentialName || 'Unnamed'
-                        }?
+                        }</code>?
                     </h2>
                     <div class="dialog-actions">
                         <${SubstrateButton.TAG}
@@ -362,8 +356,9 @@ export const ProfileRoute:FunctionComponent<{
                         >
                             Cancel
                         <//>
+
                         <${SubstrateButton.TAG}
-                            class="dialog-revoke-btn"
+                            class="dialog-revoke-btn btn-danger"
                             type="button"
                             onClick=${onConfirmRevoke}
                             spinning=${revokePending.value !== null}

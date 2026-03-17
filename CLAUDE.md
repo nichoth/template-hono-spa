@@ -1,5 +1,29 @@
 # template-hono-spa Development Guidelines
 
+## 1. Project Context
+
+**Project Goal**: This is a template repo for web application that use Cloudflare
+as the backend, and an SPA architecture for the frontend.
+
+**Tech Stack**: `preact`, `htm` (template literals for the view),
+`Cloudflare` services including D1 database, Passkeys
+
+## 2. Coding Standards
+
+Write as little code as possible. Any time there is a free Cloudfalre service
+that can accomplish something for use, use that.
+
+## 3. Workflow Commands
+
+- **Install**: `npm install`
+- **Test**: `npm test`
+
+## 4. Constraints
+
+* Do not add new dependencies without asking first.
+
+---
+
 Auto-generated from all feature plans. Last updated: 2026-03-16
 
 ## Active Technologies
@@ -25,8 +49,13 @@ Auto-generated from all feature plans. Last updated: 2026-03-16
 
 ```text
 src/
+├── client
+├── server
 tests/
 ```
+
+* `src/client` has frontend code
+* `src/server` has the backend
 
 ## Commands
 

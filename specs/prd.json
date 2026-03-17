@@ -1,5 +1,5 @@
 {
-  "project": "Tests for SSR preact apps",
+  "project": "A template repo for web applications that use Cloudflare as the backend, and an SPA architecture for the frontend.",
   "description": "Write tests that validate serverside rendering and client-side rendering. Need to write the tests and then run them in node. Add the tests as a script in package.json.",
   "status": "in-progress",
   "tasks": [

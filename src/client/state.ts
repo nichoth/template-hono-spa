@@ -331,6 +331,9 @@ State.login = async function (state:AppState, credentials:LoginCredentials) {
     }
 }
 
+const DEVICE_POLL_INTERVAL_MS = 5_000
+let devicePollInterval:ReturnType<typeof setInterval> | null = null
+
 State.listDevices = async function (state:AppState) {
     start(state.devices)
 
@@ -372,6 +375,42 @@ State.createInvite = async function (
         ).json<DeviceInvitation & { status:string }>()
 
         await State.listInvites(state)
+
+        // Capture current device IDs as the baseline.
+        // If state.devices has not been loaded yet, baselineIds will
+        // be empty — the first tick will then see all returned devices
+        // as "new" and clear the interval after one refresh, which is
+        // acceptable.
+        const baselineIds = new Set(
+            (state.devices.value.data ?? []).map(
+                (d:DeviceInfo) => d.deviceId
+            )
+        )
+
+        // Replace any prior interval (e.g. user created a second invite)
+        if (devicePollInterval !== null) {
+            clearInterval(devicePollInterval)
+        }
+
+        devicePollInterval = setInterval(async () => {
+            // Skip tick if a devices request is already in flight
+            if (state.devices.value.pending) return
+
+            await State.listDevices(state)
+            await State.listInvites(state)
+
+            const newDevice = (state.devices.value.data ?? [])
+                .some((d:DeviceInfo) => !baselineIds.has(d.deviceId))
+            const noInvites = (
+                state.invitations.value.data ?? []
+            ).length === 0
+
+            if (newDevice || noInvites) {
+                clearInterval(devicePollInterval!)
+                devicePollInterval = null
+            }
+        }, DEVICE_POLL_INTERVAL_MS)
+
         return result
     } catch (_err) {
         const err = _err as HTTPError|Error

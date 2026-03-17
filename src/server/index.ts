@@ -85,10 +85,11 @@ app.get('/api/health', (c) => {
 })
 
 app.get('/api/foobar', (c) => {
-    if (c.req.method !== 'GET') {
-        return new Response(null, { status: 405 })
-    }
     return c.json(FOOBAR_RESPONSE, 200)
+})
+
+app.all('/api/foobar', (c) => {
+    return c.json({ error: 'method_not_allowed' }, 405)
 })
 
 app.post('/api/auth/register/start', async (c) => {

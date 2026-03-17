@@ -1,6 +1,6 @@
 import { type FunctionComponent } from 'preact'
-import { useCallback, useRef, useEffect } from 'preact/hooks'
-import { useComputed, useSignal, useSignalEffect } from '@preact/signals'
+import { useCallback, useEffect, useRef } from 'preact/hooks'
+import { useComputed, useSignal, useSignalEffect, batch } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import { SubstrateInput } from '@substrate-system/input'
@@ -89,7 +89,6 @@ export const ProfileRoute:FunctionComponent<{
     const revokeTarget = useSignal<DeviceInfo|null>(null)
     const revokeDialogOpen = useSignal(false)
     const revokeDialogError = useSignal<string|null>(null)
-    const revokeDialogRef = useRef<ModalWindow|null>(null)
     const cancelPending = useSignal<string|null>(null)
     const currentDeviceId = useComputed(() => {
         const data = state.user.value.data
@@ -97,26 +96,32 @@ export const ProfileRoute:FunctionComponent<{
         return data.currentDeviceId ?? null
     })
 
+    const revokeDialogRef = useRef<ModalWindow|null>(null)
+
     const pendingInvitations = useComputed(() => {
         return state.invitations.value.data ?? []
     })
 
-    // useEffect(() => {
-    //     if (isPasskeyUser.value) {
-    //         State.listDevices(state)
-    //         State.listInvites(state)
-    //     }
-    // }, [isPasskeyUser.value])
-
+    // listen for signal changes,
+    // update the web-component state
     useSignalEffect(() => {
+        const isOpen = revokeDialogOpen.value
         const modal = revokeDialogRef.current
         if (!modal) return
-        if (revokeDialogOpen.value) {
-            modal.open()
-        } else {
-            modal.close()
-        }
+        if (isOpen) modal.open()
+        else modal.close()
     })
+
+    // dialog state
+    useEffect(() => {
+        if (!revokeDialogRef.current) return
+        revokeDialogRef.current.addEventListener('open', () => {
+            revokeDialogOpen.value = true
+        })
+        revokeDialogRef.current.addEventListener('close', () => {
+            revokeDialogOpen.value = false
+        })
+    }, [revokeDialogRef.current])
 
     const onAddDevice = useCallback(async () => {
         addDevicePending.value = true
@@ -171,8 +176,10 @@ export const ProfileRoute:FunctionComponent<{
 
         try {
             await State.revokeDevice(state, device.deviceId)
-            revokeTarget.value = null
-            revokeDialogOpen.value = false
+            batch(() => {
+                revokeTarget.value = null
+                revokeDialogOpen.value = false
+            })
         } catch (_err) {
             const err = _err as Error
             revokeDialogError.value = (
@@ -293,15 +300,15 @@ export const ProfileRoute:FunctionComponent<{
                                     class="device-revoke-btn"
                                     type="button"
                                     onClick=${() => {
-                                        revokeTarget.value = device
-                                        revokeDialogOpen.value = true
+                                        batch(() => {
+                                            revokeTarget.value = device
+                                            revokeDialogOpen.value = true
+                                        })
                                     }}
                                     disabled=${!canRevoke.value ||
-                                        device.deviceId ===
-                                            currentDeviceId.value}
+                                        device.deviceId === currentDeviceId.value}
                                     title=${
-                                        device.deviceId ===
-                                            currentDeviceId.value ?
+                                        device.deviceId === currentDeviceId.value ?
                                             'Cannot revoke the device'
                                                 + ' you are using' :
                                             canRevoke.value ?
@@ -315,8 +322,7 @@ export const ProfileRoute:FunctionComponent<{
                                         if (!el) return
                                         const d = (
                                             !canRevoke.value ||
-                                            device.deviceId ===
-                                                currentDeviceId.value
+                                            device.deviceId === currentDeviceId.value
                                         )
                                         if (d) {
                                             el.setAttribute('disabled', '')
@@ -342,7 +348,7 @@ export const ProfileRoute:FunctionComponent<{
                     ref=${(el:ModalWindow|null) => {
                         revokeDialogRef.current = el
                     }}
-                    noclick=${revokePending.value !== null || undefined}
+                    active="${revokeDialogOpen.value}"
                 >
                     <h2>
                         Remove device <code>${
@@ -353,8 +359,10 @@ export const ProfileRoute:FunctionComponent<{
                         <${SubstrateButton.TAG}
                             type="button"
                             onClick=${() => {
-                                revokeTarget.value = null
-                                revokeDialogOpen.value = false
+                                batch(() => {
+                                    revokeTarget.value = null
+                                    revokeDialogOpen.value = false
+                                })
                             }}
                         >
                             Cancel
@@ -409,10 +417,8 @@ export const ProfileRoute:FunctionComponent<{
                                         onClick=${() =>
                                             onCancelInvite(inv.inviteCode)
                                         }
-                                        disabled=${cancelPending.value ===
-                                            inv.inviteCode}
-                                        spinning=${cancelPending.value ===
-                                            inv.inviteCode}
+                                        disabled=${cancelPending.value === inv.inviteCode}
+                                        spinning=${cancelPending.value === inv.inviteCode}
                                     >
                                         Cancel
                                     <//>

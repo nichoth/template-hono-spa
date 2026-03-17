@@ -16,6 +16,8 @@ Auto-generated from all feature plans. Last updated: 2026-03-16
 - TypeScript (ES2022) + Hono (server), Preact + Signals (client) (046-prevent-self-revoke)
 - Cloudflare D1 (SQLite) — no schema changes required (046-prevent-self-revoke)
 - TypeScript (ES2022) + ESM + Hono (server), Cloudflare Workers, `@simplewebauthn/server` (047-revoke-device-logout)
+- TypeScript (ES2022), ESM + Preact + @preact/signals, htm/preact, (048-confirm-revoke-device)
+- Cloudflare D1 — no schema changes (048-confirm-revoke-device)
 
 - TypeScript (ESM) + Hono (server), Preact + Signals (040-add-passkey-device)
 
@@ -35,9 +37,9 @@ npm test && npm run lint
 TypeScript (ESM): Follow standard conventions
 
 ## Recent Changes
+- 048-confirm-revoke-device: Added TypeScript (ES2022), ESM + Preact + @preact/signals, htm/preact,
 - 047-revoke-device-logout: Added TypeScript (ES2022) + ESM + Hono (server), Cloudflare Workers, `@simplewebauthn/server`
 - 046-prevent-self-revoke: Added TypeScript (ES2022) + Hono (server), Preact + Signals (client)
-- 045-indicate-current-device: Added TypeScript (ES2022) + Hono (server), Preact + Signals (frontend),
 
 
 <!-- MANUAL ADDITIONS START -->

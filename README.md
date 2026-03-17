@@ -35,8 +35,6 @@ the browser by Preact.
   * [Superpowers](#superpowers)
 - [openspec](#openspec)
   * [1. `openspec init`](#1-openspec-init)
-- [Superpowers](#superpowers-1)
-  * [The Basic Superpowers Workflow](#the-basic-superpowers-workflow)
 - [Some links](#some-links)
 
 <!-- tocstop -->

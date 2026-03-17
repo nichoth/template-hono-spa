@@ -12,10 +12,10 @@
 		"nodejs_compat"
 	],
 	"kv_namespaces": [],
-	"rate_limiting": [
+	"ratelimits": [
 		{
-			"binding": "INVITE_RATE_LIMIT",
-			"namespace_id": "1",
+			"name": "INVITE_RATE_LIMIT",
+			"namespace_id": "1",  // unique per CF account
 			"simple": {
 				"limit": 10,
 				"period": 60

@@ -88,6 +88,10 @@ app.get('/api/foobar', (c) => {
     return c.json(FOOBAR_RESPONSE, 200)
 })
 
+app.all('/api/foobar', (c) => {
+    return c.json({ error: 'method_not_allowed' }, 405)
+})
+
 app.post('/api/auth/register/start', async (c) => {
     try {
         const body = await c.req.json<{
@@ -365,84 +369,66 @@ app.delete(
     },
 )
 
-async function checkInviteRateLimit (
-    c:Context<{ Bindings:Bindings }>,
-):Promise<boolean> {
-    if (!c.env.INVITE_RATE_LIMIT) return true
-    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
-    return success
-}
+app.get('/api/auth/passkey/devices/invite/:code', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const { code } = c.req.param()
+        const invitation =
+            await authService.getInvitationInfo(
+                c.env.AUTH_DB,
+                code,
+            )
+        return c.json(invitation, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
 
-app.get(
-    '/api/auth/passkey/devices/invite/:code',
-    async (c) => {
-        if (!await checkInviteRateLimit(c)) {
-            return c.json({ error: 'rate_limited' }, 429)
-        }
-        try {
-            const { code } = c.req.param()
-            const invitation =
-                await authService.getInvitationInfo(
-                    c.env.AUTH_DB,
-                    code,
-                )
-            return c.json(invitation, 200)
-        } catch (err) {
-            return authErrorResponse(c, err)
-        }
-    },
-)
+app.post('/api/auth/passkey/devices/invite/:code/claim/start', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const code = c.req.param('code')
+        const result =
+            await authService.startInviteClaim(
+                c.env.AUTH_DB,
+                c.req.url,
+                code,
+            )
 
-app.post(
-    '/api/auth/passkey/devices/invite/:code/claim/start',
-    async (c) => {
-        if (!await checkInviteRateLimit(c)) {
-            return c.json({ error: 'rate_limited' }, 429)
-        }
-        try {
-            const code = c.req.param('code')
-            const result =
-                await authService.startInviteClaim(
-                    c.env.AUTH_DB,
-                    c.req.url,
-                    code,
-                )
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
 
-            return c.json(result, 200)
-        } catch (err) {
-            return authErrorResponse(c, err)
-        }
-    },
-)
+app.post('/api/auth/passkey/devices/invite/:code/claim/finish', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const code = c.req.param('code')
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
 
-app.post(
-    '/api/auth/passkey/devices/invite/:code/claim/finish',
-    async (c) => {
-        if (!await checkInviteRateLimit(c)) {
-            return c.json({ error: 'rate_limited' }, 429)
-        }
-        try {
-            const code = c.req.param('code')
-            const body = await c.req.json<{
-                challengeReference:string;
-                credential:unknown;
-            }>()
+        const result =
+            await authService.finishInviteClaim(
+                c.env.AUTH_DB,
+                c.req.url,
+                code,
+                body as never,
+            )
 
-            const result =
-                await authService.finishInviteClaim(
-                    c.env.AUTH_DB,
-                    c.req.url,
-                    code,
-                    body as never,
-                )
-
-            return c.json(result, 200)
-        } catch (err) {
-            return authErrorResponse(c, err)
-        }
-    },
-)
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
 
 app.get('/api/session', async (c) => {
     try {
@@ -474,13 +460,6 @@ app.post('/api/logout', async (c) => {
     } catch (err) {
         return authErrorResponse(c, err)
     }
-})
-
-app.all('/api/foobar', (c) => {
-    return c.json(
-        { error: 'method_not_allowed' },
-        405,
-    )
 })
 
 app.get('/health', c => {
@@ -668,4 +647,13 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
 
         return c.text(message, 500)
     }
+}
+
+async function checkInviteRateLimit (
+    c:Context<{ Bindings:Bindings }>,
+):Promise<boolean> {
+    if (!c.env.INVITE_RATE_LIMIT) return true
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
+    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
+    return success
 }

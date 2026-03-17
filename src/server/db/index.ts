@@ -377,6 +377,18 @@ export async function revokeDevice (
     `).bind(deviceID).run()
 }
 
+export async function revokeSessionsByDeviceId (
+    db:D1Database,
+    deviceId:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE sessions
+        SET status = 'revoked', revoked_at = ?
+        WHERE device_id = ? AND status = 'active'
+    `).bind(now, deviceId).run()
+}
+
 export async function createChallenge (
     db:D1Database,
     params:{

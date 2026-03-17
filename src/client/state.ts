@@ -1,15 +1,13 @@
 import { type Signal, signal } from '@preact/signals'
 import ky, { type HTTPError } from 'ky'
 import Route from 'route-event'
-import {
-    type RequestFor,
-    RequestState,
-} from '@substrate-system/state'
+import { type RequestFor, RequestState } from '@substrate-system/state'
 import Debug from '@substrate-system/debug'
 import {
     startAuthentication as beginBrowserAuthentication,
     startRegistration as beginBrowserRegistration,
 } from '@simplewebauthn/browser'
+import { when } from './util/index.js'
 import type {
     AuthenticationResponseJSON,
     PublicKeyCredentialCreationOptionsJSON,
@@ -34,6 +32,7 @@ export type SessionResponse = {
         expiresAt:string;
     };
     loginMethod:'passkey'|'password' | null;
+    currentDeviceId?:string | null;
 }
 
 export type SignupConfirmationResponse = {
@@ -101,14 +100,51 @@ export type PasskeyRegistrationValues = {
     displayName?:string;
 }
 
+export type DeviceInfo = {
+    deviceId:string;
+    credentialId:string;
+    credentialName:string | null;
+    aaguid:string | null;
+    transports:string[];
+    createdAt:string;
+    lastUsedAt:string | null;
+    isRevoked:boolean;
+}
+
+export type DeviceAddedResponse = {
+    status:'device_added';
+    device:{
+        deviceId:string;
+        credentialName:string;
+        createdAt:string;
+    };
+}
+
+export type DeviceInvitation = {
+    inviteCode:string;
+    inviteUrl:string;
+    deviceName:string|null;
+    expiresAt:string;
+}
+
+export type PendingInvitation = {
+    inviteCode:string;
+    deviceName:string|null;
+    status:string;
+    expiresAt:string;
+    createdAt:string;
+}
+
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
     user:Signal<RequestFor<SessionResponse, HTTPError|Error>>;
     response:Signal<RequestFor<{ message:string }, HTTPError|Error>>;
+    devices:Signal<RequestFor<DeviceInfo[], HTTPError|Error>>;
+    invitations:Signal<RequestFor<PendingInvitation[], HTTPError|Error>>;
     logoutInProgress:Signal<boolean>;
-    logoutError:Signal<string | null>;
-    _setRoute?:(path:string) => void;
+    logoutError:Signal<string|null>;
+    _setRoute?:(path:string)=>void;
 }
 
 const { start, set, error } = RequestState
@@ -117,10 +153,15 @@ export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
         user: signal<RequestFor<SessionResponse, HTTPError|Error>>(RequestState()),
+        // just for demo
         response: signal<RequestFor<{ message:string }, HTTPError|Error>>(RequestState()),
+        devices: signal<RequestFor<DeviceInfo[], HTTPError|Error>>(RequestState()),
+        invitations: signal<RequestFor<PendingInvitation[], HTTPError|Error>>(
+            RequestState()
+        ),
         count: signal<number>(0),
         logoutInProgress: signal<boolean>(false),
-        logoutError: signal<string | null>(null),
+        logoutError: signal<string|null>(null),
     }
 
     const onRoute = Route()
@@ -135,6 +176,13 @@ export function State ():AppState {
             )
         }
         window.scrollTo(0, 0)
+    })
+
+    // setup effect-based state machine,
+    // eg when we have a `user`, then also fetch their devices
+    when(state.user, () => {
+        // fetch the device list
+        State.listDevices(state)
     })
 
     return state
@@ -207,7 +255,7 @@ State.loginWithPasskey = async function (
 }
 
 State.registerWithPasskey = async function (
-    state:AppState,
+    _state:AppState,
     values:PasskeyRegistrationValues,
 ) {
     try {
@@ -291,6 +339,153 @@ State.login = async function (state:AppState, credentials:LoginCredentials) {
     }
 }
 
+const DEVICE_POLL_INTERVAL_MS = 5_000
+let devicePollInterval:ReturnType<typeof setInterval> | null = null
+
+State.listDevices = async function (state:AppState) {
+    start(state.devices)
+
+    try {
+        const devices = await ky.get(
+            '/api/auth/passkey/devices',
+        ).json<DeviceInfo[]>()
+        set(state.devices, devices)
+        return devices
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.devices, err)
+    }
+}
+
+State.revokeDevice = async function (
+    state:AppState,
+    deviceId:string,
+) {
+    try {
+        await ky.patch(
+            `/api/auth/passkey/devices/${deviceId}/revoke`,
+        )
+        await State.listDevices(state)
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.createInvite = async function (
+    state:AppState,
+    deviceName:string,
+):Promise<DeviceInvitation | undefined> {
+    try {
+        const result = await ky.post(
+            '/api/auth/passkey/devices/invite',
+            { json: { deviceName } },
+        ).json<DeviceInvitation & { status:string }>()
+
+        await State.listInvites(state)
+
+        // Capture current device IDs as the baseline.
+        // If state.devices has not been loaded yet, baselineIds will
+        // be empty — the first tick will then see all returned devices
+        // as "new" and clear the interval after one refresh, which is
+        // acceptable.
+        const baselineIds = new Set(
+            (state.devices.value.data ?? []).map(
+                (d:DeviceInfo) => d.deviceId
+            )
+        )
+
+        // Replace any prior interval (e.g. user created a second invite)
+        if (devicePollInterval !== null) {
+            clearInterval(devicePollInterval)
+        }
+
+        devicePollInterval = setInterval(async () => {
+            // Skip tick if a devices request is already in flight
+            if (state.devices.value.pending) return
+
+            await State.listDevices(state)
+            await State.listInvites(state)
+
+            const newDevice = (state.devices.value.data ?? [])
+                .some((d:DeviceInfo) => !baselineIds.has(d.deviceId))
+            const noInvites = (
+                state.invitations.value.data ?? []
+            ).length === 0
+
+            if (newDevice || noInvites) {
+                clearInterval(devicePollInterval!)
+                devicePollInterval = null
+            }
+        }, DEVICE_POLL_INTERVAL_MS)
+
+        return result
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.listInvites = async function (state:AppState) {
+    start(state.invitations)
+
+    try {
+        const invites = await ky.get(
+            '/api/auth/passkey/devices/invites',
+        ).json<PendingInvitation[]>()
+        set(state.invitations, invites)
+        return invites
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        error(state.invitations, err)
+    }
+}
+
+State.cancelInvite = async function (
+    state:AppState,
+    inviteCode:string,
+) {
+    try {
+        await ky.delete(
+            `/api/auth/passkey/devices/invite/${inviteCode}`,
+        )
+        await State.listInvites(state)
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
+
+State.claimInvite = async function (code:string):Promise<DeviceAddedResponse> {
+    const startResponse = await ky.post(
+        `/api/auth/passkey/devices/invite/${code}/claim/start`,
+    ).json<{
+        challengeReference:string;
+        options:PublicKeyCredentialCreationOptionsJSON;
+        deviceName:string | null;
+        handle:string;
+    }>()
+
+    const credential = await beginBrowserRegistration({
+        optionsJSON: startResponse.options,
+    })
+
+    const result = await ky.post(
+        `/api/auth/passkey/devices/invite/${code}/claim/finish`,
+        {
+            json: {
+                challengeReference: startResponse.challengeReference,
+                credential,
+            },
+        },
+    ).json<DeviceAddedResponse>()
+
+    return result
+}
+
+/**
+ * This is just for demonstration purposes in the template.
+ */
 State.fetch = Object.assign(
     async function (state:AppState) {
         try {

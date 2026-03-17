@@ -44,6 +44,7 @@ export const AUTH_SCHEMA_STATEMENTS = [
         expires_at INTEGER NOT NULL,
         revoked_at INTEGER,
         last_seen_at INTEGER NOT NULL,
+        device_id TEXT,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
     `CREATE TABLE IF NOT EXISTS auth_events (
@@ -64,6 +65,18 @@ export const AUTH_SCHEMA_STATEMENTS = [
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         used_at INTEGER
+    )`,
+    `CREATE TABLE IF NOT EXISTS device_invitations (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        invite_code TEXT NOT NULL UNIQUE,
+        device_name TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        consumed_at INTEGER,
+        FOREIGN KEY (user_id)
+            REFERENCES users(id) ON DELETE CASCADE
     )`,
 ] as const
 

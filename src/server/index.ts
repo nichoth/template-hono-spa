@@ -21,12 +21,14 @@ type Bindings = {
     ASSETS?:Fetcher
     AUTH_DB:D1Database
     NODE_ENV?:string
+    DOMAIN?:string
     DEPLOY_BRANCH?:string
     MAIN_BRANCH?:string
     STAGING_USERNAME?:string
     STAGING_PW?:string
     BASIC_AUTH_REALM?:string
     AUTH_SESSION_TTL_SECONDS?:string
+    INVITE_RATE_LIMIT?:RateLimit
 }
 
 let cachedAssets:AssetPaths|null = null
@@ -68,7 +70,12 @@ app.use('*', async (c, next) => {
     return unauthorizedBasicAuthResponse(c.env?.BASIC_AUTH_REALM)
 })
 
-app.use('/api/*', cors())
+app.use('/api/*', async (c, next) => {
+    const origin = c.env.DOMAIN ?
+        `https://${c.env.DOMAIN}` :
+        'http://localhost:9999'
+    return cors({ origin, credentials: true })(c, next)
+})
 
 app.get('/api/health', (c) => {
     return c.json({
@@ -79,6 +86,10 @@ app.get('/api/health', (c) => {
 
 app.get('/api/foobar', (c) => {
     return c.json(FOOBAR_RESPONSE, 200)
+})
+
+app.all('/api/foobar', (c) => {
+    return c.json({ error: 'method_not_allowed' }, 405)
 })
 
 app.post('/api/auth/register/start', async (c) => {
@@ -122,31 +133,6 @@ app.post('/api/auth/register/finish', async (c) => {
         return c.json(result.response, 200)
     } catch (err) {
         return authErrorResponse(c, err)
-    }
-})
-
-app.post('/api/auth/passkey/register', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishRegistration(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        logLocalConfirmUrl(
-            c.req.url,
-            result.response.identifier,
-            result.confirmationCode,
-        )
-
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err as Error)
     }
 })
 
@@ -202,47 +188,40 @@ app.post('/api/auth/login/finish', async (c) => {
     }
 })
 
-app.post('/api/auth/passkey/login', async (c) => {
-    try {
-        const body = await c.req.json<{
-            challengeReference:string;
-            credential:unknown;
-        }>()
-
-        const result = await authService.finishAuthentication(
-            c.env.AUTH_DB,
-            c.req.url,
-            body as never,
-        )
-
-        setSessionCookie(c, result.sessionToken)
-        return c.json(result.response, 200)
-    } catch (err) {
-        return authErrorResponse(c, err)
-    }
-})
-
 app.get('/api/auth/passkey/devices', async (c) => {
     try {
-        const userId = c.req.query('userId')
-        if (!userId) {
+        const sessionToken = getCookie(c, AUTH_SESSION_COOKIE)
+        const session =
+            await authService.getCurrentSession(c.env.AUTH_DB, sessionToken)
+        if (!session.authenticated) {
             return c.json({
-                error: 'userId query parameter is required',
-            }, 400)
+                error: 'unauthenticated',
+                message: 'Session is required.',
+            }, 401)
         }
 
-        const devices = await authService.listRegisteredDevices(
-            c.env.AUTH_DB,
-            userId,
-        )
+        const devices =
+            await authService.listRegisteredDevices(
+                c.env.AUTH_DB,
+                session.user.id,
+            )
 
         return c.json(devices.map(device => ({
             deviceId: device.id,
             credentialId: device.credential_id,
             credentialName: device.credential_name,
             aaguid: device.aaguid,
-            transports: device.transports_json ? JSON.parse(device.transports_json) : [],
-            lastUsedAt: device.last_used_at ? new Date(device.last_used_at).toISOString() : null,
+            transports: device.transports_json ?
+                JSON.parse(device.transports_json) :
+                [],
+            createdAt: new Date(
+                device.created_at,
+            ).toISOString(),
+            lastUsedAt: device.last_used_at ?
+                new Date(
+                    device.last_used_at,
+                ).toISOString() :
+                null,
             isRevoked: Boolean(device.is_revoked),
         })), 200)
     } catch (err) {
@@ -250,17 +229,204 @@ app.get('/api/auth/passkey/devices', async (c) => {
     }
 })
 
-app.patch('/api/auth/passkey/devices/:deviceId/revoke', async (c) => {
-    try {
-        const deviceId = c.req.param('deviceId')
-        await authService.revokeRegisteredDevice(
-            c.env.AUTH_DB,
-            deviceId,
-        )
+app.patch(
+    '/api/auth/passkey/devices/:deviceId/revoke',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
 
-        return c.body(null, 204)
+            const deviceId = c.req.param('deviceId')
+            await authService.revokeRegisteredDevice(
+                c.env.AUTH_DB,
+                session.user.id,
+                deviceId,
+                session.currentDeviceId ?? null,
+            )
+
+            return c.body(null, 204)
+        } catch (err) {
+            return authErrorResponse(c, err as Error)
+        }
+    },
+)
+
+app.post('/api/auth/passkey/devices/invite', async (c) => {
+    try {
+        const sessionToken = getCookie(
+            c, AUTH_SESSION_COOKIE,
+        )
+        const session =
+            await authService.getCurrentSession(
+                c.env.AUTH_DB, sessionToken,
+            )
+        if (!session.authenticated) {
+            return c.json({
+                error: 'unauthenticated',
+                message: 'Session is required.',
+            }, 401)
+        }
+        if (session.loginMethod !== 'passkey') {
+            return c.json({
+                error: 'not_passkey_user',
+                message: 'Only passkey accounts '
+                    + 'can add devices.',
+            }, 403)
+        }
+
+        const body = await c.req.json<{
+            deviceName:string;
+        }>()
+
+        const result =
+            await authService.createDeviceInvitation(
+                c.env.AUTH_DB,
+                c.req.url,
+                session.user.id,
+                body.deviceName,
+            )
+
+        return c.json(result, 200)
     } catch (err) {
-        return authErrorResponse(c, err as Error)
+        return authErrorResponse(c, err)
+    }
+})
+
+app.get(
+    '/api/auth/passkey/devices/invites',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+
+            const invitations =
+                await authService
+                    .listDeviceInvitations(
+                        c.env.AUTH_DB,
+                        session.user.id,
+                    )
+
+            return c.json(invitations, 200)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.delete(
+    '/api/auth/passkey/devices/invite/:inviteCode',
+    async (c) => {
+        try {
+            const sessionToken = getCookie(
+                c, AUTH_SESSION_COOKIE,
+            )
+            const session =
+                await authService.getCurrentSession(
+                    c.env.AUTH_DB, sessionToken,
+                )
+            if (!session.authenticated) {
+                return c.json({
+                    error: 'unauthenticated',
+                    message: 'Session is required.',
+                }, 401)
+            }
+
+            const inviteCode =
+                c.req.param('inviteCode')
+            await authService
+                .cancelDeviceInvitation(
+                    c.env.AUTH_DB,
+                    session.user.id,
+                    inviteCode,
+                )
+
+            return c.body(null, 204)
+        } catch (err) {
+            return authErrorResponse(c, err)
+        }
+    },
+)
+
+app.get('/api/auth/passkey/devices/invite/:code', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const { code } = c.req.param()
+        const invitation =
+            await authService.getInvitationInfo(
+                c.env.AUTH_DB,
+                code,
+            )
+        return c.json(invitation, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/passkey/devices/invite/:code/claim/start', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const code = c.req.param('code')
+        const result =
+            await authService.startInviteClaim(
+                c.env.AUTH_DB,
+                c.req.url,
+                code,
+            )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
+    }
+})
+
+app.post('/api/auth/passkey/devices/invite/:code/claim/finish', async (c) => {
+    if (!await checkInviteRateLimit(c)) {
+        return c.json({ error: 'rate_limited' }, 429)
+    }
+    try {
+        const code = c.req.param('code')
+        const body = await c.req.json<{
+            challengeReference:string;
+            credential:unknown;
+        }>()
+
+        const result =
+            await authService.finishInviteClaim(
+                c.env.AUTH_DB,
+                c.req.url,
+                code,
+                body as never,
+            )
+
+        return c.json(result, 200)
+    } catch (err) {
+        return authErrorResponse(c, err)
     }
 })
 
@@ -296,13 +462,6 @@ app.post('/api/logout', async (c) => {
     }
 })
 
-app.all('/api/foobar', (c) => {
-    return c.json(
-        { error: 'method_not_allowed' },
-        405,
-    )
-})
-
 app.get('/health', c => {
     return c.json({ status: 'ok' })
 })
@@ -336,6 +495,7 @@ function setSessionCookie (
     c:Context<{ Bindings:Bindings }>,
     sessionToken:string,
 ) {
+    // 1 month
     const ttlSeconds = Number(c.env.AUTH_SESSION_TTL_SECONDS || '2592000')
 
     setCookie(c, AUTH_SESSION_COOKIE, sessionToken, {
@@ -487,4 +647,13 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
 
         return c.text(message, 500)
     }
+}
+
+async function checkInviteRateLimit (
+    c:Context<{ Bindings:Bindings }>,
+):Promise<boolean> {
+    if (!c.env.INVITE_RATE_LIMIT) return true
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
+    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
+    return success
 }

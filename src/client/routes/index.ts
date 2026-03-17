@@ -5,6 +5,7 @@ import { LoginRoute } from './login.js'
 import { ProfileRoute } from './profile.js'
 import { SignupRoute } from './signup.js'
 import { ConfirmRoute } from './confirm.js'
+import { ClaimDeviceRoute } from './claim-device.js'
 import { type AppState } from '../state.js'
 
 export type AppRoute = {
@@ -27,7 +28,7 @@ const knownClientRoutes = new Set([
     '/confirm',
 ])
 
-export function createRouter (_state?:AppState):InstanceType<typeof Router> {
+export function createRouter (state:AppState):InstanceType<typeof Router> {
     const router = new Router()
 
     router.addRoute('/', () => {
@@ -47,6 +48,15 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
     })
 
     router.addRoute('/profile', () => {
+        if (
+            state?.user.value.pending === false &&
+            state.user.value.data?.authenticated === false
+        ) {
+            // not a user, or not logged in
+            // so redirect
+            state._setRoute!('/')
+        }
+
         return ProfileRoute
     })
 
@@ -56,6 +66,10 @@ export function createRouter (_state?:AppState):InstanceType<typeof Router> {
 
     router.addRoute('/confirm/:code', () => {
         return ConfirmRoute
+    })
+
+    router.addRoute('/add/:code', () => {
+        return ClaimDeviceRoute
     })
 
     return router
@@ -71,5 +85,6 @@ export function isKnownClientRoute (path:string):boolean {
     if (knownClientRoutes.has(path)) return true
     if (path === '/confirm' || path === '/confirm/') return true
     if (path.startsWith('/confirm/')) return true
+    if (path.startsWith('/add/')) return true
     return false
 }

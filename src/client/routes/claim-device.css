@@ -1,0 +1,49 @@
+.route.claim-device {
+    min-height: 60vh;
+    max-width: 480px;
+    margin: 0 auto;
+
+    & h2 {
+        margin-top: 0;
+    }
+
+    & .claim-loading {
+        color: var(--color-text-muted, #6c757d);
+    }
+
+    & .claim-info {
+        margin: 1rem 0;
+        padding: 1rem 1.25rem;
+        background-color: var(--color-bg-subtle, #f8f9fa);
+        border: 1px solid var(--color-border, #dee2e6);
+        border-radius: 4px;
+
+        & p {
+            margin: 0.25rem 0;
+        }
+    }
+
+    & .claim-confirm {
+        margin: 1rem 0;
+    }
+
+    & .claim-btn {
+        margin-top: 0.5rem;
+    }
+
+    & .claim-error {
+        color: var(--color-error, #c00);
+        margin: 0.75rem 0 0;
+    }
+
+    & .claim-success {
+        padding: 1.5rem;
+        background-color: var(--color-bg-subtle, #f8f9fa);
+        border: 1px solid var(--color-border, #dee2e6);
+        border-radius: 4px;
+    }
+
+    & .claim-success h2 {
+        margin-top: 0;
+    }
+}

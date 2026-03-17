@@ -87,12 +87,10 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         return getNavRoutes(isAuthenticated.value)
     })
 
-    const navRoutes = visibleRoutes.value
-
     return html`<nav class="app-nav" aria-label="Main navigation">
         <div class="desktop-nav">
             <ul class="nav-links nav-links-inline">
-                ${renderNavItems(currentPath, navRoutes)}
+                ${renderNavItems(currentPath, visibleRoutes.value)}
             </ul>
         </div>
         <${HamburgerTwo.TAG}
@@ -101,7 +99,7 @@ export const Nav:FunctionComponent<{ state:AppState }> = function ({ state }) {
         ></${HamburgerTwo.TAG}>
         <div class=${menuClasses} hidden=${!isMenuOpen}>
             <ul class="nav-links nav-links-mobile">
-                ${renderNavItems(currentPath, navRoutes)}
+                ${renderNavItems(currentPath, visibleRoutes.value)}
             </ul>
         </div>
     </nav>`

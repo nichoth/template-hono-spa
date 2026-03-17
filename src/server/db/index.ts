@@ -29,7 +29,7 @@ export type AuthChallengeRecord = {
     id:string;
     user_id:string | null;
     identifier:string | null;
-    purpose:'registration'|'authentication';
+    purpose:'registration'|'authentication'|'device_addition'|'device_invitation';
     challenge_value:string;
     status:string;
     expires_at:number;
@@ -47,6 +47,7 @@ export type SessionRecord = {
     expires_at:number;
     revoked_at:number | null;
     last_seen_at:number;
+    device_id:string | null;
 }
 
 export type SessionWithUserRecord = SessionRecord & {
@@ -66,9 +67,21 @@ export type ConfirmationCodeRecord = {
     used_at:number | null;
 }
 
+export type DeviceInvitationRecord = {
+    id:string;
+    user_id:string;
+    invite_code:string;
+    device_name:string | null;
+    status:'pending'|'consumed'|'cancelled'|'expired';
+    expires_at:number;
+    created_at:number;
+    consumed_at:number | null;
+}
+
 type ChallengeMetadata = {
     userID?:string;
     displayName?:string;
+    credentialName?:string;
 }
 
 const initializedDbs = new WeakSet<D1Database>()
@@ -82,6 +95,13 @@ export async function ensureAuthSchema (db:D1Database):Promise<void> {
     await db.batch(
         AUTH_SCHEMA_STATEMENTS.map(statement => db.prepare(statement))
     )
+    try {
+        await db.prepare(
+            'ALTER TABLE sessions ADD COLUMN device_id TEXT'
+        ).run()
+    } catch {
+        // column already exists — ignore
+    }
     initializedDbs.add(db)
 }
 
@@ -229,6 +249,17 @@ export async function activateUser (
     `).bind(now, identifier).run()
 }
 
+export async function countActiveDevicesByUserId (
+    db:D1Database,
+    userId:string,
+):Promise<number> {
+    const row = await db.prepare(
+        'SELECT COUNT(*) as count FROM devices ' +
+        'WHERE user_id = ? AND is_revoked = 0'
+    ).bind(userId).first<{ count:number }>()
+    return row?.count ?? 0
+}
+
 export async function listActiveDevicesByUserId (
     db:D1Database,
     userID:string,
@@ -254,6 +285,19 @@ export async function listDevicesByUserId (
     `).bind(userID).all<DeviceRecord>()
 
     return result.results ?? []
+}
+
+export async function findDeviceById (
+    db:D1Database,
+    deviceId:string,
+):Promise<DeviceRecord | null> {
+    const result = await db.prepare(`
+        SELECT * FROM devices
+        WHERE id = ?
+        LIMIT 1
+    `).bind(deviceId).first<DeviceRecord>()
+
+    return result ?? null
 }
 
 export async function findDeviceByCredentialId (
@@ -333,13 +377,25 @@ export async function revokeDevice (
     `).bind(deviceID).run()
 }
 
+export async function revokeSessionsByDeviceId (
+    db:D1Database,
+    deviceId:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE sessions
+        SET status = 'revoked', revoked_at = ?
+        WHERE device_id = ? AND status = 'active'
+    `).bind(now, deviceId).run()
+}
+
 export async function createChallenge (
     db:D1Database,
     params:{
         id:string;
         userID?:string;
         identifier?:string;
-        purpose:'registration'|'authentication';
+        purpose:'registration'|'authentication'|'device_addition'|'device_invitation';
         challengeValue:string;
         expiresAt:number;
         now:number;
@@ -420,13 +476,15 @@ export async function createSession (
         sessionToken:string;
         expiresAt:number;
         now:number;
+        deviceId?:string;
     }
 ):Promise<SessionRecord> {
     await db.prepare(`
         INSERT INTO sessions (
-            id, user_id, session_token, status, created_at, expires_at, last_seen_at
+            id, user_id, session_token, status,
+            created_at, expires_at, last_seen_at, device_id
         )
-        VALUES (?, ?, ?, 'active', ?, ?, ?)
+        VALUES (?, ?, ?, 'active', ?, ?, ?, ?)
     `).bind(
         params.id,
         params.userID,
@@ -434,6 +492,7 @@ export async function createSession (
         params.now,
         params.expiresAt,
         params.now,
+        params.deviceId ?? null,
     ).run()
 
     return {
@@ -445,6 +504,7 @@ export async function createSession (
         expires_at: params.expiresAt,
         revoked_at: null,
         last_seen_at: params.now,
+        device_id: params.deviceId ?? null,
     }
 }
 
@@ -532,4 +592,100 @@ export async function createAuthEvent (
         params.occurredAt,
         params.detail ?? null,
     ).run()
+}
+
+export async function createInvitation (
+    db:D1Database,
+    params:{
+        id:string;
+        userID:string;
+        inviteCode:string;
+        deviceName?:string;
+        expiresAt:number;
+        now:number;
+    },
+):Promise<void> {
+    await db.prepare(`
+        INSERT INTO device_invitations (
+            id, user_id, invite_code, device_name,
+            status, expires_at, created_at
+        )
+        VALUES (?, ?, ?, ?, 'pending', ?, ?)
+    `).bind(
+        params.id,
+        params.userID,
+        params.inviteCode,
+        params.deviceName ?? null,
+        params.expiresAt,
+        params.now,
+    ).run()
+}
+
+export async function findInvitationByCode (
+    db:D1Database,
+    inviteCode:string,
+):Promise<DeviceInvitationRecord | null> {
+    const result = await db.prepare(`
+        SELECT * FROM device_invitations
+        WHERE invite_code = ?
+        LIMIT 1
+    `).bind(
+        inviteCode,
+    ).first<DeviceInvitationRecord>()
+
+    return result ?? null
+}
+
+export async function markInvitationConsumed (
+    db:D1Database,
+    inviteCode:string,
+    now:number,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE device_invitations
+        SET status = 'consumed', consumed_at = ?
+        WHERE invite_code = ?
+    `).bind(now, inviteCode).run()
+}
+
+export async function markInvitationCancelled (
+    db:D1Database,
+    inviteCode:string,
+):Promise<void> {
+    await db.prepare(`
+        UPDATE device_invitations
+        SET status = 'cancelled'
+        WHERE invite_code = ?
+    `).bind(inviteCode).run()
+}
+
+export async function countPendingInvitationsByUserId (
+    db:D1Database,
+    userId:string,
+    now:number,
+):Promise<number> {
+    const row = await db.prepare(
+        'SELECT COUNT(*) as count '
+        + 'FROM device_invitations '
+        + 'WHERE user_id = ? '
+        + 'AND status = \'pending\' '
+        + 'AND expires_at > ?'
+    ).bind(userId, now).first<{ count:number }>()
+    return row?.count ?? 0
+}
+
+export async function listPendingInvitationsByUserId (
+    db:D1Database,
+    userId:string,
+    now:number,
+):Promise<DeviceInvitationRecord[]> {
+    const result = await db.prepare(`
+        SELECT * FROM device_invitations
+        WHERE user_id = ?
+        AND status = 'pending'
+        AND expires_at > ?
+        ORDER BY created_at DESC
+    `).bind(userId, now).all<DeviceInvitationRecord>()
+
+    return result.results ?? []
 }

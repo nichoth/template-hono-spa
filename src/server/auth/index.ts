@@ -11,6 +11,7 @@ import {
 } from '@simplewebauthn/server'
 import { isoBase64URL } from '@simplewebauthn/server/helpers'
 import {
+    countActiveDevicesByUserId,
     createAuthEvent,
     createChallenge,
     createDevice,
@@ -19,6 +20,7 @@ import {
     ensureAuthSchema,
     expireSession,
     findChallengeById,
+    findDeviceById,
     findDeviceByCredentialId,
     findSessionByToken,
     findUserById,
@@ -30,6 +32,7 @@ import {
     parseChallengeMetadata,
     revokeDevice,
     revokeSession,
+    revokeSessionsByDeviceId,
     touchSession,
     updateDeviceUsage,
     activateUser,
@@ -37,6 +40,12 @@ import {
     findConfirmationCode,
     markConfirmationCodeExpired,
     markConfirmationCodeUsed,
+    createInvitation,
+    findInvitationByCode,
+    markInvitationConsumed,
+    markInvitationCancelled,
+    countPendingInvitationsByUserId,
+    listPendingInvitationsByUserId,
 } from '../db/index.js'
 
 const REGISTRATION_TIMEOUT_MS = 5 * 60 * 1000
@@ -46,6 +55,7 @@ export const AUTH_SESSION_COOKIE = 'auth_session'
 export const DEFAULT_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30
 export const AUTH_RP_NAME = 'Template Hono SPA'
 export const EMAIL_CONFIRMATION_TTL_MS = 1000 * 60 * 60 * 24
+export const DEVICE_INVITATION_TTL_MS = 5 * 60 * 1000
 
 export type AuthUser = {
     id:string;
@@ -65,6 +75,7 @@ export type SessionResponse = {
     user:AuthUser;
     session:SessionSummary;
     loginMethod:'passkey'|'password' | null;
+    currentDeviceId:string | null;
 }
 
 export type RegistrationStartRequest = {
@@ -116,6 +127,45 @@ export type AuthenticationStartResponse = {
 export type AuthenticationFinishRequest = {
     challengeReference:string;
     credential:AuthenticationResponseJSON;
+}
+
+export const MAX_DEVICES_PER_USER = 10
+
+export type InvitationResponse = {
+    status:'invitation_created';
+    inviteCode:string;
+    inviteUrl:string;
+    deviceName:string | null;
+    expiresAt:string;
+}
+
+export type InviteClaimStartResponse = {
+    challengeReference:string;
+    options:PublicKeyCredentialCreationOptionsJSON;
+    deviceName:string | null;
+    userIdentifier:string;
+}
+
+export type InviteClaimFinishRequest = {
+    challengeReference:string;
+    credential:RegistrationResponseJSON;
+}
+
+export type InviteClaimFinishResponse = {
+    status:'device_added';
+    device:{
+        deviceId:string;
+        credentialName:string;
+        createdAt:string;
+    };
+}
+
+export type PendingInvitationInfo = {
+    inviteCode:string;
+    deviceName:string | null;
+    status:string;
+    expiresAt:string;
+    createdAt:string;
 }
 
 export class AuthError extends Error {
@@ -506,6 +556,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
             sessionToken: buildSessionToken(),
             expiresAt: sessionNow + DEFAULT_SESSION_TTL_MS,
             now: sessionNow,
+            deviceId: device.id,
         })
 
         await createAuthEvent(db, {
@@ -520,7 +571,11 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
         return {
             sessionToken: session.session_token,
-            response: makeAuthenticatedSessionResponse(user, session.expires_at),
+            response: makeAuthenticatedSessionResponse(
+                user,
+                session.expires_at,
+                device.id,
+            ),
         }
     }
 
@@ -564,6 +619,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
                 expiresAt: new Date(session.expires_at).toISOString(),
             },
             loginMethod: session.login_method ?? null,
+            currentDeviceId: session.device_id ?? null,
         }
     }
 
@@ -590,10 +646,537 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
 
     async function revokeRegisteredDevice (
         db:D1Database,
+        userId:string,
         deviceID:string,
+        currentSessionDeviceId:string | null,
     ) {
         await ensureAuthSchema(db)
+
+        const device = await findDeviceById(db, deviceID)
+        if (!device) {
+            throw new AuthError(
+                404,
+                'unknown_device',
+                'Device not found.',
+            )
+        }
+        if (device.user_id !== userId) {
+            throw new AuthError(
+                403,
+                'not_owner',
+                'Device does not belong '
+                    + 'to your account.',
+            )
+        }
+        if (
+            currentSessionDeviceId !== null &&
+            deviceID === currentSessionDeviceId
+        ) {
+            throw new AuthError(
+                403,
+                'self_revoke',
+                'Cannot revoke the device '
+                    + 'you are currently using.',
+            )
+        }
+
+        const activeCount = await countActiveDevicesByUserId(
+            db, userId,
+        )
+        if (activeCount <= 1) {
+            throw new AuthError(
+                409,
+                'last_device',
+                'Cannot revoke your only '
+                    + 'active device.',
+            )
+        }
+
         await revokeDevice(db, deviceID)
+        await revokeSessionsByDeviceId(
+            db, deviceID, deps.now(),
+        )
+    }
+
+    async function createDeviceInvitation (
+        db:D1Database,
+        requestUrl:string,
+        userId:string,
+        deviceName?:string,
+    ):Promise<InvitationResponse> {
+        await ensureAuthSchema(db)
+
+        if (!deviceName || !deviceName.trim()) {
+            throw new AuthError(
+                400,
+                'missing_device_name',
+                'Device name is required.',
+            )
+        }
+
+        const user = await findUserById(db, userId)
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        const now = deps.now()
+        const activeDevices =
+            await countActiveDevicesByUserId(
+                db, userId,
+            )
+        const pendingInvites =
+            await countPendingInvitationsByUserId(
+                db, userId, now,
+            )
+
+        if (
+            activeDevices + pendingInvites
+            >= MAX_DEVICES_PER_USER
+        ) {
+            throw new AuthError(
+                409,
+                'device_limit',
+                'You have reached the maximum '
+                + 'number of devices ('
+                + MAX_DEVICES_PER_USER + ').',
+            )
+        }
+
+        const expiresAt =
+            now + DEVICE_INVITATION_TTL_MS
+        const id = deps.createID()
+
+        let inviteCode = generateInviteCode()
+        for (let attempt = 0; attempt < 10; attempt++) {
+            const existing = await findInvitationByCode(
+                db, inviteCode,
+            )
+            if (
+                !existing
+                || existing.status !== 'pending'
+                || existing.expires_at <= now
+            ) {
+                break
+            }
+            inviteCode = generateInviteCode()
+        }
+
+        await createInvitation(db, {
+            id,
+            userID: userId,
+            inviteCode,
+            deviceName: deviceName || undefined,
+            expiresAt,
+            now,
+        })
+
+        const origin = new URL(requestUrl).origin
+        const inviteUrl = `${origin}/add/${inviteCode}`
+
+        return {
+            status: 'invitation_created',
+            inviteCode,
+            inviteUrl,
+            deviceName: deviceName || null,
+            expiresAt: new Date(expiresAt)
+                .toISOString(),
+        }
+    }
+
+    async function getInvitationInfo (
+        db:D1Database,
+        inviteCode:string,
+    ):Promise<{
+        deviceName:string | null;
+        userIdentifier:string;
+    }> {
+        await ensureAuthSchema(db)
+
+        const invitation =
+            await findInvitationByCode(db, inviteCode)
+        if (!invitation) {
+            throw new AuthError(
+                404,
+                'unknown_invite',
+                'Invitation not found.',
+            )
+        }
+        if (invitation.status === 'consumed') {
+            throw new AuthError(
+                409,
+                'already_consumed',
+                'This invitation has already been used.',
+            )
+        }
+        if (invitation.status !== 'pending') {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation is no longer valid.',
+            )
+        }
+        if (invitation.expires_at <= deps.now()) {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation has expired.',
+            )
+        }
+
+        const user = await findUserById(
+            db, invitation.user_id,
+        )
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        return {
+            deviceName: invitation.device_name,
+            userIdentifier: user.identifier,
+        }
+    }
+
+    async function startInviteClaim (
+        db:D1Database,
+        requestUrl:string,
+        inviteCode:string,
+    ):Promise<InviteClaimStartResponse> {
+        await ensureAuthSchema(db)
+
+        const invitation =
+            await findInvitationByCode(db, inviteCode)
+        if (!invitation) {
+            throw new AuthError(
+                404,
+                'unknown_invite',
+                'Invitation not found.',
+            )
+        }
+        if (invitation.status === 'consumed') {
+            throw new AuthError(
+                409,
+                'already_consumed',
+                'This invitation has already '
+                + 'been used.',
+            )
+        }
+        if (
+            invitation.status !== 'pending'
+        ) {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation is no longer '
+                + 'valid.',
+            )
+        }
+        if (invitation.expires_at <= deps.now()) {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation has expired.',
+            )
+        }
+
+        const user = await findUserById(
+            db, invitation.user_id,
+        )
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        const existingDevices =
+            await listActiveDevicesByUserId(
+                db, user.id,
+            )
+        const rpID = deriveRpID(requestUrl)
+        const challengeReference = deps.createID()
+        const now = deps.now()
+
+        const options =
+            await deps.generateRegistrationOptions({
+                rpName: AUTH_RP_NAME,
+                rpID,
+                userName: user.identifier,
+                userDisplayName:
+                    user.display_name
+                    || user.identifier,
+                timeout: REGISTRATION_TIMEOUT_MS,
+                attestationType: 'none',
+                excludeCredentials:
+                    existingDevices.map(d => ({
+                        id: d.credential_id,
+                        transports: parseTransports(
+                            d.transports_json,
+                        ),
+                    })),
+                authenticatorSelection: {
+                    residentKey: 'preferred',
+                    userVerification: 'preferred',
+                },
+            })
+
+        await createChallenge(db, {
+            id: challengeReference,
+            userID: user.id,
+            identifier: user.identifier,
+            purpose: 'device_invitation',
+            challengeValue: options.challenge,
+            expiresAt:
+                now + REGISTRATION_TIMEOUT_MS,
+            now,
+            metadata: {
+                credentialName:
+                    invitation.device_name
+                    ?? undefined,
+            },
+        })
+
+        return {
+            challengeReference,
+            options,
+            deviceName: invitation.device_name,
+            userIdentifier: user.identifier,
+        }
+    }
+
+    async function finishInviteClaim (
+        db:D1Database,
+        requestUrl:string,
+        inviteCode:string,
+        request:InviteClaimFinishRequest,
+    ):Promise<InviteClaimFinishResponse> {
+        await ensureAuthSchema(db)
+
+        const invitation =
+            await findInvitationByCode(db, inviteCode)
+        if (!invitation) {
+            throw new AuthError(
+                404,
+                'unknown_invite',
+                'Invitation not found.',
+            )
+        }
+        if (invitation.status === 'consumed') {
+            throw new AuthError(
+                409,
+                'already_consumed',
+                'This invitation has already '
+                + 'been used.',
+            )
+        }
+        if (invitation.status !== 'pending') {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation is no longer '
+                + 'valid.',
+            )
+        }
+        if (invitation.expires_at <= deps.now()) {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'This invitation has expired.',
+            )
+        }
+
+        const challenge = await findChallengeById(
+            db, request.challengeReference,
+        )
+        if (
+            !challenge
+            || challenge.purpose
+                !== 'device_invitation'
+        ) {
+            throw new AuthError(
+                400,
+                'invalid_challenge',
+                'Challenge was not found.',
+            )
+        }
+        if (challenge.status !== 'pending') {
+            throw new AuthError(
+                400,
+                'invalid_challenge_state',
+                'Challenge can no longer be used.',
+            )
+        }
+        if (challenge.expires_at <= deps.now()) {
+            await markChallengeExpired(
+                db, challenge.id,
+            )
+            throw new AuthError(
+                400,
+                'challenge_expired',
+                'Challenge has expired. '
+                + 'Please try again.',
+            )
+        }
+
+        const user = await findUserById(
+            db, invitation.user_id,
+        )
+        if (!user || user.status !== 'active') {
+            throw new AuthError(
+                404,
+                'unknown_account',
+                'Account not found.',
+            )
+        }
+
+        const now = deps.now()
+        const activeCount =
+            await countActiveDevicesByUserId(
+                db, user.id,
+            )
+        if (activeCount >= MAX_DEVICES_PER_USER) {
+            throw new AuthError(
+                409,
+                'device_limit',
+                'Maximum device limit reached.',
+            )
+        }
+
+        const rpID = deriveRpID(requestUrl)
+        const expectedOrigin =
+            deriveExpectedOrigin(requestUrl)
+
+        const verification =
+            await deps.verifyRegistrationResponse({
+                response: request.credential,
+                expectedChallenge:
+                    challenge.challenge_value,
+                expectedOrigin,
+                expectedRPID: rpID,
+            })
+
+        if (
+            !verification.verified
+            || !verification.registrationInfo
+        ) {
+            throw new AuthError(
+                400,
+                'verification_failed',
+                'Passkey verification failed.',
+            )
+        }
+
+        const { credential } =
+            verification.registrationInfo
+        const credentialName =
+            invitation.device_name ?? 'Device'
+        const deviceId = deps.createID()
+
+        await createDevice(db, {
+            id: deviceId,
+            userID: user.id,
+            credentialID: credential.id,
+            publicKey: isoBase64URL.fromBuffer(
+                credential.publicKey,
+            ),
+            counter: credential.counter,
+            transports: credential.transports,
+            aaguid:
+                verification.registrationInfo
+                    .aaguid,
+            credentialName,
+            now,
+        })
+
+        await markChallengeUsed(db, challenge.id, now)
+        await markInvitationConsumed(
+            db, inviteCode, now,
+        )
+
+        return {
+            status: 'device_added',
+            device: {
+                deviceId,
+                credentialName,
+                createdAt:
+                    new Date(now).toISOString(),
+            },
+        }
+    }
+
+    async function cancelDeviceInvitation (
+        db:D1Database,
+        userId:string,
+        inviteCode:string,
+    ):Promise<void> {
+        await ensureAuthSchema(db)
+
+        const invitation =
+            await findInvitationByCode(db, inviteCode)
+        if (!invitation) {
+            throw new AuthError(
+                404,
+                'unknown_invite',
+                'Invitation not found.',
+            )
+        }
+        if (invitation.user_id !== userId) {
+            throw new AuthError(
+                403,
+                'not_owner',
+                'Invitation does not belong '
+                + 'to your account.',
+            )
+        }
+        if (invitation.status === 'consumed') {
+            throw new AuthError(
+                409,
+                'already_consumed',
+                'Invitation has already been '
+                + 'used.',
+            )
+        }
+        if (invitation.status !== 'pending') {
+            throw new AuthError(
+                410,
+                'invite_expired',
+                'Invitation is no longer valid.',
+            )
+        }
+
+        await markInvitationCancelled(db, inviteCode)
+    }
+
+    async function listDeviceInvitations (
+        db:D1Database,
+        userId:string,
+    ):Promise<PendingInvitationInfo[]> {
+        await ensureAuthSchema(db)
+        const now = deps.now()
+        const rows =
+            await listPendingInvitationsByUserId(
+                db, userId, now,
+            )
+
+        return rows.map(row => ({
+            inviteCode: row.invite_code,
+            deviceName: row.device_name,
+            status: row.status,
+            expiresAt:
+                new Date(row.expires_at)
+                    .toISOString(),
+            createdAt:
+                new Date(row.created_at)
+                    .toISOString(),
+        }))
     }
 
     return {
@@ -606,6 +1189,12 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         logout,
         listRegisteredDevices,
         revokeRegisteredDevice,
+        createDeviceInvitation,
+        getInvitationInfo,
+        startInviteClaim,
+        finishInviteClaim,
+        cancelDeviceInvitation,
+        listDeviceInvitations,
     }
 }
 
@@ -634,8 +1223,14 @@ function parseTransports (
 }
 
 function makeAuthenticatedSessionResponse (
-    user:{ id:string; identifier:string; display_name:string | null; login_method:'passkey'|'password' | null },
+    user:{
+        id:string;
+        identifier:string;
+        display_name:string | null;
+        login_method:'passkey'|'password' | null;
+    },
     expiresAt:number,
+    deviceId:string | null,
 ):SessionResponse {
     return {
         authenticated: true,
@@ -649,6 +1244,7 @@ function makeAuthenticatedSessionResponse (
             expiresAt: new Date(expiresAt).toISOString(),
         },
         loginMethod: user.login_method ?? null,
+        currentDeviceId: deviceId,
     }
 }
 
@@ -666,4 +1262,16 @@ function generateConfirmationCode ():string {
     return Array.from(bytes)
         .map(byte => byte.toString(16).padStart(2, '0'))
         .join('')
+}
+
+function generateInviteCode ():string {
+    const bytes = new Uint8Array(4)
+    crypto.getRandomValues(bytes)
+    const num = (
+        (bytes[0] << 24)
+        | (bytes[1] << 16)
+        | (bytes[2] << 8)
+        | bytes[3]
+    ) >>> 0
+    return String(num % 1000000).padStart(6, '0')
 }

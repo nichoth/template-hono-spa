@@ -3,6 +3,14 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from 'cloudflare:test'
+import {
+    parseBasicAuthHeader,
+    credentialsMatch,
+} from '../src/server/basic-auth.js'
+import {
+    createAuthService,
+    AuthError,
+} from '../src/server/auth/index.js'
 import { signal } from '@preact/signals'
 import {
     type RequestFor,
@@ -32,8 +40,7 @@ import {
     getRadioCheckedAttr,
     resolveSelectedMethod,
 } from '../src/client/routes/login.js'
-import type { AppState, SessionResponse } from '../src/client/state.js'
-import { formatLoginStatus } from '../src/client/login-status.js'
+import type { AppState } from '../src/client/state.js'
 import viteConfigSource from '../vite.config.js?raw'
 import styleCssSource from '../src/style.css?inline'
 import cardCssSource from '../src/client/components/card.css?inline'
@@ -53,6 +60,27 @@ vi.mock('@substrate-system/button', () => ({
 vi.mock('@substrate-system/radio-input', () => ({
     RadioInput: {
         TAG: 'radio-input',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/input', () => ({
+    SubstrateInput: {
+        TAG: 'substrate-input',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/copy-button', () => ({
+    CopyButton: {
+        TAG: 'copy-button',
+        define: () => {},
+    },
+}))
+
+vi.mock('@substrate-system/dialog', () => ({
+    ModalWindow: {
+        TAG: 'modal-window',
         define: () => {},
     },
 }))
@@ -799,51 +827,164 @@ describe('Hono worker', () => {
             expect(Object.keys(tsxFiles)).toEqual([])
         })
     })
+})
 
-    describe('login status helper', () => {
-        it('returns the authenticated identifier when available', () => {
-            const session: SessionResponse = {
-                authenticated: true,
-                user: {
-                    identifier: 'user@example.com',
-                    displayName: 'User Example',
-                    id: 'user-1',
-                },
-                session: {
-                    expiresAt: new Date().toISOString(),
-                },
-            }
-
-            expect(formatLoginStatus(session)).toBe('logged in as user@example.com')
+describe('Basic Auth', () => {
+    describe('credentialsMatch — valid credentials', () => {
+        it('returns true for correct username and password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(true)
         })
 
-        it('falls back to anonymous for unauthenticated sessions', () => {
-            const anonymousVariants = [
-                { authenticated: false },
-                null,
-                undefined,
-            ]
-
-            for (const variant of anonymousVariants) {
-                expect(formatLoginStatus(variant as SessionResponse | null | undefined))
-                    .toBe('logged in as anonymous')
-            }
+        it('returns false for case-sensitive username mismatch', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('Admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
         })
 
-        it('handles authenticated sessions with missing identifiers as anonymous', () => {
-            const session: SessionResponse = {
-                authenticated: true,
-                user: {
-                    identifier: '',
-                    displayName: null,
-                    id: 'user-2',
-                },
-                session: {
-                    expiresAt: new Date().toISOString(),
-                },
-            }
+        it('returns false for case-sensitive password mismatch', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:Secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+    })
 
-            expect(formatLoginStatus(session)).toBe('logged in as anonymous')
+    describe('credentialsMatch — invalid credentials', () => {
+        it('returns false for correct username with wrong password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:wrong')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for wrong username with correct password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('other:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false when both username and password are wrong', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('other:wrong')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for empty string username', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa(':secret')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false for empty string password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:')
+            )
+            expect(credentialsMatch(cred, 'admin', 'secret')).toBe(false)
+        })
+
+        it('returns false when expectedUsername is undefined', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, undefined, 'secret')).toBe(false)
+        })
+
+        it('returns false when expectedPassword is undefined', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:secret')
+            )
+            expect(credentialsMatch(cred, 'admin', undefined)).toBe(false)
+        })
+
+        it('returns false when submitted and expected values differ in byte length', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('admin:short')
+            )
+            expect(
+                credentialsMatch(cred, 'admin', 'muchlongerpassword')
+            ).toBe(false)
+        })
+    })
+
+    describe('parseBasicAuthHeader', () => {
+        it('returns null credentials for missing header', () => {
+            const cred = parseBasicAuthHeader(undefined)
+            expect(cred).toEqual({
+                username: null,
+                password: null,
+                isMalformed: false,
+            })
+        })
+
+        it('returns null credentials for empty string', () => {
+            const cred = parseBasicAuthHeader('')
+            expect(cred).toEqual({
+                username: null,
+                password: null,
+                isMalformed: false,
+            })
+        })
+
+        it('marks header as malformed when scheme is not Basic', () => {
+            const cred = parseBasicAuthHeader('Bearer some-token')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed when encoded part is missing', () => {
+            const cred = parseBasicAuthHeader('Basic')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed for invalid base64', () => {
+            const cred = parseBasicAuthHeader('Basic !!!notbase64!!!')
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('marks header as malformed when no colon separator exists', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('nocolon')
+            )
+            expect(cred.isMalformed).toBe(true)
+        })
+
+        it('parses a well-formed Basic Auth header', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('user:pass')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass',
+                isMalformed: false,
+            })
+        })
+
+        it('allows colons in the password', () => {
+            const cred = parseBasicAuthHeader(
+                'Basic ' + btoa('user:pass:with:colons')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass:with:colons',
+                isMalformed: false,
+            })
+        })
+
+        it('accepts Basic scheme in any case', () => {
+            const cred = parseBasicAuthHeader(
+                'BASIC ' + btoa('user:pass')
+            )
+            expect(cred).toEqual({
+                username: 'user',
+                password: 'pass',
+                isMalformed: false,
+            })
         })
     })
 })
@@ -862,5 +1003,70 @@ describe('nav routes helper', () => {
 
         expect(visible.some(route => route.text === 'Login')).toBe(true)
         expect(visible.some(route => route.text === 'Create Account')).toBe(true)
+    })
+})
+
+describe('revokeRegisteredDevice', () => {
+    function makeMockDb ():D1Database {
+        return {
+            exec: () => Promise.resolve({
+                count: 0, duration: 0,
+            }),
+            batch: () => Promise.resolve([]),
+            prepare: (sql:string) => ({
+                bind: (..._args:unknown[]) => ({
+                    first: () => {
+                        if (sql.includes('WHERE id = ?')) {
+                            return Promise.resolve({
+                                id: 'device-1',
+                                user_id: 'user-1',
+                                credential_id: 'cred-1',
+                                public_key: 'pk',
+                                counter: 0,
+                                is_revoked: 0,
+                                created_at: Date.now(),
+                            })
+                        }
+                        return Promise.resolve({ count: 2 })
+                    },
+                    run: () => Promise.resolve({ success: true }),
+                    all: () => Promise.resolve({ results: [] }),
+                }),
+                run: () => Promise.resolve({ success: true }),
+                first: () => Promise.resolve(null),
+                all: () => Promise.resolve({ results: [] }),
+            }),
+        } as unknown as D1Database
+    }
+
+    it('rejects revocation of the current session device with 403', async () => {
+        const authService = createAuthService()
+        const db = makeMockDb()
+        let thrown:unknown
+
+        try {
+            await authService.revokeRegisteredDevice(
+                db, 'user-1', 'device-1', 'device-1',
+            )
+        } catch (err) {
+            thrown = err
+        }
+
+        expect(thrown).toBeInstanceOf(AuthError)
+        const authErr = thrown as AuthError
+        expect(authErr.status).toBe(403)
+        expect(authErr.code).toBe('self_revoke')
+    })
+
+    it('allows revoking a different device', async () => {
+        const authService = createAuthService()
+        const db = makeMockDb()
+
+        // Should not throw — device-1 is not the current session device
+        await expect(
+            authService.revokeRegisteredDevice(
+                db, 'user-1', 'device-1', 'device-2',
+            )
+        ).resolves.toBeUndefined()
     })
 })

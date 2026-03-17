@@ -1,7 +1,14 @@
 @import url("../../_variables.css");
+@import url("@substrate-system/copy-button/css");
+@import url("@substrate-system/dialog/css");
 
 .route.profile {
     min-height: 60vh;
+
+    & copy-button {
+        width: 2rem;
+        height: 2rem;
+    }
 
     & h2 {
         margin-top: 0;
@@ -10,7 +17,9 @@
     & .profile-card {
         margin: 1rem 0;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px #21212114;
+        background-color: white;
+        /* box-shadow: 0 4px 12px #21212114; */
+        box-shadow: var(--card-shadow);
     }
 
     & .profile-fields {
@@ -24,10 +33,13 @@
         font-size: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 3px;
     }
 
     & .profile-field-value {
-        margin: 0.25rem 0 0;
+        margin-top: 0.4rem;
     }
 
     & .profile-sr-only {
@@ -38,5 +50,173 @@
         margin: -1px;
         overflow: hidden;
         border: 0;
+    }
+
+    & .device-management {
+        margin: 2rem 0 1rem;
+
+        & h3 {
+            margin: 0 0 1rem;
+            margin-top: 2rem;
+        }
+    }
+
+    & .device-list {
+        list-style: none;
+        margin: 0 0 1.5rem;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    & .card {
+        flex-direction: row;
+        /* box-shadow: 0 2px 6px #21212110; */
+        box-shadow: var(--card-shadow);
+        padding: 0.75rem 1rem;
+    }
+
+    & .device-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    & .device-revoked-label {
+        margin-left: 0.45rem;
+    }
+
+    & .device-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        min-width: 0;
+    }
+
+    & .device-revoke-btn {
+        flex-shrink: 0;
+    }
+
+    & .add-device-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    & .add-device-label {
+        display: flex;
+        flex-direction: column;
+        min-width: 20rem;
+        gap: 0.25rem;
+    }
+
+    & .add-device-input {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        border: 1px solid;
+        width: 14rem;
+    }
+
+    & .device-error {
+        color: var(--color-error, #c00);
+        font-size: 0.85rem;
+        margin: 0.5rem 0 0;
+        width: 100%;
+    }
+
+    & .device-success {
+        color: var(--color-success, #080);
+        font-size: 0.85rem;
+        margin: 0.5rem 0 0;
+        width: 100%;
+    }
+
+    & .invite-url-label {
+        margin: 0 0 0.5rem;
+    }
+
+    & .invite-url-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    & code.invite-url {
+        word-break: break-all;
+    }
+
+    & .invite-expires {
+        margin: 0.5rem 0 0;
+        color: var(--color-text-muted, #6c757d);
+    }
+
+    & .invitation-list {
+        list-style: none;
+        margin: 0 0 1.5rem;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    & .invitation-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    & .invitation-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    & .invitation-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        min-width: 0;
+    }
+
+    & .invitation-name {
+        font-weight: 500;
+    }
+
+    & .invitation-expires {
+        color: var(--color-text-muted, #6c757d);
+    }
+
+    & .invitation-cancel-btn {
+        flex-shrink: 0;
+    }
+
+    & .device-current {
+        color: var(--color-text-muted, #6c757d);
+        margin-left: 0.4em;
+    }
+
+    & .dialog-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+    }
+
+    & .dialog-revoke-btn button {
+        background: var(--color-danger, #c00);
+        color: #fff;
+        border-color: var(--color-danger, #c00);
+    }
+
+    & .dialog-revoke-btn button:hover {
+        background: var(--color-danger-hover, #a00);
+        border-color: var(--color-danger-hover, #a00);
     }
 }

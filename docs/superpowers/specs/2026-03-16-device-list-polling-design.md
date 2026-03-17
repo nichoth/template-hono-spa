@@ -1,4 +1,4 @@
-# Design: Device List Polling on Profile Page
+# Design: Device List Polling After Invite Creation
 
 **Date**: 2026-03-16
 **Status**: Approved
@@ -12,106 +12,152 @@ successfully added.
 
 ## Goal
 
-Automatically refresh the device list while the user is on the profile
-page and has at least one pending invitation. Stop polling when no
-invitations remain (because the invite was claimed or cancelled).
+After `State.createInvite` succeeds, automatically poll the device
+list in the background until a new device appears. Stop polling when
+a new device is detected or when no pending invitations remain
+(e.g. the invitation was cancelled).
 
 ## Scope
 
 Client-side only. No server changes required.
+No `useEffect` or component lifecycle involved.
 
 ## Design
 
-### Trigger Condition
+### Where polling lives
 
-Polling is active when both of the following are true:
-1. The `ProfileRoute` component is mounted (user is on `/profile`)
-2. At least one pending invitation exists
-   (`pendingInvitations.value.length > 0`)
+Polling is initiated inside `State.createInvite` in
+`src/client/state.ts`, immediately after the invitation POST
+succeeds. It runs in the background — `createInvite` returns the
+invitation result and the polling continues independently.
 
-### Polling Behaviour
+A module-level variable holds the active interval reference so it
+can be cleared from `createInvite` (on a second invite creation),
+from `cancelInvite`, or from within the poll tick itself when a
+stop condition is met.
 
-- Interval: 5 seconds (`DEVICE_POLL_INTERVAL_MS = 5_000`)
-- Each tick calls `State.listDevices(state)` and
-  `State.listInvites(state)`
-- `listDevices` causes the new device to appear in the UI
-- `listInvites` causes `pendingInvitations` to update, which stops
-  the poll once the invite is consumed
+### Baseline
+
+Before starting the interval, capture the set of current device IDs
+from `state.devices.value.data`. This is the baseline for detecting
+new devices.
+
+### Poll tick (every 5 seconds)
+
+1. Skip if `state.devices.value.pending` (in-flight guard)
+2. Call `State.listDevices(state)` and `State.listInvites(state)`
+   - Both are called every tick so `state.invitations` stays fresh.
+     This is what allows the "no invitations remain" stop condition to
+     fire even when the user abandons the flow without explicitly
+     cancelling (e.g. after the 5-minute server-side TTL expires the
+     next `listInvites` response will return an empty list).
+   - Errors inside the tick are swallowed silently by `setInterval`'s
+     async callback — this is acceptable; the next tick retries.
+3. Check stop conditions:
+   - **New device detected**: any device ID in the updated list is
+     absent from the baseline set → clear interval
+   - **No invitations remain**: `state.invitations.value.data` is
+     empty → clear interval
+
+### `cancelInvite` integration
+
+`State.cancelInvite` already calls `State.listInvites(state)`, which
+updates `state.invitations`. On the next poll tick, the "no
+invitations remain" check will catch this and clear the interval.
+No changes to `cancelInvite` are required.
 
 ### Lifecycle
 
 ```
-Component mounts
-  → existing mount useEffect: listDevices + listInvites (unconditional,
-    runs once when isPasskeyUser becomes true)
-  → new polling useEffect: if pendingInvitations > 0, start interval
-    (exits immediately if no pending invitations)
+createInvite called
+  → POST /api/auth/passkey/devices/invite
+  → listInvites (refresh invitation list)
+  → capture baseline device IDs from state.devices.value.data
+  → clear any existing poll interval (idempotent)
+  → start interval (every 5s)
+  → return invitation result
 
-Interval tick (every 5s)
-  → skip if state.devices.value.pending (in-flight guard)
-  → listDevices  (device list refreshes in UI)
-  → listInvites  (invitation count may drop to 0)
+Interval tick
+  → skip if state.devices.value.pending
+  → listDevices
+  → if new device ID found: clear interval
+  → if no invitations remain: clear interval
 
-pendingInvitations drops to 0
-  → component re-renders (Preact signal change)
-  → polling useEffect re-runs with new deps, clears interval
-
-Component unmounts
-  → cleanup clears interval
+cancelInvite called (separately, by user)
+  → DELETE invite
+  → listInvites (invitations drop to 0)
+  → next tick: no invitations remain → clear interval
 ```
 
 ### Implementation
 
-One constant and one `useEffect` added to
-`src/client/routes/profile.ts`:
-
 ```typescript
+// module-level, outside State.*
 const DEVICE_POLL_INTERVAL_MS = 5_000
+let devicePollInterval:ReturnType<typeof setInterval> | null = null
 
-useEffect(() => {
-    if (!pendingInvitations.value.length) return
-    const id = setInterval(() => {
-        if (state.devices.value.pending) return
-        State.listDevices(state)
-        State.listInvites(state)
-    }, DEVICE_POLL_INTERVAL_MS)
-    return () => clearInterval(id)
-}, [pendingInvitations.value.length > 0])
+State.createInvite = async function (
+    state:AppState,
+    deviceName:string,
+):Promise<DeviceInvitation | undefined> {
+    try {
+        const result = await ky.post(
+            '/api/auth/passkey/devices/invite',
+            { json: { deviceName } },
+        ).json<DeviceInvitation & { status:string }>()
+
+        await State.listInvites(state)
+
+        // Capture the current device IDs as a baseline.
+        // If state.devices has never been loaded, baselineIds will
+        // be empty — the first tick will then see all returned
+        // devices as "new" and immediately clear the interval after
+        // one refresh, which is acceptable.
+        const baselineIds = new Set(
+            (state.devices.value.data ?? []).map(d => d.deviceId)
+        )
+
+        // Clear any prior poll (e.g. user created a second invite)
+        if (devicePollInterval !== null) {
+            clearInterval(devicePollInterval)
+        }
+
+        devicePollInterval = setInterval(async () => {
+            if (state.devices.value.pending) return
+            await State.listDevices(state)
+            await State.listInvites(state)
+
+            const newDevice = (state.devices.value.data ?? [])
+                .some(d => !baselineIds.has(d.deviceId))
+            const noInvites = (state.invitations.value.data ?? [])
+                .length === 0
+
+            if (newDevice || noInvites) {
+                clearInterval(devicePollInterval!)
+                devicePollInterval = null
+            }
+        }, DEVICE_POLL_INTERVAL_MS)
+
+        return result
+    } catch (_err) {
+        const err = _err as HTTPError|Error
+        throw err
+    }
+}
 ```
-
-**Signal dependency note**: `pendingInvitations` is a `useComputed`
-signal already consumed in the render body. Because Preact re-renders
-the component whenever a signal read during render changes, the effect
-re-runs with an updated deps array whenever `pendingInvitations.value`
-changes. This is standard Preact signal + `useEffect` interaction —
-not a raw signal subscription.
-
-**In-flight guard**: Each tick checks `state.devices.value.pending`
-before firing. If the previous request is still in flight (e.g. on a
-slow connection), the tick is skipped. Last-write-wins is acceptable
-for these idempotent GET endpoints; the guard prevents double-updates
-to the same signal within a single interval cycle.
 
 ## What This Does Not Include
 
-- No toast or explicit notification message
-- No server-sent events or WebSocket infrastructure
-- No exponential backoff or jitter (not needed at 5s for this use
-  case)
-- No polling when there are no pending invitations (avoids
-  unnecessary load)
+- No `useEffect` or component lifecycle involvement
+- No toast or explicit notification message — device list refreshes
+  automatically via `state.devices` signal
+- No maximum poll duration (invitation TTL is 5 minutes server-side;
+  the server will reject any claim on an expired invite, at which
+  point `listInvites` will return 0 items and stop the poll)
+- No exponential backoff
 
 ## Files Changed
 
 | File | Change |
 |------|--------|
-| `src/client/routes/profile.ts` | Add `DEVICE_POLL_INTERVAL_MS` constant and one `useEffect` |
-
-## Trade-offs
-
-| Concern | Decision |
-|---------|----------|
-| Latency | Up to 5s delay before new device appears — acceptable |
-| Server load | One extra D1 read per 5s per active user with a pending invite — negligible |
-| Complexity | Minimal — reuses existing `State.listDevices` and `State.listInvites` |
-| Cloudflare Workers compatibility | Full — no streaming, no Durable Objects |
+| `src/client/state.ts` | Add `DEVICE_POLL_INTERVAL_MS` constant, `devicePollInterval` module var, polling logic inside `createInvite` |

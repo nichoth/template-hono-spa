@@ -43,7 +43,7 @@ const App:FunctionComponent<{ state:AppState }> = function ({ state }) {
     })
 
     const loginLabel = useComputed<string>(() => {
-        if (!state.user.value.data?.authenticated) return 'anonymous'
+        if (!state.user.value.data?.authenticated) return ''
 
         const identifier = state.user.value.data?.user.identifier
         return `Logged in as ${identifier}`

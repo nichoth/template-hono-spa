@@ -19,7 +19,7 @@ Vitest + `@cloudflare/vitest-pool-workers`
 **Purpose**: No project initialization required — feature modifies existing
 files only. No schema changes needed.
 
-- [ ] T001 Confirm test suite baseline passes: `npm test`
+- [x] T001 Confirm test suite baseline passes: `npm test`
 
 ---
 
@@ -30,7 +30,7 @@ work depends on this function existing.
 
 **⚠️ CRITICAL**: US1 implementation cannot begin until T002 is complete.
 
-- [ ] T002 Add `revokeSessionsByDeviceId(db, deviceId, now)` to
+- [x] T002 Add `revokeSessionsByDeviceId(db, deviceId, now)` to
   `src/server/db/index.ts` — executes
   `UPDATE sessions SET status = 'revoked', revoked_at = ? WHERE device_id = ?
   AND status = 'active'` and returns `Promise<void>`
@@ -51,7 +51,7 @@ are rejected with HTTP 401.
 
 ### Tests for User Story 1
 
-- [ ] T003 [US1] Add integration test `revoke-then-session` to
+- [x] T003 [US1] Add integration test `revoke-then-session` to
   `test/integration.spec.ts`:
   1. Register user + device (mock-passkey pattern)
   2. Confirm email to activate user
@@ -63,7 +63,7 @@ are rejected with HTTP 401.
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Update `revokeRegisteredDevice` in
+- [x] T004 [US1] Update `revokeRegisteredDevice` in
   `src/server/auth/index.ts` to call
   `revokeSessionsByDeviceId(db, deviceId, deps.now())` immediately after the
   `revokeDevice(db, deviceID)` call (depends on T002)
@@ -83,7 +83,7 @@ device B's session token still returns `{ authenticated: true }`.
 
 ### Tests for User Story 2
 
-- [ ] T005 [US2] Add integration test `revoke-one-not-other` to
+- [x] T005 [US2] Add integration test `revoke-one-not-other` to
   `test/integration.spec.ts`:
   1. Register user + device 1 + device 2
   2. Confirm email
@@ -98,10 +98,10 @@ device B's session token still returns `{ authenticated: true }`.
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T006 [P] Verify `test/unit.spec.ts` still passes without modification
+- [x] T006 [P] Verify `test/unit.spec.ts` still passes without modification
   (mock returns `run: () => Promise.resolve({ success: true })` for all
   prepared statements — new `UPDATE sessions` statement is already handled)
-- [ ] T007 Run full test suite and lint: `npm test && npm run lint`
+- [x] T007 Run full test suite and lint: `npm test && npm run lint`
 
 ---
 

@@ -1626,6 +1626,288 @@ describe('Integration tests', () => {
         })
     })
 
+    describe('Device revocation logout', () => {
+        function makeRevokeSessionAuthService (
+            prefix:string,
+            credentialCounterRef:{ value:number }
+        ) {
+            return createAuthService({
+                generateRegistrationOptions:
+                    async (opts) => ({
+                        challenge: 'revoke-logout-challenge',
+                        rp: {
+                            name: opts.rpName,
+                            id: opts.rpID,
+                        },
+                        user: {
+                            id: 'user-id-b64',
+                            name: opts.userName,
+                            displayName: '',
+                        },
+                        pubKeyCredParams: [
+                            {
+                                type: 'public-key',
+                                alg: -7,
+                            },
+                        ],
+                        timeout: opts.timeout,
+                        attestation: 'none',
+                        authenticatorSelection: {
+                            residentKey: 'preferred',
+                            userVerification: 'preferred',
+                        },
+                    }),
+                verifyRegistrationResponse: async () => {
+                    credentialCounterRef.value++
+                    return {
+                        verified: true,
+                        registrationInfo: {
+                            fmt: 'none' as const,
+                            aaguid:
+                                '00000000-0000-0000'
+                                + '-0000-000000000000',
+                            credential: {
+                                id: `${prefix}-${
+                                    credentialCounterRef.value
+                                }`,
+                                publicKey: new Uint8Array(
+                                    [credentialCounterRef.value]
+                                ),
+                                counter: 0,
+                                transports: [
+                                    'internal' as const,
+                                ],
+                            },
+                            credentialType:
+                                'public-key' as const,
+                            attestationObject:
+                                new Uint8Array(0),
+                            userVerified: true,
+                            credentialDeviceType:
+                                'multiDevice' as const,
+                            credentialBackedUp: true,
+                        },
+                    }
+                },
+                generateAuthenticationOptions:
+                    async () => ({ challenge: '', rpId: '' }),
+                verifyAuthenticationResponse: async () => ({
+                    verified: true,
+                    authenticationInfo: {} as never,
+                }),
+                now: () => Date.now(),
+                createID: () => crypto.randomUUID(),
+            })
+        }
+
+        async function setupUserWithTwoDevices (
+            db:D1Database,
+            identifier:string,
+        ) {
+            const credRef = { value: 0 }
+            const prefix = `cred-${crypto.randomUUID()}`
+            const authService =
+                makeRevokeSessionAuthService(prefix, credRef)
+
+            const startResult =
+                await authService.startRegistration(
+                    db,
+                    'http://localhost/register/start',
+                    { identifier },
+                )
+            const finishResult =
+                await authService.finishRegistration(
+                    db,
+                    'http://localhost/register/finish',
+                    {
+                        challengeReference:
+                            startResult.challengeReference,
+                        credential: {} as never,
+                    },
+                )
+            await authService.confirmEmail(db, {
+                code: finishResult.confirmationCode,
+                identifier,
+            })
+
+            const userRow = await db.prepare(
+                'SELECT id FROM users'
+                + ' WHERE identifier = ? LIMIT 1'
+            ).bind(
+                identifier.toLowerCase()
+            ).first<{ id:string }>()
+            const userId = userRow!.id
+
+            const devices1 =
+                await authService.listRegisteredDevices(
+                    db, userId,
+                )
+            const device1Id = devices1[0].id
+
+            const inv =
+                await authService.createDeviceInvitation(
+                    db,
+                    'http://localhost/add',
+                    userId,
+                    'Second Device',
+                )
+            const claimStart =
+                await authService.startInviteClaim(
+                    db,
+                    'http://localhost/add',
+                    inv.inviteCode,
+                )
+            await authService.finishInviteClaim(
+                db,
+                'http://localhost/add',
+                inv.inviteCode,
+                {
+                    challengeReference:
+                        claimStart.challengeReference,
+                    credential: {} as never,
+                },
+            )
+
+            const devices2 =
+                await authService.listRegisteredDevices(
+                    db, userId,
+                )
+            const device2Id =
+                devices2.find(d => d.id !== device1Id)!.id
+
+            return { authService, userId, device1Id, device2Id }
+        }
+
+        it(
+            'revoked device session is rejected immediately',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier =
+                    `revoke-sess-${crypto.randomUUID()}`
+                    + '@example.com'
+
+                const {
+                    authService,
+                    userId,
+                    device1Id,
+                } = await setupUserWithTwoDevices(
+                    db, identifier,
+                )
+
+                const sessionToken =
+                    `tok-revoke-${crypto.randomUUID()}`
+                const now = Date.now()
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at, device_id)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                    device1Id,
+                ).run()
+
+                await authService.revokeRegisteredDevice(
+                    db, userId, device1Id, null,
+                )
+
+                const session =
+                    await authService.getCurrentSession(
+                        db, sessionToken,
+                    )
+                expect(session.authenticated).toBe(false)
+            }
+        )
+
+        it(
+            'revoking device A does not affect device B session',
+            async () => {
+                const db = env.AUTH_DB
+                await db.batch(
+                    AUTH_SCHEMA_STATEMENTS.map(
+                        s => db.prepare(s)
+                    )
+                )
+
+                const identifier =
+                    `revoke-scope-${crypto.randomUUID()}`
+                    + '@example.com'
+
+                const {
+                    authService,
+                    userId,
+                    device1Id,
+                    device2Id,
+                } = await setupUserWithTwoDevices(
+                    db, identifier,
+                )
+
+                const now = Date.now()
+                const sessionToken1 =
+                    `tok-dev1-${crypto.randomUUID()}`
+                const sessionToken2 =
+                    `tok-dev2-${crypto.randomUUID()}`
+
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at, device_id)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken1,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                    device1Id,
+                ).run()
+
+                await db.prepare(
+                    'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at, device_id)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                ).bind(
+                    crypto.randomUUID(),
+                    userId,
+                    sessionToken2,
+                    'active',
+                    now,
+                    now + 86400000,
+                    now,
+                    device2Id,
+                ).run()
+
+                await authService.revokeRegisteredDevice(
+                    db, userId, device1Id, null,
+                )
+
+                const session2 =
+                    await authService.getCurrentSession(
+                        db, sessionToken2,
+                    )
+                expect(session2.authenticated).toBe(true)
+            }
+        )
+    })
+
     describe('Actionable startup failures', () => {
         it('returns actionable prerequisite message',
             async () => {

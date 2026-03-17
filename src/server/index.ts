@@ -85,6 +85,9 @@ app.get('/api/health', (c) => {
 })
 
 app.get('/api/foobar', (c) => {
+    if (c.req.method !== 'GET') {
+        return new Response(null, { status: 405 })
+    }
     return c.json(FOOBAR_RESPONSE, 200)
 })
 
@@ -365,15 +368,6 @@ app.delete(
     },
 )
 
-async function checkInviteRateLimit (
-    c:Context<{ Bindings:Bindings }>,
-):Promise<boolean> {
-    if (!c.env.INVITE_RATE_LIMIT) return true
-    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
-    return success
-}
-
 app.get('/api/auth/passkey/devices/invite/:code', async (c) => {
     if (!await checkInviteRateLimit(c)) {
         return c.json({ error: 'rate_limited' }, 429)
@@ -652,4 +646,13 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
 
         return c.text(message, 500)
     }
+}
+
+async function checkInviteRateLimit (
+    c:Context<{ Bindings:Bindings }>,
+):Promise<boolean> {
+    if (!c.env.INVITE_RATE_LIMIT) return true
+    const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
+    const { success } = await c.env.INVITE_RATE_LIMIT.limit({ key: ip })
+    return success
 }

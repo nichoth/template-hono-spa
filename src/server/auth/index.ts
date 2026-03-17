@@ -32,6 +32,7 @@ import {
     parseChallengeMetadata,
     revokeDevice,
     revokeSession,
+    revokeSessionsByDeviceId,
     touchSession,
     updateDeviceUsage,
     activateUser,
@@ -692,6 +693,9 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         }
 
         await revokeDevice(db, deviceID)
+        await revokeSessionsByDeviceId(
+            db, deviceID, deps.now(),
+        )
     }
 
     async function createDeviceInvitation (

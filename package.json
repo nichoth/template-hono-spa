@@ -12,6 +12,7 @@
     "build": "rm -rf ./public && mkdir -p ./public/client && echo '{}' > ./public/client/vite-manifest.json && vite build",
     "start": "vite",
     "toc": "markdown-toc --maxdepth 3 -i README.md",
+    "reset": "rm -rf .wrangler/state",
     "preversion": "npm run lint",
     "version": "auto-changelog --template keepachangelog --breaking-pattern 'BREAKING CHANGE' && git add CHANGELOG.md",
     "postversion": "git push --follow-tags",

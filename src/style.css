@@ -18,6 +18,10 @@
     min-width: 0;
 }
 
+button {
+    cursor: pointer;
+}
+
 hr {
     margin: 2rem 0;
 }

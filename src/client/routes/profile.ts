@@ -1,6 +1,6 @@
 import { type FunctionComponent } from 'preact'
-import { useCallback, useEffect, useRef } from 'preact/hooks'
-import { useComputed, useSignal } from '@preact/signals'
+import { useCallback, useRef, useEffect } from 'preact/hooks'
+import { useComputed, useSignal, useSignalEffect } from '@preact/signals'
 import { html } from 'htm/preact'
 import { SubstrateButton } from '@substrate-system/button'
 import { SubstrateInput } from '@substrate-system/input'
@@ -16,11 +16,10 @@ import {
 import {
     formatSessionExpiration,
     type SessionExpirationResult,
-} from '../utils/session-expiration.js'
+} from '../util/session-expiration.js'
 import './profile.css'
 import { ELLIPSIS } from '../constants.js'
 import Debug from '@substrate-system/debug'
-import '@substrate-system/button/css'
 
 const debug = Debug('template:view')
 
@@ -31,7 +30,7 @@ export const ProfileRoute:FunctionComponent<{
         return state.user.value.data?.authenticated === true
     })
 
-    const isPasskeyUser = useComputed(() => {
+    const isPasskeyUser = useComputed<boolean>(() => {
         const session = state.user.value.data
         if (session?.authenticated !== true) return false
         const method = session.loginMethod ?? session.user?.login_method ?? null
@@ -83,14 +82,15 @@ export const ProfileRoute:FunctionComponent<{
 
     const addDeviceName = useSignal('')
     const addDevicePending = useSignal(false)
-    const addDeviceError = useSignal<string | null>(null)
-    const lastInvite = useSignal<DeviceInvitation | null>(null)
-    const revokePending = useSignal<string | null>(null)
-    const revokeError = useSignal<string | null>(null)
-    const revokeTarget = useSignal<DeviceInfo | null>(null)
-    const revokeDialogError = useSignal<string | null>(null)
-    const revokeDialogRef = useRef<ModalWindow | null>(null)
-    const cancelPending = useSignal<string | null>(null)
+    const addDeviceError = useSignal<string|null>(null)
+    const lastInvite = useSignal<DeviceInvitation|null>(null)
+    const revokePending = useSignal<string|null>(null)
+    const revokeError = useSignal<string|null>(null)
+    const revokeTarget = useSignal<DeviceInfo|null>(null)
+    const revokeDialogOpen = useSignal(false)
+    const revokeDialogError = useSignal<string|null>(null)
+    const revokeDialogRef = useRef<ModalWindow|null>(null)
+    const cancelPending = useSignal<string|null>(null)
     const currentDeviceId = useComputed(() => {
         const data = state.user.value.data
         if (!data || data.authenticated !== true) return null
@@ -101,22 +101,22 @@ export const ProfileRoute:FunctionComponent<{
         return state.invitations.value.data ?? []
     })
 
-    useEffect(() => {
-        if (isPasskeyUser.value) {
-            State.listDevices(state)
-            State.listInvites(state)
-        }
-    }, [isPasskeyUser.value])
+    // useEffect(() => {
+    //     if (isPasskeyUser.value) {
+    //         State.listDevices(state)
+    //         State.listInvites(state)
+    //     }
+    // }, [isPasskeyUser.value])
 
-    useEffect(() => {
+    useSignalEffect(() => {
         const modal = revokeDialogRef.current
         if (!modal) return
-        if (revokeTarget.value) {
+        if (revokeDialogOpen.value) {
             modal.open()
         } else {
             modal.close()
         }
-    }, [revokeTarget.value])
+    })
 
     const onAddDevice = useCallback(async () => {
         addDevicePending.value = true
@@ -172,6 +172,7 @@ export const ProfileRoute:FunctionComponent<{
         try {
             await State.revokeDevice(state, device.deviceId)
             revokeTarget.value = null
+            revokeDialogOpen.value = false
         } catch (_err) {
             const err = _err as Error
             revokeDialogError.value = (
@@ -249,7 +250,7 @@ export const ProfileRoute:FunctionComponent<{
                     </div>
                 </dl>
             </section>` :
-            html`<p>Profile data goes here.</p>`}
+            null}
 
         ${isPasskeyUser.value ? html`
             <section class="device-management" aria-label="Registered devices">
@@ -293,6 +294,7 @@ export const ProfileRoute:FunctionComponent<{
                                     type="button"
                                     onClick=${() => {
                                         revokeTarget.value = device
+                                        revokeDialogOpen.value = true
                                     }}
                                     disabled=${!canRevoke.value ||
                                         device.deviceId ===
@@ -352,6 +354,7 @@ export const ProfileRoute:FunctionComponent<{
                             type="button"
                             onClick=${() => {
                                 revokeTarget.value = null
+                                revokeDialogOpen.value = false
                             }}
                         >
                             Cancel

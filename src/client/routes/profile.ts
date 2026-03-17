@@ -190,13 +190,12 @@ export const ProfileRoute:FunctionComponent<{
         }
     }, [state])
 
-    const activeDevices = useComputed(() => {
-        const data = state.devices.value.data ?? []
-        return data.filter((d:DeviceInfo) => !d.isRevoked)
+    const deviceList = useComputed(() => {
+        return state.devices.value.data ?? []
     })
     const canRevoke = useComputed(() => {
-        const data = state.devices.value.data ?? []
-        return data.filter(
+        if (deviceList.value.length === 0) return false
+        return deviceList.value.filter(
             (d:DeviceInfo) => !d.isRevoked
         ).length > 1
     })
@@ -269,14 +268,24 @@ export const ProfileRoute:FunctionComponent<{
                     </p>
                 ` : null}
 
-                ${activeDevices.value.length > 0 ? html`
+                ${deviceList.value.length > 0 ? html`
                     <ul class="device-list" role="list">
-                        ${activeDevices.value.map(
+                        ${deviceList.value.map(
                             (device:DeviceInfo) => html`
-                            <li class="device-item card" key=${device.deviceId}>
+                            <li
+                                class=${device.isRevoked ?
+                                    'device-item card revoked' :
+                                    'device-item card'
+                                }
+                                key=${device.deviceId}
+                            >
                                 <div class="device-info">
                                     <span class="device-name">
                                         ${device.credentialName || 'Unnamed'}
+                                        ${device.isRevoked ? html`
+                                            <span class="device-revoked-label">
+                                                Revoked
+                                            </span>` : null}
                                         ${device.deviceId ===
                                             currentDeviceId.value ?
                                             html`<span
@@ -296,6 +305,7 @@ export const ProfileRoute:FunctionComponent<{
                                         }
                                     </span>
                                 </div>
+                                ${!device.isRevoked ? html`
                                 <${SubstrateButton.TAG}
                                     class="device-revoke-btn"
                                     type="button"
@@ -332,7 +342,7 @@ export const ProfileRoute:FunctionComponent<{
                                     }}
                                 >
                                     Revoke
-                                <//>
+                                <//>` : null}
                             </li>`,
                         )}
                     </ul>

@@ -12,16 +12,16 @@ description: "Task list for implementing the Show Revoked Devices changes"
 ## Phase 1: Setup (Shared Infrastructure)
 **Purpose**: Align on scope, priorities, and existing data/state before touching source files
 
-- [ ] T001 [P] Review `specs/050-show-revoked-devices/plan.md` to confirm the exact files and APIs that must change to include revoked devices in the profile list.
-- [ ] T002 [P] Review `specs/050-show-revoked-devices/spec.md` to capture the P1/P2 narratives, success criteria, and independent test steps for later verification.
-- [ ] T003 [P] Review `specs/050-show-revoked-devices/data-model.md` and `specs/050-show-revoked-devices/research.md` to understand the `devices` table, retained `is_revoked` flag, and UI treatment decisions that drive the implementation.
+- [X] T001 [P] Review `specs/050-show-revoked-devices/plan.md` to confirm the exact files and APIs that must change to include revoked devices in the profile list.
+- [X] T002 [P] Review `specs/050-show-revoked-devices/spec.md` to capture the P1/P2 narratives, success criteria, and independent test steps for later verification.
+- [X] T003 [P] Review `specs/050-show-revoked-devices/data-model.md` and `specs/050-show-revoked-devices/research.md` to understand the `devices` table, retained `is_revoked` flag, and UI treatment decisions that drive the implementation.
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 **Purpose**: Make the backend surface all devices so any client rendering change can be built on the same data
 
-- [ ] T004 In `src/server/auth/index.ts`, keep `ensureAuthSchema` and switch `listRegisteredDevices` to call `listDevicesByUserId` instead of `listActiveDevicesByUserId`, updating the import list so the auth API now returns every device (revoked and active).
+- [X] T004 In `src/server/auth/index.ts`, keep `ensureAuthSchema` and switch `listRegisteredDevices` to call `listDevicesByUserId` instead of `listActiveDevicesByUserId`, updating the import list so the auth API now returns every device (revoked and active).
 
 ---
 
@@ -30,9 +30,9 @@ description: "Task list for implementing the Show Revoked Devices changes"
 **Independent Test**: As an authenticated passkey user with both active and revoked devices, visit `/profile` and confirm all entries appear in the Devices list with revoked rows visually marked while active rows remain unchanged.
 
 ### Implementation for User Story 1
-- [ ] T005 [US1] Replace all uses of the `activeDevices` computed signal inside `src/client/routes/profile.ts` so the rendered list iterates directly over `state.devices.value.data ?? []`, guaranteeing both active and revoked devices are emitted in the DOM.
-- [ ] T006 [US1] In `src/client/routes/profile.ts`, apply `device-item--revoked` when `device.isRevoked` is true, insert a `<span class="device-revoked-label">Revoked</span>` beside the device name, and keep the current-device indicator logic intact so revoked rows stay informative.
-- [ ] T007 [US1] Add `.device-item--revoked` (opacity 0.4) and `.device-revoked-label` (uppercased, smaller text, letter spacing) rules in `src/client/routes/profile.css` to match the requested visual treatment from the research decisions.
+- [X] T005 [US1] Replace all uses of the `activeDevices` computed signal inside `src/client/routes/profile.ts` so the rendered list iterates directly over `state.devices.value.data ?? []`, guaranteeing both active and revoked devices are emitted in the DOM.
+- [X] T006 [US1] In `src/client/routes/profile.ts`, apply `device-item--revoked` when `device.isRevoked` is true, insert a `<span class="device-revoked-label">Revoked</span>` beside the device name, and keep the current-device indicator logic intact so revoked rows stay informative.
+- [X] T007 [US1] Add `.device-item--revoked` (opacity 0.4) and `.device-revoked-label` (uppercased, smaller text, letter spacing) rules in `src/client/routes/profile.css` to match the requested visual treatment from the research decisions.
 
 ---
 
@@ -41,8 +41,8 @@ description: "Task list for implementing the Show Revoked Devices changes"
 **Independent Test**: Visit `/profile` with revoked devices and assert that the revoked rows render no Revoke button yet continue to disable the button for the last remaining active device/current device.
 
 ### Implementation for User Story 2
-- [ ] T008 [US2] Wrap the `Revoke` button markup in `src/client/routes/profile.ts` so it only renders when `device.isRevoked` is false, while preserving the existing `disabled`, `title`, and `current device` checks for active entries.
-- [ ] T009 [US2] Adjust the `canRevoke` computed signal in `src/client/routes/profile.ts` so it counts only non-revoked devices (still filtering to `state.devices.value.data ?? []`) while continuing to protect the current session device and the last active device logic.
+- [X] T008 [US2] Wrap the `Revoke` button markup in `src/client/routes/profile.ts` so it only renders when `device.isRevoked` is false, while preserving the existing `disabled`, `title`, and `current device` checks for active entries.
+- [X] T009 [US2] Adjust the `canRevoke` computed signal in `src/client/routes/profile.ts` so it counts only non-revoked devices (still filtering to `state.devices.value.data ?? []`) while continuing to protect the current session device and the last active device logic.
 
 ---
 
@@ -50,7 +50,7 @@ description: "Task list for implementing the Show Revoked Devices changes"
 **Purpose**: Capture verification evidence and keep the feature discovery documented.
 
 - [ ] T010 Run `npm test` as defined in `package.json` to ensure the existing automated suite stays green after the changes.
-- [ ] T011 [P] Record the manual verification steps (US1 and US2 independent tests) inside `specs/050-show-revoked-devices/checklists/requirements.md` or an adjacent verification note so the QA tester knows what to rerun if needed.
+- [X] T011 [P] Record the manual verification steps (US1 and US2 independent tests) inside `specs/050-show-revoked-devices/checklists/requirements.md` or an adjacent verification note so the QA tester knows what to rerun if needed.
 
 ---
 

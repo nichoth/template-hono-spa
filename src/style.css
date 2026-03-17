@@ -22,6 +22,12 @@ button {
     cursor: pointer;
 }
 
+
+.revoked {
+    opacity: 0.4;
+}
+
+
 hr {
     margin: 2rem 0;
 }

@@ -36,3 +36,8 @@ to planning
   list.
 - No clarifications were needed; all decisions have clear reasonable defaults.
 - Ready to proceed to `/speckit.plan`.
+
+## Manual verification
+
+- Visit `/profile` while signed in with a passkey account that has at least one active and one revoked device; confirm every device appears in the list, revoked rows show the "Revoked" label with reduced opacity, and the current device indicator still renders for the active entry.
+- Visit `/profile` with revoked devices and verify that revoked entries have no "Revoke" button while active entries still show the button, including the guardrails for the current device and being the only remaining active device.

@@ -22,8 +22,8 @@ implementation and testing.
 to an existing component. These tasks establish the signal/ref scaffolding
 that US1 and US2 both depend on.
 
-- [ ] T001 Add modal state signals and ref to profile component in `src/client/routes/profile.ts`: import `ModalWindow` from `@substrate-system/dialog`; add `revokeTarget = useSignal<DeviceInfo | null>(null)`; add `revokeDialogError = useSignal<string | null>(null)`; add `revokeDialogRef = useRef<ModalWindow | null>(null)`; add `useEffect` to call `.open()` / `.close()` on ref when `revokeTarget` changes
-- [ ] T002 Refactor revoke button handler in `src/client/routes/profile.ts`: change `onClick` from calling `onRevokeDevice` directly to `revokeTarget.value = device`; remove `spinning`/`disabled` attributes from the list button
+- [X] T001 Add modal state signals and ref to profile component in `src/client/routes/profile.ts`: import `ModalWindow` from `@substrate-system/dialog`; add `revokeTarget = useSignal<DeviceInfo | null>(null)`; add `revokeDialogError = useSignal<string | null>(null)`; add `revokeDialogRef = useRef<ModalWindow | null>(null)`; add `useEffect` to call `.open()` / `.close()` on ref when `revokeTarget` changes
+- [X] T002 Refactor revoke button handler in `src/client/routes/profile.ts`: change `onClick` from calling `onRevokeDevice` directly to `revokeTarget.value = device`; remove `spinning`/`disabled` attributes from the list button
 
 **Checkpoint**: Modal signals and button handler wired — user story work
 can now begin.
@@ -42,9 +42,9 @@ device, observe the confirmation modal with the device name, click
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Add modal submit handler in `src/client/routes/profile.ts`: rename/refactor `onRevokeDevice` to set `revokePending`, clear `revokeDialogError`, call `State.revokeDevice`, set `revokeTarget.value = null` on success, set `revokeDialogError.value = err.message` on failure, clear `revokePending` in finally
-- [ ] T004 [US1] Render confirmation modal markup in `src/client/routes/profile.ts`: add `modal-window` element below device list with `noclick` when `revokePending` is set; include `<h2>` with device name, `.dialog-actions` div containing Cancel button and Revoke button (with `spinning`/`disabled` wired to `revokePending`), and `<p class="device-error">` for `revokeDialogError`
-- [ ] T005 [P] [US1] Update integration tests for confirm flow in `test/integration.spec.ts`: verify clicking Revoke does not call API immediately; modal appears with correct device name; clicking "Revoke this device" in modal calls API and closes modal on success; API error leaves modal open with error text visible
+- [X] T003 [US1] Add modal submit handler in `src/client/routes/profile.ts`: rename/refactor `onRevokeDevice` to set `revokePending`, clear `revokeDialogError`, call `State.revokeDevice`, set `revokeTarget.value = null` on success, set `revokeDialogError.value = err.message` on failure, clear `revokePending` in finally
+- [X] T004 [US1] Render confirmation modal markup in `src/client/routes/profile.ts`: add `modal-window` element below device list with `noclick` when `revokePending` is set; include `<h2>` with device name, `.dialog-actions` div containing Cancel button and Revoke button (with `spinning`/`disabled` wired to `revokePending`), and `<p class="device-error">` for `revokeDialogError`
+- [X] T005 [P] [US1] Update integration tests for confirm flow in `test/integration.spec.ts`: verify clicking Revoke does not call API immediately; modal appears with correct device name; clicking "Revoke this device" in modal calls API and closes modal on success; API error leaves modal open with error text visible
 
 **Checkpoint**: User Story 1 is fully functional — confirm-and-revoke
 flow works end to end.
@@ -68,7 +68,7 @@ provided by `@substrate-system/dialog` automatically. The Cancel button
 in the modal markup (added in T004) sets `revokeTarget.value = null`.
 This phase adds only the integration tests to verify each cancel path.
 
-- [ ] T006 [US2] Update integration tests for cancel paths in `test/integration.spec.ts`: verify Cancel button closes modal without API call; verify backdrop click closes modal without API call; verify Escape key closes modal without API call; verify device list is unchanged after each cancel path
+- [X] T006 [US2] Update integration tests for cancel paths in `test/integration.spec.ts`: verify Cancel button closes modal without API call; verify backdrop click closes modal without API call; verify Escape key closes modal without API call; verify device list is unchanged after each cancel path
 
 **Checkpoint**: User Stories 1 and 2 both function independently and
 all cancel paths are covered by tests.
@@ -79,8 +79,8 @@ all cancel paths are covered by tests.
 
 **Purpose**: Visual refinement and final validation.
 
-- [ ] T007 [P] Add danger button CSS in `src/client/routes/profile.css`: inside `.route.profile`, add `& .dialog-revoke-btn` rule with `--substrate-button-bg`, `--substrate-button-bg-hover`, `--substrate-button-color` CSS variables (verify exact variable names against `@substrate-system/button` source)
-- [ ] T008 Run `npm test && npm run lint` and fix any failures
+- [X] T007 [P] Add danger button CSS in `src/client/routes/profile.css`: inside `.route.profile`, add `& .dialog-revoke-btn` rule with `--substrate-button-bg`, `--substrate-button-bg-hover`, `--substrate-button-color` CSS variables (verify exact variable names against `@substrate-system/button` source)
+- [X] T008 Run `npm test && npm run lint` and fix any failures
 
 ---
 

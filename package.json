@@ -41,7 +41,7 @@
     "nanoid": "^5.1.6",
     "nanoid-dictionary": "^5.0.0",
     "preact": "^10.28.3",
-    "route-event": "^7.4.0"
+    "route-event": "^8.0.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.28.0",

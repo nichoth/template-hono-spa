@@ -1,10 +1,7 @@
 import { type Signal, signal } from '@preact/signals'
 import ky, { type HTTPError } from 'ky'
 import Route from 'route-event'
-import {
-    type RequestFor,
-    RequestState,
-} from '@substrate-system/state'
+import { type RequestFor, RequestState } from '@substrate-system/state'
 import Debug from '@substrate-system/debug'
 import {
     startAuthentication as beginBrowserAuthentication,
@@ -125,13 +122,13 @@ export type DeviceAddedResponse = {
 export type DeviceInvitation = {
     inviteCode:string;
     inviteUrl:string;
-    deviceName:string | null;
+    deviceName:string|null;
     expiresAt:string;
 }
 
 export type PendingInvitation = {
     inviteCode:string;
-    deviceName:string | null;
+    deviceName:string|null;
     status:string;
     expiresAt:string;
     createdAt:string;
@@ -140,18 +137,10 @@ export type PendingInvitation = {
 export type AppState = {
     route:Signal<string>;
     count:Signal<number>;
-    user:Signal<RequestFor<
-        SessionResponse, HTTPError|Error
-    >>;
-    response:Signal<RequestFor<
-        { message:string }, HTTPError|Error
-    >>;
-    devices:Signal<RequestFor<
-        DeviceInfo[], HTTPError|Error
-    >>;
-    invitations:Signal<RequestFor<
-        PendingInvitation[], HTTPError|Error
-    >>;
+    user:Signal<RequestFor<SessionResponse, HTTPError|Error>>;
+    response:Signal<RequestFor<{ message:string }, HTTPError|Error>>;
+    devices:Signal<RequestFor<DeviceInfo[], HTTPError|Error>>;
+    invitations:Signal<RequestFor<PendingInvitation[], HTTPError|Error>>;
     logoutInProgress:Signal<boolean>;
     logoutError:Signal<string | null>;
     _setRoute?:(path:string) => void;
@@ -162,21 +151,16 @@ const { start, set, error } = RequestState
 export function State ():AppState {
     const state:AppState = {
         route: signal<string>(location.pathname),
-        user: signal<RequestFor<
-            SessionResponse, HTTPError|Error
-        >>(RequestState()),
-        response: signal<RequestFor<
-            { message:string }, HTTPError|Error
-        >>(RequestState()),
-        devices: signal<RequestFor<
-            DeviceInfo[], HTTPError|Error
-        >>(RequestState()),
-        invitations: signal<RequestFor<
-            PendingInvitation[], HTTPError|Error
-        >>(RequestState()),
+        user: signal<RequestFor<SessionResponse, HTTPError|Error>>(RequestState()),
+        // just for demo
+        response: signal<RequestFor<{ message:string }, HTTPError|Error>>(RequestState()),
+        devices: signal<RequestFor<DeviceInfo[], HTTPError|Error>>(RequestState()),
+        invitations: signal<RequestFor<PendingInvitation[], HTTPError|Error>>(
+            RequestState()
+        ),
         count: signal<number>(0),
         logoutInProgress: signal<boolean>(false),
-        logoutError: signal<string | null>(null),
+        logoutError: signal<string|null>(null),
     }
 
     const onRoute = Route()
@@ -263,7 +247,7 @@ State.loginWithPasskey = async function (
 }
 
 State.registerWithPasskey = async function (
-    state:AppState,
+    _state:AppState,
     values:PasskeyRegistrationValues,
 ) {
     try {

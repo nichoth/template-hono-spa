@@ -39,7 +39,7 @@
     }
 
     & .profile-field-value {
-        margin: 0.25rem 0 0;
+        margin-top: 0.4rem;
     }
 
     & .profile-sr-only {
@@ -83,6 +83,10 @@
         justify-content: space-between;
         gap: 1rem;
         padding: 0.75rem 1rem;
+    }
+
+    & .device-revoked-label {
+        margin-left: 0.45rem;
     }
 
     & .device-info {

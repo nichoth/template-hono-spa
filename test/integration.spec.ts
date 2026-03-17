@@ -1336,9 +1336,17 @@ describe('Integration tests', () => {
                     await authService.listRegisteredDevices(
                         db, userId,
                     )
-                expect(devicesAfterRevoke.length).toBe(1)
-                expect(devicesAfterRevoke[0].is_revoked)
-                    .toBe(0)
+                expect(devicesAfterRevoke.length).toBe(2)
+                expect(
+                    devicesAfterRevoke.some(
+                        (d) => d.is_revoked === 0,
+                    ),
+                ).toBe(true)
+                expect(
+                    devicesAfterRevoke.some(
+                        (d) => d.is_revoked === 1,
+                    ),
+                ).toBe(true)
             }
         )
     })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatSessionExpiration } from '../src/client/utils/session-expiration.js'
+import { formatSessionExpiration } from '../src/client/util/session-expiration.js'
 
 describe('formatSessionExpiration', () => {
     it('formats a valid ISO timestamp as YYYY-MM-DD, h:mmam/pm', () => {

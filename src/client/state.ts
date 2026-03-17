@@ -7,6 +7,7 @@ import {
     startAuthentication as beginBrowserAuthentication,
     startRegistration as beginBrowserRegistration,
 } from '@simplewebauthn/browser'
+import { when } from './util/index.js'
 import type {
     AuthenticationResponseJSON,
     PublicKeyCredentialCreationOptionsJSON,
@@ -175,6 +176,13 @@ export function State ():AppState {
             )
         }
         window.scrollTo(0, 0)
+    })
+
+    // setup effect-based state machine,
+    // eg when we have a `user`, then also fetch their devices
+    when(state.user, () => {
+        // fetch the device list
+        State.listDevices(state)
     })
 
     return state

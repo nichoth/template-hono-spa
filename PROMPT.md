@@ -15,7 +15,7 @@ Build a robust, production-ready web app.
    every session.
 2. SCOPE: Pick the highest priority task where `passes: false` OR where
    `passes` is not yet defined.. Work ONLY on that task.
-3. VERIFY: You must run `npm run lint:ci` and `npm test:ci` after any code change.
+3. VERIFY: You must run `npm run lint` and `npm test` after any code change.
    Results are saved to `lint-output.txt` and `test-output.txt`.
 4. DOCUMENT: Update `progress.log` with what was changed and any new
    patterns discovered.

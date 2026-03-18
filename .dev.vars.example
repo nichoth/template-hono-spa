@@ -1,3 +1,4 @@
 NODE_ENV="development"
 STAGING_PW="abc123"
+STAGING_USERNAME="admin"
 RESEND_API_KEY=""

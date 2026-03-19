@@ -79,6 +79,11 @@ export const ProfileRoute:FunctionComponent<{
     const devicesLoading = useComputed(() => {
         return state.devices.value.pending ?? false
     })
+    const devicesError = useComputed(() => {
+        const err = state.devices.value.error
+        if (!err) return null
+        return err.message || 'Failed to load devices.'
+    })
 
     const addDeviceName = useSignal('')
     const addDevicePending = useSignal(false)
@@ -192,6 +197,13 @@ export const ProfileRoute:FunctionComponent<{
 
     const deviceList = useComputed(() => {
         return state.devices.value.data ?? []
+    })
+    const showEmptyDevices = useComputed(() => {
+        return (
+            !devicesLoading.value &&
+            devicesError.value === null &&
+            deviceList.value.length === 0
+        )
     })
     const canRevoke = useComputed(() => {
         if (deviceList.value.length === 0) return false
@@ -346,6 +358,18 @@ export const ProfileRoute:FunctionComponent<{
                             </li>`,
                         )}
                     </ul>
+                ` : null}
+
+                ${showEmptyDevices.value ? html`
+                    <p class="devices-empty" role="status">
+                        No registered devices yet.
+                    </p>
+                ` : null}
+
+                ${devicesError.value ? html`
+                    <p class="device-error" role="status">
+                        ${devicesError.value}
+                    </p>
                 ` : null}
 
                 ${revokeError.value ? html`

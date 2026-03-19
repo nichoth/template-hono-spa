@@ -26,10 +26,15 @@ Verify that `/profile` shows the authenticated user’s registered devices on fi
    npm test -- test/state-polling.spec.ts test/integration.spec.ts
    ```
 
+   Focus points:
+   - `test/state-polling.spec.ts` proves device loading starts only after `State.restoreSession()` resolves.
+   - `test/integration.spec.ts` keeps the current session device visible across `/api/session` and `/api/auth/passkey/devices`.
+   - `test/unit.spec.ts` keeps the profile route source aligned with explicit loading, empty, and error messaging.
+
 2. Run the full validation suite before completing implementation:
 
    ```bash
-   npm run lint
+    npm run lint
    npm test
    ```
 

@@ -17,8 +17,8 @@
 
 **Purpose**: Prepare the existing test files to express the regression clearly before changing production behavior.
 
-- [ ] T001 Add reusable authenticated-session and registered-device fixtures in `test/state-polling.spec.ts`
-- [ ] T002 [P] Add reusable profile-route source lookups for `src/client/routes/profile.ts` in `test/unit.spec.ts`
+- [X] T001 Add reusable authenticated-session and registered-device fixtures in `test/state-polling.spec.ts`
+- [X] T002 [P] Add reusable profile-route source lookups for `src/client/routes/profile.ts` in `test/unit.spec.ts`
 
 ---
 
@@ -28,9 +28,9 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Write a failing regression test in `test/state-polling.spec.ts` proving `State.listDevices` does not run before `State.restoreSession` resolves
-- [ ] T004 Implement a post-session-restoration device-loading trigger in `src/client/state.ts` so device fetches start only after the resolved authenticated session is available
-- [ ] T005 Remove or narrow the one-shot `when()` dependency in `src/client/state.ts` and `src/client/util/index.ts` so device loading cannot fire from the initial truthy `RequestState`
+- [X] T003 Write a failing regression test in `test/state-polling.spec.ts` proving `State.listDevices` does not run before `State.restoreSession` resolves
+- [X] T004 Implement a post-session-restoration device-loading trigger in `src/client/state.ts` so device fetches start only after the resolved authenticated session is available
+- [X] T005 Remove or narrow the one-shot `when()` dependency in `src/client/state.ts` and `src/client/util/index.ts` so device loading cannot fire from the initial truthy `RequestState`
 
 **Checkpoint**: Session restoration now governs device loading, and the sequencing regression test passes.
 
@@ -46,14 +46,14 @@
 
 > **NOTE: Write these tests before implementation changes for this story and confirm they fail first**
 
-- [ ] T006 [P] [US1] Add source-level regression assertions for populated device rendering and current-device labeling in `test/unit.spec.ts`
-- [ ] T007 [P] [US1] Extend authenticated device-list coverage for `GET /api/auth/passkey/devices` and current-session device visibility in `test/integration.spec.ts`
+- [X] T006 [P] [US1] Add source-level regression assertions for populated device rendering and current-device labeling in `test/unit.spec.ts`
+- [X] T007 [P] [US1] Extend authenticated device-list coverage for `GET /api/auth/passkey/devices` and current-session device visibility in `test/integration.spec.ts`
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Update authenticated device refresh behavior in `src/client/state.ts` so resolved sessions repopulate `state.devices` on first load and after later auth transitions
-- [ ] T009 [US1] Preserve populated-device rendering and current-device labeling in `src/client/routes/profile.ts`
-- [ ] T010 [US1] Run targeted verification for `test/state-polling.spec.ts`, `test/unit.spec.ts`, and `test/integration.spec.ts` using the commands documented in `specs/051-fix-profile-devices/quickstart.md`
+- [X] T008 [US1] Update authenticated device refresh behavior in `src/client/state.ts` so resolved sessions repopulate `state.devices` on first load and after later auth transitions
+- [X] T009 [US1] Preserve populated-device rendering and current-device labeling in `src/client/routes/profile.ts`
+- [X] T010 [US1] Run targeted verification for `test/state-polling.spec.ts`, `test/unit.spec.ts`, and `test/integration.spec.ts` using the commands documented in `specs/051-fix-profile-devices/quickstart.md`
 
 **Checkpoint**: User Story 1 is independently complete when `/profile` reliably shows the current user’s devices on first load.
 
@@ -67,14 +67,14 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T011 [US2] Add failing empty-state and device-load-error assertions for `src/client/routes/profile.ts` in `test/unit.spec.ts`
+- [X] T011 [US2] Add failing empty-state and device-load-error assertions for `src/client/routes/profile.ts` in `test/unit.spec.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Render an explicit zero-devices empty-state message in `src/client/routes/profile.ts`
-- [ ] T013 [US2] Render an explicit device-load-error message in `src/client/routes/profile.ts`
-- [ ] T014 [US2] Keep loading, empty, and error transitions aligned with request state in `src/client/state.ts` and `src/client/routes/profile.ts`
-- [ ] T015 [US2] Run targeted verification for `test/unit.spec.ts` and `test/state-polling.spec.ts` using the commands in `specs/051-fix-profile-devices/quickstart.md`
+- [X] T012 [US2] Render an explicit zero-devices empty-state message in `src/client/routes/profile.ts`
+- [X] T013 [US2] Render an explicit device-load-error message in `src/client/routes/profile.ts`
+- [X] T014 [US2] Keep loading, empty, and error transitions aligned with request state in `src/client/state.ts` and `src/client/routes/profile.ts`
+- [X] T015 [US2] Run targeted verification for `test/unit.spec.ts` and `test/state-polling.spec.ts` using the commands in `specs/051-fix-profile-devices/quickstart.md`
 
 **Checkpoint**: User Story 2 is independently complete when blank space is replaced by explicit empty/error messaging.
 
@@ -84,8 +84,8 @@
 
 **Purpose**: Final verification and documentation updates that apply across the feature.
 
-- [ ] T016 [P] Update regression and manual verification notes in `specs/051-fix-profile-devices/quickstart.md`
-- [ ] T017 Run full validation from `package.json` with `npm run lint` and `npm test`
+- [X] T016 [P] Update regression and manual verification notes in `specs/051-fix-profile-devices/quickstart.md`
+- [X] T017 Run full validation from `package.json` with `npm run lint` and `npm test`
 
 ---
 

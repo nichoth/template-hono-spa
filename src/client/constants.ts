@@ -1,5 +1,6 @@
-export const NDASH = '\u2013'
+export const EN_DASH = '\u2013'
 export const EM_DASH = '\u2014'
 export const NBSP = '\u00A0'
 export const ELLIPSIS = '\u2026'
 export const COPYRIGHT = '\u00A9'
+export const BULLET = '\u2022'

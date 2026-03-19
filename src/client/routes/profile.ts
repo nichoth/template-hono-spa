@@ -18,7 +18,7 @@ import {
     type SessionExpirationResult,
 } from '../util/session-expiration.js'
 import './profile.css'
-import { ELLIPSIS } from '../constants.js'
+import { BULLET, ELLIPSIS } from '../constants.js'
 import Debug from '@substrate-system/debug'
 
 const debug = Debug('template:view')
@@ -306,12 +306,10 @@ export const ProfileRoute:FunctionComponent<{
                                             null
                                         }
                                     </span>
-                                    <span
-                                        class="device-dates"
-                                    >
+                                    <span class="device-dates">
                                         Added ${formatDate(device.createdAt)}${
                                             device.lastUsedAt ?
-                                                (' \u00B7 Last used ' +
+                                                (` ${BULLET} Last used ` +
                                                     formatDate(device.lastUsedAt)) :
                                                 ''
                                         }

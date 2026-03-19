@@ -28,6 +28,7 @@
     "@substrate-system/copy-button": "^0.5.24",
     "@substrate-system/css-normalize": "^0.0.13",
     "@substrate-system/dialog": "^0.0.28",
+    "@substrate-system/editable-field": "^0.0.1",
     "@substrate-system/hamburger-two": "^0.0.13",
     "@substrate-system/input": "^0.0.22",
     "@substrate-system/password-input": "^0.0.4",

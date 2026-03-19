@@ -48,6 +48,10 @@ npm test && npm run lint
 TypeScript (ESM): Follow standard conventions
 
 ## Recent Changes
+- 051-fix-profile-devices: Added TypeScript 5.x, ESM + Preact, `htm`, `@preact/signals`, `@substrate-system/state`, `ky`, Hono, `@simplewebauthn/server`, `@simplewebauthn/browser`
 - 048-confirm-revoke-device: Added TypeScript (ES2022), ESM + Preact + @preact/signals, htm/preact,
 - 047-revoke-device-logout: Added TypeScript (ES2022) + ESM + Hono (server), Cloudflare Workers, `@simplewebauthn/server`
-- 046-prevent-self-revoke: Added TypeScript (ES2022) + Hono (server), Preact + Signals (client)
+
+## Active Technologies
+- TypeScript 5.x, ESM + Preact, `htm`, `@preact/signals`, `@substrate-system/state`, `ky`, Hono, `@simplewebauthn/server`, `@simplewebauthn/browser` (051-fix-profile-devices)
+- Cloudflare D1 auth tables (`users`, `devices`, `sessions`, `device_invitations`) (051-fix-profile-devices)

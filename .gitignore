@@ -5,7 +5,6 @@ test/*.js
 dist
 build
 coverage
-*.log
 *.tmp
 *.swp
 .env

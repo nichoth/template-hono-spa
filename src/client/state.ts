@@ -7,7 +7,6 @@ import {
     startAuthentication as beginBrowserAuthentication,
     startRegistration as beginBrowserRegistration,
 } from '@simplewebauthn/browser'
-import { when } from './util/index.js'
 import type {
     AuthenticationResponseJSON,
     PublicKeyCredentialCreationOptionsJSON,
@@ -178,13 +177,6 @@ export function State ():AppState {
         window.scrollTo(0, 0)
     })
 
-    // setup effect-based state machine,
-    // eg when we have a `user`, then also fetch their devices
-    when(state.user, () => {
-        // fetch the device list
-        State.listDevices(state)
-    })
-
     return state
 }
 
@@ -194,6 +186,7 @@ State.restoreSession = async function (state:AppState) {
     try {
         const user = await ky.get('/api/session').json<SessionResponse>()
         set(state.user, user)
+        await syncDeviceManagementState(state, user)
         return user
     } catch (_err) {
         const err = _err as HTTPError|Error
@@ -209,6 +202,7 @@ State.logout = async function (state:AppState) {
     try {
         const user = await ky.post('/api/logout').json<SessionResponse>()
         set(state.user, user)
+        clearDeviceManagementState(state)
         state.logoutInProgress.value = false
         state.logoutError.value = null
         return user
@@ -246,6 +240,7 @@ State.loginWithPasskey = async function (
         }).json<SessionResponse>()
 
         set(state.user, user)
+        await syncDeviceManagementState(state, user)
         return user
     } catch (_err) {
         const err = _err as HTTPError|Error
@@ -329,6 +324,7 @@ State.login = async function (state:AppState, credentials:LoginCredentials) {
             }).json<SessionResponse>()
 
             set(state.user, user)
+            await syncDeviceManagementState(state, user)
             return user
         }
 
@@ -545,4 +541,21 @@ export function buildLoginRequestBody (credentials:LoginCredentials):LoginReques
                 {}),
         },
     }
+}
+
+async function syncDeviceManagementState (
+    state:AppState,
+    user:SessionResponse,
+) {
+    if (user.authenticated !== true) {
+        clearDeviceManagementState(state)
+        return
+    }
+
+    await State.listDevices(state)
+}
+
+function clearDeviceManagementState (state:AppState) {
+    state.devices.value = RequestState()
+    state.invitations.value = RequestState()
 }

@@ -25,6 +25,14 @@ vi.mock('ky', () => ({
     },
 }))
 
+vi.mock('route-event', () => ({
+    default: vi.fn(() => {
+        const listen = vi.fn()
+        listen.setRoute = vi.fn()
+        return listen
+    }),
+}))
+
 const mockGet = vi.mocked(ky.get)
 const mockPost = vi.mocked(ky.post)
 
@@ -50,6 +58,25 @@ function makeDevice (id:string):DeviceInfo {
         createdAt: new Date().toISOString(),
         lastUsedAt: null,
         isRevoked: false,
+    }
+}
+
+function makeAuthenticatedSession (
+    currentDeviceId:string,
+):SessionResponse {
+    return {
+        authenticated: true,
+        user: {
+            id: 'user-1',
+            identifier: 'nick@example.com',
+            displayName: 'Nick',
+            login_method: 'passkey',
+        },
+        session: {
+            expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+        },
+        loginMethod: 'passkey',
+        currentDeviceId,
     }
 }
 
@@ -277,5 +304,69 @@ describe('State.createInvite polling', () => {
         )
         // Guard: confirms fake timers are reaching the interval callback
         expect(devicesCalls.length).toBeGreaterThanOrEqual(1)
+    })
+})
+
+describe('State session restoration sequencing', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+    })
+
+    it('does not load devices before session restoration resolves', async () => {
+        const device = makeDevice('device-1')
+        const session = makeAuthenticatedSession(device.deviceId)
+        let resolveSession:(value:SessionResponse)=>void
+        const sessionPromise = new Promise<SessionResponse>((resolve) => {
+            resolveSession = resolve
+        })
+
+        const requests:string[] = []
+        mockGet.mockImplementation((url:string) => {
+            requests.push(url)
+            return {
+                json: () => {
+                    if (url === '/api/session') {
+                        return sessionPromise
+                    }
+                    if (url === '/api/auth/passkey/devices') {
+                        return Promise.resolve([device])
+                    }
+                    throw new Error(`Unexpected GET ${url}`)
+                },
+            }
+        })
+
+        const originalLocation = globalThis.location
+
+        Object.defineProperty(globalThis, 'location', {
+            configurable: true,
+            value: new URL('http://localhost/profile'),
+        })
+
+        try {
+            const state = State()
+            const restorePromise = State.restoreSession(state)
+
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(requests).toEqual(['/api/session'])
+
+            resolveSession!(session)
+            await restorePromise
+            await Promise.resolve()
+            await Promise.resolve()
+
+            expect(requests).toEqual([
+                '/api/session',
+                '/api/auth/passkey/devices',
+            ])
+            expect(state.devices.value.data).toEqual([device])
+        } finally {
+            Object.defineProperty(globalThis, 'location', {
+                configurable: true,
+                value: originalLocation,
+            })
+        }
     })
 })

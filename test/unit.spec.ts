@@ -101,6 +101,8 @@ const cssSourceFiles:Record<string, string> = {
     '/src/client/routes/signup.css': signupCssSource,
 }
 
+const profileRouteSource = sourceFiles['/src/client/routes/profile.ts']
+
 function createTestState ():AppState {
     return {
         route: signal('/'),
@@ -658,6 +660,21 @@ describe('Hono worker', () => {
             expect(homeSource).toContain('>Fetch<//>')
             expect(homeSource).toContain('>Error<//>')
             expect(homeSource).toContain('<pre>')
+        })
+    })
+
+    describe('Profile route', () => {
+        it('keeps the registered devices section and current-device label in the route source', () => {
+            expect(profileRouteSource).toContain('<h3>Devices</h3>')
+            expect(profileRouteSource).toContain('class="device-list"')
+            expect(profileRouteSource).toContain('(current device)')
+        })
+
+        it('renders an explicit empty-state and error-state message for device loading outcomes', () => {
+            expect(profileRouteSource)
+                .toContain('No registered devices yet.')
+            expect(profileRouteSource)
+                .toContain('Failed to load devices.')
         })
     })
 

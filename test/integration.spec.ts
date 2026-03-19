@@ -2282,5 +2282,108 @@ describe('Integration tests', () => {
                     ).toBe(true)
                 }
             )
+
+            it(
+                'keeps the current session device visible'
+            + ' across session and device-list reads',
+                async () => {
+                    const db = env.AUTH_DB
+                    await db.batch(
+                        AUTH_SCHEMA_STATEMENTS.map(
+                            s => db.prepare(s)
+                        )
+                    )
+                    const now = Date.now()
+                    const userId = crypto.randomUUID()
+                    const sessionToken = crypto.randomUUID()
+                    const deviceId = crypto.randomUUID()
+
+                    await db.prepare(
+                        'INSERT INTO users'
+                    + ' (id, handle, identifier,'
+                    + '  login_method, status,'
+                    + '  created_at, updated_at)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        userId,
+                        `session-device-${userId}`,
+                        `session-device-${userId}@example.com`,
+                        'passkey',
+                        'active',
+                        now,
+                        now,
+                    ).run()
+
+                    await db.prepare(
+                        'INSERT INTO devices'
+                    + ' (id, user_id, credential_id,'
+                    + '  public_key, counter,'
+                    + '  credential_name, created_at,'
+                    + '  is_revoked)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        deviceId,
+                        userId,
+                        `cred-session-${userId}`,
+                        'pk-session',
+                        0,
+                        'Current Device',
+                        now,
+                        0,
+                    ).run()
+
+                    await db.prepare(
+                        'INSERT INTO sessions'
+                    + ' (id, user_id, session_token,'
+                    + '  status, created_at, expires_at,'
+                    + '  last_seen_at, device_id)'
+                    + ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+                    ).bind(
+                        crypto.randomUUID(),
+                        userId,
+                        sessionToken,
+                        'active',
+                        now,
+                        now + 86400000,
+                        now,
+                        deviceId,
+                    ).run()
+
+                    const sessionRes = await SELF.fetch(
+                        'http://localhost/api/session',
+                        {
+                            headers: {
+                                Cookie: `auth_session=${sessionToken}`,
+                            },
+                        },
+                    )
+
+                    expect(sessionRes.status).toBe(200)
+                    const sessionBody = await sessionRes.json() as {
+                        authenticated:boolean;
+                        currentDeviceId?:string | null;
+                    }
+                    expect(sessionBody.authenticated).toBe(true)
+                    expect(sessionBody.currentDeviceId).toBe(deviceId)
+
+                    const devicesRes = await SELF.fetch(
+                        'http://localhost/api/auth/passkey/devices',
+                        {
+                            headers: {
+                                Cookie: `auth_session=${sessionToken}`,
+                            },
+                        },
+                    )
+
+                    expect(devicesRes.status).toBe(200)
+                    const devicesBody =
+                        await devicesRes.json<{ deviceId:string }[]>()
+                    expect(
+                        devicesBody.some(
+                            d => d.deviceId === sessionBody.currentDeviceId
+                        )
+                    ).toBe(true)
+                },
+            )
         })
 })

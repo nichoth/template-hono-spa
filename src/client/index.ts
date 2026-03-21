@@ -5,6 +5,7 @@ import { HamburgerTwo } from '@substrate-system/hamburger-two'
 import '@substrate-system/input'
 import '@substrate-system/password-input'
 import '@substrate-system/radio-input'
+import * as Sentry from '@sentry/browser'
 import { html } from 'htm/preact'
 import { createRouter } from './routes/index.js'
 import type { AppState } from './state.js'
@@ -14,6 +15,37 @@ import { Nav } from './components/nav.js'
 import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
 const debug = Debug('template:view')
+
+// Sentry.init({
+//     dsn: 'https://611a40292c20e5da25b156c387d5aba3@o4511016664694784.ingest.us.sentry.io/4511016666398720',
+//     // Setting this option to true will send default PII data to Sentry.
+//     // For example, automatic IP address collection on events
+//     sendDefaultPii: true
+// })
+
+// with "sessions"
+// see https://docs.sentry.io/product/explore/session-replay/web/
+Sentry.init({
+    dsn: 'https://611a40292c20e5da25b156c387d5aba3@o4511016664694784.ingest.us.sentry.io/4511016666398720',
+    // Setting this option to true will send default PII data to Sentry.
+    // For example, automatic IP address collection on events
+    sendDefaultPii: true,
+    integrations: [
+        Sentry.replayIntegration()
+    ],
+    // Session Replay
+    //
+    // This sets the sample rate at 10%. You may
+    // want to change it to 100% while in development and then sample at a lower
+    // rate in production.
+    replaysSessionSampleRate: 0.1,
+    // If you're not already sampling the entire
+    // session, change the sample rate to 100% when sampling sessions
+    // where errors occur.
+    replaysOnErrorSampleRate: 1.0
+})
+
+// myUndefinedFunction()
 
 BlurHash.define()
 

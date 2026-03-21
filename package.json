@@ -46,8 +46,8 @@
     "route-event": "^7.4.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.28.0",
-    "@cloudflare/vitest-pool-workers": "^0.13.0",
+    "@cloudflare/vite-plugin": "^1.29.1",
+    "@cloudflare/vitest-pool-workers": "^0.13.2",
     "@cloudflare/workers-types": "^4.20260313.1",
     "@hono/vite-dev-server": "^0.25.1",
     "@substrate-system/debug": "^0.9.38",
@@ -71,7 +71,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
     "vitest": "^4.1.0",
-    "wrangler": "^4.73.0"
+    "wrangler": "^4.75.0"
   },
   "author": "nichoth <nichoth@nichoth.com> (https://nichoth.com)"
 }

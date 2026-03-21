@@ -5,6 +5,7 @@
   "main": "public/index.js",
   "scripts": {
     "dev": "npm start",
+    "stylelint": "stylelint \"**/*.css\"",
     "lint": "eslint \"./**/*.{ts,js,tsx}\"",
     "test": "vitest run",
     "test:typecheck": "tsc -p tsconfig.test.json --pretty false",

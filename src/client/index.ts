@@ -16,6 +16,7 @@ import Debug from '@substrate-system/debug'
 import profileUrl from './profile_avatar_placeholder.png'
 const debug = Debug('template:view')
 
+// no sessions
 // Sentry.init({
 //     dsn: 'https://611a40292c20e5da25b156c387d5aba3@o4511016664694784.ingest.us.sentry.io/4511016666398720',
 //     // Setting this option to true will send default PII data to Sentry.

@@ -79,9 +79,9 @@
 					"database_id": "eeed6191-33f0-4656-9ce1-348baeb9027d"
 				},
 			],
-			"rate_limiting": [
+			"ratelimits": [
 				{
-					"binding": "INVITE_RATE_LIMIT",
+					"name": "INVITE_RATE_LIMIT",
 					"namespace_id": "2",
 					"simple": {
 						"limit": 10,

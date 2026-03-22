@@ -57,11 +57,7 @@ app.use('*', async (c, next) => {
     )
 
     if (
-        credentialsMatch(
-            credential,
-            c.env?.STAGING_USERNAME,
-            c.env?.STAGING_PW,
-        )
+        credentialsMatch(credential, c.env?.STAGING_USERNAME, c.env?.STAGING_PW)
     ) {
         await next()
         return
@@ -71,9 +67,7 @@ app.use('*', async (c, next) => {
 })
 
 app.use('/api/*', async (c, next) => {
-    const origin = c.env.DOMAIN ?
-        `https://${c.env.DOMAIN}` :
-        'http://localhost:9999'
+    const origin = c.env.DOMAIN ? `https://${c.env.DOMAIN}` : 'http://localhost:9999'
     return cors({ origin, credentials: true })(c, next)
 })
 

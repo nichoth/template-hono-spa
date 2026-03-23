@@ -49,7 +49,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.28.0",
     "@cloudflare/vitest-pool-workers": "^0.13.0",
-    "@cloudflare/workers-types": "^4.20260313.1",
+    "@cloudflare/workers-types": "^4.20260317.1",
     "@hono/vite-dev-server": "^0.25.1",
     "@substrate-system/debug": "^0.9.38",
     "@substrate-system/dom": "^0.1.13",

@@ -8,7 +8,6 @@
     "types": ["vite/client", "@cloudflare/workers-types"],
     "typeRoots": ["./node_modules"],
     "moduleResolution": "Bundler",
-    "esModuleInterop": false,
     "lib": ["ES2022", "DOM", "WebWorker"],
     "allowJs": false,
     "skipLibCheck": true,

@@ -8,7 +8,6 @@ import {
 } from './basic-auth.js'
 import { resolveDeploymentContext } from './deployment-context.js'
 import { unauthorizedBasicAuthResponse } from './access-response.js'
-import { type AssetPaths, resolveStartupAssets } from './startup-assets.js'
 import { formatStartupFailure } from './startup-errors.js'
 import {
     AUTH_SESSION_COOKIE,
@@ -31,7 +30,7 @@ type Bindings = {
     INVITE_RATE_LIMIT?:RateLimit
 }
 
-let cachedAssets:AssetPaths|null = null
+let cachedShellHtml:string|null = null
 
 const app = new Hono<{ Bindings:Bindings }>()
 const authService = createAuthService()
@@ -573,60 +572,39 @@ function looksLikeAssetPath (pathname:string):boolean {
     return /\.[a-z0-9]+$/i.test(pathname)
 }
 
-async function getAssetPaths (
-    c:Context<{ Bindings:Bindings }>
-):Promise<AssetPaths> {
-    if (cachedAssets) return cachedAssets
+export function resetShellCacheForTests ():void {
+    cachedShellHtml = null
+}
 
-    console.log(
-        '[getAssetPaths] ASSETS binding:',
-        c.env?.ASSETS ? 'present' : 'missing'
-    )
-    const result = await resolveStartupAssets(c.env?.ASSETS)
-    if (result.warning) {
-        console.warn(
-            formatStartupFailure({
-                cause: result.warning,
-                remediation:
-                    'Run `npm start` for local dev or '
-                    + '`npm run build` and verify `public/client/` assets are deployed.'
-            })
-        )
+async function fetchShellHtml (
+    c:Context<{ Bindings:Bindings }>
+):Promise<string> {
+    if (cachedShellHtml) return cachedShellHtml
+
+    if (!c.env?.ASSETS) {
+        throw new Error('Static asset binding is unavailable.')
     }
 
-    cachedAssets = result.assets
-    return cachedAssets
+    const response = await c.env.ASSETS.fetch(
+        new Request('http://assets/index.html')
+    )
+    if (!response.ok) {
+        throw new Error('Bundled `index.html` not found in assets.')
+    }
+
+    cachedShellHtml = await response.text()
+    return cachedShellHtml
 }
 
 async function shellPage (c:Context<{ Bindings:Bindings }>) {
     try {
-        const isDev = import.meta.env.DEV
-        const assets = isDev ?
-            { css: '/src/style.css', js: '/src/client/index.ts' } :
-            await getAssetPaths(c)
-
         if (c.req.header('x-startup-prereq-fail') === '1') {
             throw new Error(
                 'Required startup prerequisite is unavailable.'
             )
         }
 
-        const html = [
-            '<!DOCTYPE html>',
-            '<html lang="en">',
-            '<head>',
-            '<meta charset="UTF-8" />',
-            '<meta name="viewport" content="width=device-width, initial-scale=1.0" />',
-            '<title>Hono + Preact</title>',
-            `<link rel="stylesheet" href="${assets.css || '/client/index.css'}" />`,
-            '</head>',
-            '<body>',
-            '<div id="root"></div>',
-            `<script type="module" src="${assets.js || '/client/index.js'}"></script>`,
-            '</body>',
-            '</html>',
-        ].join('')
-
+        const html = await fetchShellHtml(c)
         return c.html(html)
     } catch (err) {
         const cause = err instanceof Error ?
@@ -636,9 +614,11 @@ async function shellPage (c:Context<{ Bindings:Bindings }>) {
         const message = formatStartupFailure({
             cause,
             remediation:
-                'Check local prerequisites and rerun `npm start`.'
+                'Run `npm run build` and verify '
+                + '`public/client/index.html` is deployed.'
         })
 
+        console.warn(message)
         return c.text(message, 500)
     }
 }

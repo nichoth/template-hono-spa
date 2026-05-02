@@ -26,7 +26,7 @@ implemented and validated independently. US1 is the MVP.
 **Purpose**: Confirm the build artifact this feature depends on actually
 exists. No code changes; this gates all later work.
 
-- [ ] T001 Run `npm install` and `npm run build`, then verify
+- [X] T001 Run `npm install` and `npm run build`, then verify
       `public/client/index.html` exists and contains content-hashed
       asset URLs (`/assets/index-<hash>.js` and
       `/assets/index-<hash>.css`). Note the current hashes — they're
@@ -45,7 +45,7 @@ exists. No code changes; this gates all later work.
 `src/server/startup-errors.ts`. This phase exists only to record the
 invariants that gate later work.
 
-- [ ] T002 Confirm `Bindings.ASSETS?:Fetcher` is declared in
+- [X] T002 Confirm `Bindings.ASSETS?:Fetcher` is declared in
       `src/server/index.ts` (line ~21) and that
       `formatStartupFailure({ cause, remediation })` is exported from
       `src/server/startup-errors.ts`. No edits — these are the
@@ -79,7 +79,7 @@ request-handling code. Hitting `/profile` returns the same body as
 > and MUST keep passing. The new tests below add coverage for the
 > "served file is the bundled file" claim and for the SC-001 invariant.
 
-- [ ] T003 [P] [US1] In `test/integration.spec.ts` "App shell"
+- [X] T003 [P] [US1] In `test/integration.spec.ts` "App shell"
       describe block (around line 112), add a test that reads
       `public/client/index.html` from disk and asserts the served
       response body for `GET /` contains the same hashed JS reference
@@ -87,12 +87,12 @@ request-handling code. Hitting `/profile` returns the same body as
       proves the served body is the bundled artifact, not a
       hand-written template. Reference: research.md §R7,
       contracts/shell-response.md "Required body properties".
-- [ ] T004 [P] [US1] In `test/integration.spec.ts` "App shell"
+- [X] T004 [P] [US1] In `test/integration.spec.ts` "App shell"
       describe block, add a test asserting `GET /profile` returns
       a 200 with body byte-equal to the body returned by `GET /`
       (covers spec acceptance scenario US1 #2). Reference:
       contracts/shell-response.md "Scope".
-- [ ] T005 [P] [US1] In `test/unit.spec.ts` add a new
+- [X] T005 [P] [US1] In `test/unit.spec.ts` add a new
       "Migration constraints"-style test (near the existing block at
       ~line 834) that fails if any file under `src/server/**/*.ts`
       contains the substrings `<!DOCTYPE`, `<html`, `<head>`, or
@@ -102,12 +102,12 @@ request-handling code. Hitting `/profile` returns the same body as
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] In `src/server/index.ts`, add a module-scope
+- [X] T006 [US1] In `src/server/index.ts`, add a module-scope
       `let cachedShellHtml:string|null = null` next to the existing
       `let cachedAssets:AssetPaths|null = null` (line 34). This is
       the per-isolate cache documented in research.md §R6 and
       data-model.md "In-isolate cache".
-- [ ] T007 [US1] In `src/server/index.ts`, add a new private
+- [X] T007 [US1] In `src/server/index.ts`, add a new private
       `async function fetchShellHtml(c:Context<{ Bindings:Bindings }>)
       :Promise<string>` below `shellPage` (after line 644). Behavior:
       return `cachedShellHtml` if set; otherwise call
@@ -117,7 +117,7 @@ request-handling code. Hitting `/profile` returns the same body as
       cause strings from research.md §R5 when the binding is missing
       or the response is non-OK (US2 will wire the catch). Reference:
       research.md §R1, §R5.
-- [ ] T008 [US1] In `src/server/index.ts`, replace the body of
+- [X] T008 [US1] In `src/server/index.ts`, replace the body of
       `async function shellPage(c)` (lines 601–644). Remove the
       `isDev`/`getAssetPaths`/`assets`/HTML-array construction
       entirely. New body:
@@ -128,13 +128,13 @@ request-handling code. Hitting `/profile` returns the same body as
       `test/unit.spec.ts:819-832` still works (throw inside the
       `try` before the fetch). Reference: research.md §R4, §R5;
       contracts/shell-response.md "Successful response".
-- [ ] T009 [US1] In `src/server/index.ts`, delete the now-unused
+- [X] T009 [US1] In `src/server/index.ts`, delete the now-unused
       `getAssetPaths` function (lines 576–599) and the
       `cachedAssets` module-scope cache (line 34). Also delete the
       `import { type AssetPaths, resolveStartupAssets } from
       './startup-assets.js'` line at the top of the file (line 11).
       Reference: research.md §R2 ("manifest code becomes dead").
-- [ ] T010 [US1] Run `npm test` and confirm
+- [X] T010 [US1] Run `npm test` and confirm
       `test/unit.spec.ts` "App shell routes" (line 183) and
       `test/integration.spec.ts` "App shell" (line 112) pass,
       including T003/T004/T005. Run
@@ -164,7 +164,7 @@ serving `/api/health` and `/health` correctly.
 
 ### Tests for User Story 2
 
-- [ ] T011 [P] [US2] In `test/unit.spec.ts` "App shell routes"
+- [X] T011 [P] [US2] In `test/unit.spec.ts` "App shell routes"
       describe block (line 183), add a test that constructs a
       request env where `ASSETS.fetch` resolves with a 404, then
       asserts: status is 500; body matches
@@ -173,11 +173,11 @@ serving `/api/health` and `/health` correctly.
       'warn')` to assert a matching warning was logged. Reference:
       research.md §R5 (table row 2), contracts/shell-response.md
       "Failure response".
-- [ ] T012 [P] [US2] In `test/unit.spec.ts` "App shell routes"
+- [X] T012 [P] [US2] In `test/unit.spec.ts` "App shell routes"
       describe block, add a test where `c.env.ASSETS` is undefined
       and assert the same 500 / cause+remediation / `console.warn`
       shape. Reference: research.md §R5 (table row 1).
-- [ ] T013 [P] [US2] In `test/unit.spec.ts` "App shell routes"
+- [X] T013 [P] [US2] In `test/unit.spec.ts` "App shell routes"
       describe block, add a test where `ASSETS.fetch` throws (e.g.
       a stub that rejects with `new Error('boom')`) and assert the
       500 / cause (the thrown message) / remediation / warn shape.
@@ -185,7 +185,7 @@ serving `/api/health` and `/health` correctly.
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] In `src/server/index.ts` `fetchShellHtml`
+- [X] T014 [US2] In `src/server/index.ts` `fetchShellHtml`
       (added in T007), throw distinct `Error` instances for the
       three failure modes from research.md §R5:
       - `c.env.ASSETS` undefined → message `"Static asset binding
@@ -194,7 +194,7 @@ serving `/api/health` and `/health` correctly.
         `index.html` not found in assets."``
       - `ASSETS.fetch` throws → re-throw with the original
         `error.message`
-- [ ] T015 [US2] In `src/server/index.ts` `shellPage` `catch`
+- [X] T015 [US2] In `src/server/index.ts` `shellPage` `catch`
       block, set the remediation string to ``"Run `npm run build`
       and verify `public/client/index.html` is deployed."`` (overwriting
       today's ``"Check local prerequisites and rerun `npm start`."``).
@@ -202,7 +202,7 @@ serving `/api/health` and `/health` correctly.
       `console.warn(message)` with the same `formatStartupFailure`
       output that becomes the response body. Reference: research.md
       §R5 ("Each failure path: 1. console.warn, 2. c.text(...500)").
-- [ ] T016 [US2] Run `npm test` and confirm T011, T012, T013, and
+- [X] T016 [US2] Run `npm test` and confirm T011, T012, T013, and
       the existing `x-startup-prereq-fail` test
       (`test/unit.spec.ts:819-832`) all pass. Manually run the
       quickstart §6 procedure (rename `public/client/index.html`,
@@ -219,25 +219,25 @@ shell-missing paths are covered and tested.
 **Purpose**: Remove the now-dead manifest reader and its tests,
 update agent-context docs, run the full quickstart.
 
-- [ ] T017 Delete `src/server/startup-assets.ts` (the entire file)
+- [X] T017 Delete `src/server/startup-assets.ts` (the entire file)
       now that no caller remains. Verify with
       `grep -rn 'startup-assets' src/ test/` returning zero
       remaining imports before deleting. Reference: research.md §R2,
       plan.md "Project Structure" ("CANDIDATE FOR REMOVAL").
-- [ ] T018 [P] In `test/unit.spec.ts`, delete the
+- [X] T018 [P] In `test/unit.spec.ts`, delete the
       `resolveStartupAssets` test block (around lines 720–816,
       including the `import { resolveStartupAssets } from
       '../src/server/startup-assets.js'` at line 26–27). Confirm
       `npm test` still passes. Reference: research.md §R7
       ("delete if `src/server/startup-assets.ts` is deleted").
-- [ ] T019 Run `.specify/scripts/bash/update-agent-context.sh
+- [X] T019 Run `.specify/scripts/bash/update-agent-context.sh
       claude` to refresh `CLAUDE.md` / `AGENTS.md` "Recent Changes"
       log with this feature. Reference: plan.md "Agent context update".
-- [ ] T020 Run the full quickstart (`specs/052-serve-index-html/
+- [X] T020 Run the full quickstart (`specs/052-serve-index-html/
       quickstart.md` steps 1–7) and confirm every step's expected
       result. Record any deviations. Reference: spec SC-001
       through SC-005.
-- [ ] T021 Run `npm test && npm run lint` (the project's
+- [X] T021 Run `npm test && npm run lint` (the project's
       mandated check from `AGENTS.md` §3) and confirm both pass.
 
 ---

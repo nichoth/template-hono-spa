@@ -17,14 +17,13 @@ import {
     RequestState
 } from '@substrate-system/state'
 import type { HTTPError } from 'ky'
-import { describe, it, expect, vi } from 'vitest'
-import worker from '../src/server/index.js'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import worker, {
+    resetShellCacheForTests,
+} from '../src/server/index.js'
 import {
     resolveDeploymentContext
 } from '../src/server/deployment-context.js'
-import {
-    resolveStartupAssets
-} from '../src/server/startup-assets.js'
 import {
     formatStartupFailure
 } from '../src/server/startup-errors.js'
@@ -247,6 +246,116 @@ describe('Hono worker', () => {
                 expect(response.status).toBe(404)
             }
         )
+
+        describe('shell-fetch failure paths', () => {
+            beforeEach(() => {
+                resetShellCacheForTests()
+            })
+
+            it('returns a 500 with cause + remediation when ASSETS.fetch resolves with 404',
+                async () => {
+                    const warnSpy = vi.spyOn(console, 'warn')
+                        .mockImplementation(() => {})
+
+                    const stubAssets = {
+                        fetch: async () => new Response('', {
+                            status: 404,
+                        }),
+                    } as unknown as Fetcher
+
+                    const request = new Request(
+                        'http://example.com/'
+                    )
+                    const ctx = createExecutionContext()
+                    const response = await worker.fetch(
+                        request,
+                        { ...env, ASSETS: stubAssets },
+                        ctx,
+                    )
+                    await waitOnExecutionContext(ctx)
+
+                    expect(response.status).toBe(500)
+                    const body = await response.text()
+                    expect(body).toMatch(
+                        /^Startup prerequisite error:.+Next step:.+/
+                    )
+                    expect(body).toContain('index.html')
+
+                    expect(warnSpy).toHaveBeenCalled()
+                    expect(warnSpy.mock.calls[0]?.[0]).toBe(body)
+
+                    warnSpy.mockRestore()
+                }
+            )
+
+            it('returns a 500 with cause + remediation when ASSETS binding is undefined',
+                async () => {
+                    const warnSpy = vi.spyOn(console, 'warn')
+                        .mockImplementation(() => {})
+
+                    const request = new Request(
+                        'http://example.com/'
+                    )
+                    const ctx = createExecutionContext()
+                    const response = await worker.fetch(
+                        request,
+                        { ...env, ASSETS: undefined },
+                        ctx,
+                    )
+                    await waitOnExecutionContext(ctx)
+
+                    expect(response.status).toBe(500)
+                    const body = await response.text()
+                    expect(body).toMatch(
+                        /^Startup prerequisite error:.+Next step:.+/
+                    )
+                    expect(body).toContain(
+                        'Static asset binding is unavailable.'
+                    )
+
+                    expect(warnSpy).toHaveBeenCalled()
+                    expect(warnSpy.mock.calls[0]?.[0]).toBe(body)
+
+                    warnSpy.mockRestore()
+                }
+            )
+
+            it('returns a 500 with cause + remediation when ASSETS.fetch throws',
+                async () => {
+                    const warnSpy = vi.spyOn(console, 'warn')
+                        .mockImplementation(() => {})
+
+                    const stubAssets = {
+                        fetch: async () => {
+                            throw new Error('boom')
+                        },
+                    } as unknown as Fetcher
+
+                    const request = new Request(
+                        'http://example.com/'
+                    )
+                    const ctx = createExecutionContext()
+                    const response = await worker.fetch(
+                        request,
+                        { ...env, ASSETS: stubAssets },
+                        ctx,
+                    )
+                    await waitOnExecutionContext(ctx)
+
+                    expect(response.status).toBe(500)
+                    const body = await response.text()
+                    expect(body).toMatch(
+                        /^Startup prerequisite error:.+Next step:.+/
+                    )
+                    expect(body).toContain('boom')
+
+                    expect(warnSpy).toHaveBeenCalled()
+                    expect(warnSpy.mock.calls[0]?.[0]).toBe(body)
+
+                    warnSpy.mockRestore()
+                }
+            )
+        })
     })
 
     describe('API endpoints', () => {
@@ -722,100 +831,6 @@ describe('Hono worker', () => {
         })
     })
 
-    describe('Startup asset resolution', () => {
-        it('falls back to default assets when no binding exists',
-            async () => {
-                const result = await resolveStartupAssets()
-                expect(result.recovered).toBe(true)
-                expect(result.assets).toEqual({
-                    css: '/assets/index.css',
-                    js: '/assets/index.js',
-                })
-                expect(result.warning).toContain(
-                    'Static asset binding'
-                )
-            }
-        )
-
-        it('uses deploy-valid fallback assets when manifest is missing',
-            async () => {
-                const fetcher = {
-                    fetch: async () => new Response('', { status: 404 })
-                } as unknown as Fetcher
-
-                const result = await resolveStartupAssets(fetcher)
-                expect(result.recovered).toBe(true)
-                expect(result.assets).toEqual({
-                    css: '/assets/index.css',
-                    js: '/assets/index.js',
-                })
-                expect(result.warning).toContain(
-                    'Vite manifest was not found at vite-manifest.json.'
-                )
-            }
-        )
-
-        it('reports invalid manifest data without returning broken asset paths',
-            async () => {
-                const fetcher = {
-                    fetch: async () => new Response(
-                        JSON.stringify({}),
-                        { status: 200 }
-                    )
-                } as unknown as Fetcher
-
-                const result = await resolveStartupAssets(fetcher)
-                expect(result.recovered).toBe(true)
-                expect(result.assets).toEqual({
-                    css: '/assets/index.css',
-                    js: '/assets/index.js',
-                })
-                expect(result.warning).toContain(
-                    'Vite manifest at vite-manifest.json is missing index.html entry.'
-                )
-            }
-        )
-
-        it('requests the client manifest path from the asset binding',
-            async () => {
-                let requestedUrl = ''
-                const fetcher = {
-                    fetch: async (input:RequestInfo | URL) => {
-                        requestedUrl = String(input)
-                        return new Response('', { status: 404 })
-                    }
-                } as unknown as Fetcher
-
-                await resolveStartupAssets(fetcher)
-                expect(requestedUrl)
-                    .toBe('http://assets/vite-manifest.json')
-            }
-        )
-
-        it('reads manifest asset paths from asset binding',
-            async () => {
-                const fetcher = {
-                    fetch: async () => new Response(
-                        JSON.stringify({
-                            'index.html': {
-                                file: 'client/index.js',
-                                css: ['client/index.css']
-                            }
-                        }),
-                        { status: 200 }
-                    )
-                } as unknown as Fetcher
-
-                const result = await resolveStartupAssets(fetcher)
-                expect(result.recovered).toBe(false)
-                expect(result.assets).toEqual({
-                    css: '/client/index.css',
-                    js: '/client/index.js',
-                })
-            }
-        )
-    })
-
     describe('Startup failure messaging', () => {
         it('formats actionable failure text', () => {
             const message = formatStartupFailure({
@@ -843,6 +858,18 @@ describe('Hono worker', () => {
             const tsxFiles = import.meta.glob('/src/**/*.tsx', { eager: true })
             expect(Object.keys(tsxFiles)).toEqual([])
         })
+
+        it('no server source contains inline HTML literals',
+            () => {
+                const htmlMarkerPattern = /<!DOCTYPE|<html|<head>|<body>/i
+                const offenders = Object.entries(sourceFiles)
+                    .filter(([path]) => path.startsWith('/src/server/'))
+                    .filter(([, source]) => htmlMarkerPattern.test(source))
+                    .map(([path]) => path)
+
+                expect(offenders).toEqual([])
+            }
+        )
     })
 })
 

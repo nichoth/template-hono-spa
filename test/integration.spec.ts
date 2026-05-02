@@ -1,5 +1,6 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
+import builtShellHtml from '../public/client/index.html?raw'
 import {
     AuthError,
     createAuthService,
@@ -124,6 +125,43 @@ describe('Integration tests', () => {
             expect(html).not.toContain('__INITIAL_STATE__')
         })
 
+        it('serves the bundled index.html with hashed asset paths',
+            async () => {
+                const hashedJsRefMatch = builtShellHtml.match(
+                    /\/assets\/index-[A-Za-z0-9_-]+\.js/
+                )
+                expect(hashedJsRefMatch).toBeTruthy()
+                const hashedJsRef = hashedJsRefMatch![0]
+
+                const response = await SELF.fetch(
+                    'http://localhost/'
+                )
+                expect(response.status).toBe(200)
+
+                const html = await response.text()
+                expect(html).toContain(hashedJsRef)
+            }
+        )
+
+        it('serves the same shell body for deep client routes',
+            async () => {
+                const [rootResponse, profileResponse] = await Promise.all([
+                    SELF.fetch('http://localhost/'),
+                    SELF.fetch('http://localhost/profile'),
+                ])
+
+                expect(rootResponse.status).toBe(200)
+                expect(profileResponse.status).toBe(200)
+
+                const [rootHtml, profileHtml] = await Promise.all([
+                    rootResponse.text(),
+                    profileResponse.text(),
+                ])
+
+                expect(profileHtml).toBe(rootHtml)
+            }
+        )
+
         it('serves shell for known client route deep links',
             async () => {
                 const response = await SELF.fetch(
@@ -158,7 +196,7 @@ describe('Integration tests', () => {
 
                 expect(response.status).toBe(200)
                 expect(html).toContain('<div id="root"></div>')
-                expect(html).toContain('/src/client/index.ts')
+                expect(html).toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
             }
         )
 
@@ -170,7 +208,7 @@ describe('Integration tests', () => {
 
             expect(response.status).toBe(200)
             expect(html).toContain('<div id="root"></div>')
-            expect(html).toContain('/src/client/index.ts')
+            expect(html).toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
             expect(html).not.toContain('Page not found.')
         })
 
@@ -637,7 +675,7 @@ describe('Integration tests', () => {
 
                 for (const html of htmlByRoute) {
                     expect(html).toContain('<div id="root"></div>')
-                    expect(html).toContain('/src/client/index.ts')
+                    expect(html).toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
                 }
             }
         )
@@ -651,8 +689,10 @@ describe('Integration tests', () => {
 
                 expect(homeResponse.status).toBe(200)
                 expect(aboutResponse.status).toBe(200)
-                expect(await homeResponse.text()).toContain('/src/client/index.ts')
-                expect(await aboutResponse.text()).toContain('/src/client/index.ts')
+                expect(await homeResponse.text())
+                    .toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
+                expect(await aboutResponse.text())
+                    .toMatch(/\/assets\/index-[A-Za-z0-9_-]+\.js/)
             }
         )
 

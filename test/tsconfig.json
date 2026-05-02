@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "rootDir": "..",
     "moduleResolution": "bundler",
     "types": [
       "@cloudflare/vitest-pool-workers",  // provides `cloudflare:test` types

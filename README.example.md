@@ -214,12 +214,3 @@ What to verify during testing:
 ```sh
 openssl rand -base64 32
 ```
-
-
-### Claude
-
-#### Example
-
-```
-Use the Nitpicker agent to review this codebase 
-```

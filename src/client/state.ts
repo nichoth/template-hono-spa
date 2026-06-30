@@ -18,20 +18,20 @@ const debug = Debug('template:state')
 export type AuthUser = {
     id:string;
     identifier:string;
-    displayName:string | null;
-    login_method:'passkey'|'password' | null;
+    displayName:string|null;
+    login_method:'passkey'|'password'|null;
 }
 
 export type SessionResponse = {
     authenticated:false;
-} | {
+}|{
     authenticated:true;
     user:AuthUser;
     session:{
         expiresAt:string;
     };
-    loginMethod:'passkey'|'password' | null;
-    currentDeviceId?:string | null;
+    loginMethod:'passkey'|'password'|null;
+    currentDeviceId?:string|null;
 }
 
 export type SignupConfirmationResponse = {
@@ -102,11 +102,11 @@ export type PasskeyRegistrationValues = {
 export type DeviceInfo = {
     deviceId:string;
     credentialId:string;
-    credentialName:string | null;
-    aaguid:string | null;
+    credentialName:string|null;
+    aaguid:string|null;
     transports:string[];
     createdAt:string;
-    lastUsedAt:string | null;
+    lastUsedAt:string|null;
     isRevoked:boolean;
 }
 
@@ -143,7 +143,7 @@ export type AppState = {
     invitations:Signal<RequestFor<PendingInvitation[], HTTPError|Error>>;
     logoutInProgress:Signal<boolean>;
     logoutError:Signal<string|null>;
-    _setRoute?:(path:string)=>void;
+    _setRoute?:(path:string) => void;
 }
 
 const { start, set, error } = RequestState
@@ -336,7 +336,7 @@ State.login = async function (state:AppState, credentials:LoginCredentials) {
 }
 
 const DEVICE_POLL_INTERVAL_MS = 5_000
-let devicePollInterval:ReturnType<typeof setInterval> | null = null
+let devicePollInterval:ReturnType<typeof setInterval>|null = null
 
 State.listDevices = async function (state:AppState) {
     start(state.devices)
@@ -371,12 +371,12 @@ State.revokeDevice = async function (
 State.createInvite = async function (
     state:AppState,
     deviceName:string,
-):Promise<DeviceInvitation | undefined> {
+):Promise<DeviceInvitation|undefined> {
     try {
         const result = await ky.post(
             '/api/auth/passkey/devices/invite',
             { json: { deviceName } },
-        ).json<DeviceInvitation & { status:string }>()
+        ).json<DeviceInvitation&{ status:string }>()
 
         await State.listInvites(state)
 
@@ -458,7 +458,7 @@ State.claimInvite = async function (code:string):Promise<DeviceAddedResponse> {
     ).json<{
         challengeReference:string;
         options:PublicKeyCredentialCreationOptionsJSON;
-        deviceName:string | null;
+        deviceName:string|null;
         handle:string;
     }>()
 

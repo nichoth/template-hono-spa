@@ -4,8 +4,8 @@ export type UserRecord = {
     id:string;
     handle:string;
     identifier:string;
-    display_name:string | null;
-    login_method:'passkey'|'password' | null;
+    display_name:string|null;
+    login_method:'passkey'|'password'|null;
     status:string;
     created_at:number;
     updated_at:number;
@@ -17,25 +17,25 @@ export type DeviceRecord = {
     credential_id:string;
     public_key:string;
     counter:number;
-    transports_json:string | null;
-    aaguid:string | null;
-    credential_name:string | null;
+    transports_json:string|null;
+    aaguid:string|null;
+    credential_name:string|null;
     created_at:number;
-    last_used_at:number | null;
+    last_used_at:number|null;
     is_revoked:number;
 }
 
 export type AuthChallengeRecord = {
     id:string;
-    user_id:string | null;
-    identifier:string | null;
+    user_id:string|null;
+    identifier:string|null;
     purpose:'registration'|'authentication'|'device_addition'|'device_invitation';
     challenge_value:string;
     status:string;
     expires_at:number;
     created_at:number;
-    used_at:number | null;
-    metadata_json:string | null;
+    used_at:number|null;
+    metadata_json:string|null;
 }
 
 export type SessionRecord = {
@@ -45,16 +45,16 @@ export type SessionRecord = {
     status:string;
     created_at:number;
     expires_at:number;
-    revoked_at:number | null;
+    revoked_at:number|null;
     last_seen_at:number;
-    device_id:string | null;
+    device_id:string|null;
 }
 
-export type SessionWithUserRecord = SessionRecord & {
+export type SessionWithUserRecord = SessionRecord&{
     identifier:string;
-    display_name:string | null;
+    display_name:string|null;
     user_status:string;
-    login_method:'passkey'|'password' | null;
+    login_method:'passkey'|'password'|null;
 }
 
 export type ConfirmationCodeRecord = {
@@ -64,18 +64,18 @@ export type ConfirmationCodeRecord = {
     expires_at:number;
     created_at:number;
     updated_at:number;
-    used_at:number | null;
+    used_at:number|null;
 }
 
 export type DeviceInvitationRecord = {
     id:string;
     user_id:string;
     invite_code:string;
-    device_name:string | null;
+    device_name:string|null;
     status:'pending'|'consumed'|'cancelled'|'expired';
     expires_at:number;
     created_at:number;
-    consumed_at:number | null;
+    consumed_at:number|null;
 }
 
 type ChallengeMetadata = {
@@ -131,7 +131,7 @@ export async function createConfirmationCode (
 export async function findConfirmationCode (
     db:D1Database,
     code:string,
-):Promise<ConfirmationCodeRecord | null> {
+):Promise<ConfirmationCodeRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM email_confirmation_codes
         WHERE code = ?
@@ -178,7 +178,7 @@ export async function markConfirmationCodeExpired (
 export async function findUserByIdentifier (
     db:D1Database,
     identifier:string,
-):Promise<UserRecord | null> {
+):Promise<UserRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM users
         WHERE identifier = ?
@@ -191,7 +191,7 @@ export async function findUserByIdentifier (
 export async function findUserById (
     db:D1Database,
     id:string,
-):Promise<UserRecord | null> {
+):Promise<UserRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM users
         WHERE id = ?
@@ -290,7 +290,7 @@ export async function listDevicesByUserId (
 export async function findDeviceById (
     db:D1Database,
     deviceId:string,
-):Promise<DeviceRecord | null> {
+):Promise<DeviceRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM devices
         WHERE id = ?
@@ -303,7 +303,7 @@ export async function findDeviceById (
 export async function findDeviceByCredentialId (
     db:D1Database,
     credentialID:string,
-):Promise<DeviceRecord | null> {
+):Promise<DeviceRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM devices
         WHERE credential_id = ?
@@ -321,9 +321,9 @@ export async function createDevice (
         credentialID:string;
         publicKey:string;
         counter:number;
-        transports:string[] | undefined;
-        aaguid:string | undefined;
-        credentialName:string | undefined;
+        transports:string[]|undefined;
+        aaguid:string|undefined;
+        credentialName:string|undefined;
         now:number;
     }
 ):Promise<void> {
@@ -423,7 +423,7 @@ export async function createChallenge (
 export async function findChallengeById (
     db:D1Database,
     challengeID:string,
-):Promise<AuthChallengeRecord | null> {
+):Promise<AuthChallengeRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM auth_challenges
         WHERE id = ?
@@ -511,7 +511,7 @@ export async function createSession (
 export async function findSessionByToken (
     db:D1Database,
     sessionToken:string,
-):Promise<SessionWithUserRecord | null> {
+):Promise<SessionWithUserRecord|null> {
     const result = await db.prepare(`
         SELECT
             sessions.*,
@@ -624,7 +624,7 @@ export async function createInvitation (
 export async function findInvitationByCode (
     db:D1Database,
     inviteCode:string,
-):Promise<DeviceInvitationRecord | null> {
+):Promise<DeviceInvitationRecord|null> {
     const result = await db.prepare(`
         SELECT * FROM device_invitations
         WHERE invite_code = ?

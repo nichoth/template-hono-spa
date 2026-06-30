@@ -90,7 +90,7 @@ function makeInvite (code:string):PendingInvitation {
     }
 }
 
-function makeInvitation ():DeviceInvitation & { status:string } {
+function makeInvitation ():DeviceInvitation&{ status:string } {
     return {
         inviteCode: 'test-invite',
         inviteUrl: 'http://localhost/add/test-invite',
@@ -315,7 +315,7 @@ describe('State session restoration sequencing', () => {
     it('does not load devices before session restoration resolves', async () => {
         const device = makeDevice('device-1')
         const session = makeAuthenticatedSession(device.deviceId)
-        let resolveSession:(value:SessionResponse)=>void
+        let resolveSession:(value:SessionResponse) => void
         const sessionPromise = new Promise<SessionResponse>((resolve) => {
             resolveSession = resolve
         })

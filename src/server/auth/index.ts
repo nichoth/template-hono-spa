@@ -60,8 +60,8 @@ export const DEVICE_INVITATION_TTL_MS = 5 * 60 * 1000
 export type AuthUser = {
     id:string;
     identifier:string;
-    displayName:string | null;
-    login_method:'passkey'|'password' | null;
+    displayName:string|null;
+    login_method:'passkey'|'password'|null;
 }
 
 export type SessionSummary = {
@@ -70,12 +70,12 @@ export type SessionSummary = {
 
 export type SessionResponse = {
     authenticated:false;
-} | {
+}|{
     authenticated:true;
     user:AuthUser;
     session:SessionSummary;
-    loginMethod:'passkey'|'password' | null;
-    currentDeviceId:string | null;
+    loginMethod:'passkey'|'password'|null;
+    currentDeviceId:string|null;
 }
 
 export type RegistrationStartRequest = {
@@ -135,14 +135,14 @@ export type InvitationResponse = {
     status:'invitation_created';
     inviteCode:string;
     inviteUrl:string;
-    deviceName:string | null;
+    deviceName:string|null;
     expiresAt:string;
 }
 
 export type InviteClaimStartResponse = {
     challengeReference:string;
     options:PublicKeyCredentialCreationOptionsJSON;
-    deviceName:string | null;
+    deviceName:string|null;
     userIdentifier:string;
 }
 
@@ -162,7 +162,7 @@ export type InviteClaimFinishResponse = {
 
 export type PendingInvitationInfo = {
     inviteCode:string;
-    deviceName:string | null;
+    deviceName:string|null;
     status:string;
     expiresAt:string;
     createdAt:string;
@@ -648,7 +648,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         userId:string,
         deviceID:string,
-        currentSessionDeviceId:string | null,
+        currentSessionDeviceId:string|null,
     ) {
         await ensureAuthSchema(db)
 
@@ -791,7 +791,7 @@ export function createAuthService (deps:AuthDeps = defaultDeps) {
         db:D1Database,
         inviteCode:string,
     ):Promise<{
-        deviceName:string | null;
+        deviceName:string|null;
         userIdentifier:string;
     }> {
         await ensureAuthSchema(db)
@@ -1211,8 +1211,8 @@ function buildSessionToken ():string {
 }
 
 function parseTransports (
-    value:string | null,
-):AuthenticatorTransportFuture[] | undefined {
+    value:string|null,
+):AuthenticatorTransportFuture[]|undefined {
     if (!value) return undefined
 
     try {
@@ -1226,11 +1226,11 @@ function makeAuthenticatedSessionResponse (
     user:{
         id:string;
         identifier:string;
-        display_name:string | null;
-        login_method:'passkey'|'password' | null;
+        display_name:string|null;
+        login_method:'passkey'|'password'|null;
     },
     expiresAt:number,
-    deviceId:string | null,
+    deviceId:string|null,
 ):SessionResponse {
     return {
         authenticated: true,

@@ -2314,7 +2314,7 @@ describe('Integration tests', () => {
 
                     expect(res.status).toBe(200)
                     const body =
-                    await res.json<{ deviceId:string }[]>()
+                        await res.json<{ deviceId:string }[]>()
                     expect(
                         body.some(
                             d => d.deviceId === deviceId
@@ -2401,7 +2401,7 @@ describe('Integration tests', () => {
                     expect(sessionRes.status).toBe(200)
                     const sessionBody = await sessionRes.json() as {
                         authenticated:boolean;
-                        currentDeviceId?:string | null;
+                        currentDeviceId?:string|null;
                     }
                     expect(sessionBody.authenticated).toBe(true)
                     expect(sessionBody.currentDeviceId).toBe(deviceId)

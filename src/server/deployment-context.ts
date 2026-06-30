@@ -1,4 +1,4 @@
-export type EnvironmentType = 'main' | 'staging' | 'preview' | 'unknown'
+export type EnvironmentType = 'main'|'staging'|'preview'|'unknown'
 
 export type DeploymentContext = {
     branchName:string

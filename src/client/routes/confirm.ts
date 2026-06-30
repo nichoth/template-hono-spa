@@ -9,7 +9,7 @@ import { ELLIPSIS } from '../constants.js'
 
 type SubmissionState = 'idle'|'loading'|'success'|'error'|'missing-code'
 
-function normalizeCodeFromPath (path:string):string | null {
+function normalizeCodeFromPath (path:string):string|null {
     const normalized = path.replace(/\/+$/, '')
     const match = normalized.match(/^\/confirm\/([^/]+)$/)
     if (!match) return null
@@ -21,7 +21,7 @@ function normalizeCodeFromPath (path:string):string | null {
     }
 }
 
-function extractIdentifierFromSearch (search:string):string | null {
+function extractIdentifierFromSearch (search:string):string|null {
     if (!search) return null
     const params = new URLSearchParams(search)
     return params.get('identifier')
@@ -32,9 +32,9 @@ export const ConfirmRoute:FunctionComponent<{
 }> = function ({ state }) {
     const submissionState = useSignal<SubmissionState>('idle')
     const message = useSignal('Preparing your confirmation flow' + ELLIPSIS)
-    const identifier = useSignal<string | null>(null)
-    const errorCode = useSignal<string | null>(null)
-    const bannerRef = useRef<HTMLDivElement | null>(null)
+    const identifier = useSignal<string|null>(null)
+    const errorCode = useSignal<string|null>(null)
+    const bannerRef = useRef<HTMLDivElement|null>(null)
 
     // Banner focus ensures keyboard/screen reader users are notified
     // when the panel updates.

@@ -28,8 +28,8 @@ type PasskeyLoginResult = {
     message:string;
 }
 
-type SignInMethodTarget = Pick<HTMLInputElement, 'name'|'value'> | {
-    getAttribute:(name:string) => string | null;
+type SignInMethodTarget = Pick<HTMLInputElement, 'name'|'value'>|{
+    getAttribute:(name:string) => string|null;
 }
 
 export const UI_ONLY_LOGIN_MESSAGE =
@@ -299,8 +299,8 @@ function isMethodTarget (value:unknown):value is SignInMethodTarget {
 }
 
 function readMethodTarget (target:SignInMethodTarget):{
-    name:string | null;
-    value:string | null;
+    name:string|null;
+    value:string|null;
 } {
     if ('getAttribute' in target) {
         return {
@@ -317,7 +317,7 @@ function readMethodTarget (target:SignInMethodTarget):{
 
 export function resolveSelectedMethod (
     event:Event
-):SignInMethod | null {
+):SignInMethod|null {
     const candidates = [
         event.target,
         ...(typeof event.composedPath === 'function' ? event.composedPath() : []),

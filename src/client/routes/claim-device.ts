@@ -10,7 +10,7 @@ import { type HTTPError } from 'ky'
 import Debug from '@substrate-system/debug'
 const debug = Debug('template:view')
 
-function parseClaimPath (path:string):string | null {
+function parseClaimPath (path:string):string|null {
     const normalized = path.replace(/\/+$/, '')
     const match = normalized.match(/^\/add\/([^/]+)$/)
     if (!match) return null
@@ -26,13 +26,13 @@ export const ClaimDeviceRoute:FunctionComponent<{
 }> = function ({ state }) {
     const code = parseClaimPath(state.route.value)
     const pending = useSignal(false)
-    const errorMsg = useSignal<string | null>(null)
+    const errorMsg = useSignal<string|null>(null)
     const success = useSignal(false)
-    const successDeviceName = useSignal<string | null>(null)
-    const deviceName = useSignal<string | null>(null)
-    const userIdentifier = useSignal<string | null>(null)
+    const successDeviceName = useSignal<string|null>(null)
+    const deviceName = useSignal<string|null>(null)
+    const userIdentifier = useSignal<string|null>(null)
     const infoLoading = useSignal(true)
-    const infoError = useSignal<string | null>(null)
+    const infoError = useSignal<string|null>(null)
 
     useEffect(() => {
         if (!code) {
@@ -69,7 +69,7 @@ export const ClaimDeviceRoute:FunctionComponent<{
                 return
             }
             const data = await res.json() as {
-                deviceName:string | null;
+                deviceName:string|null;
                 userIdentifier:string;
             }
             deviceName.value = data.deviceName

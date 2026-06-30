@@ -1,10 +1,10 @@
 export type SessionExpirationResult = {
-    label: string
-    hint: string | null
-    isFallback: boolean
+    label:string
+    hint:string|null
+    isFallback:boolean
 }
 
-function formatFriendlyDate (date: Date): string {
+function formatFriendlyDate (date:Date):string {
     const year = date.getUTCFullYear()
     const month = String(date.getUTCMonth() + 1).padStart(2, '0')
     const day = String(date.getUTCDate()).padStart(2, '0')
@@ -16,7 +16,7 @@ function formatFriendlyDate (date: Date): string {
     return `${year}-${month}-${day}, ${hour}:${minute}${period}`
 }
 
-function fallback (hint: string): SessionExpirationResult {
+function fallback (hint:string):SessionExpirationResult {
     return {
         label: 'Session Expires not available',
         hint,
@@ -25,8 +25,8 @@ function fallback (hint: string): SessionExpirationResult {
 }
 
 export function formatSessionExpiration (
-    expiresAt: string | null | undefined,
-): SessionExpirationResult {
+    expiresAt:string|null|undefined,
+):SessionExpirationResult {
     if (!expiresAt) {
         return fallback('Session expiration timestamp is unavailable.')
     }

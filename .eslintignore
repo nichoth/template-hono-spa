@@ -1,8 +1,0 @@
-dist/*
-public/*
-test/*.js
-html
-node_modules/*
-coverage/*
-build/*
-*.min.js

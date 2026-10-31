@@ -586,7 +586,9 @@ async function fetchShellHtml (
     }
 
     const response = await c.env.ASSETS.fetch(
-        new Request('http://assets/index.html')
+        // Use the request's own origin: in dev the binding forwards to
+        // the Vite server, which rejects unknown Host headers (403).
+        new Request(new URL('/index.html', c.req.url))
     )
     if (!response.ok) {
         throw new Error('Bundled `index.html` not found in assets.')

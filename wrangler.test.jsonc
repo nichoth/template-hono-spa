@@ -7,7 +7,7 @@
     "nodejs_compat"
   ],
   "assets": {
-    "directory": "./_public/",
+    "directory": "./public/client/",
     "not_found_handling": "none",
     "binding": "ASSETS",
     "run_worker_first": true

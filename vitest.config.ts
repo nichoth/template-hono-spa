@@ -9,7 +9,4 @@ export default defineConfig({
             d1Databases: ['AUTH_DB'],
         },
     })],
-    test: {
-        globalSetup: ['./test/global-setup.ts'],
-    },
 })

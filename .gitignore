@@ -10,7 +10,6 @@ coverage
 .env
 .env*
 public
-_public/index.html
 .wrangler
 .dev.vars
 .claude

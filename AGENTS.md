@@ -19,7 +19,10 @@ Use `@preact/signals` for all client-side application state.
 ## 3. Workflow Commands
 
 - **Install**: `npm install`
-- **Test**: `npm test`
+- **Test**: `npm test` (run `npm run build` first; the test Worker's
+  `ASSETS` serve `public/client/`. Never write build output into
+  `_public/`: it is Vite's `publicDir`, and the dev server serves an
+  `index.html` found there instead of the source one.)
 
 ## 4. Constraints
 

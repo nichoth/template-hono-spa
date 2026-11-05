@@ -1,60 +1,47 @@
-# template-hono-spa Development Guidelines
+# Development Guidelines
 
-## 1. Project Context
+## Project
 
-**Project Goal**: This is a template repo for web application that use Cloudflare
-as the backend, and an SPA architecture for the frontend.
+The repository currently contains a web application starter,
+including authentication. Do not invent product requirements.
+Consult the existing code and clarify consequential scope decisions as needed.
 
-**Tech Stack**: `preact`, `htm` (template literals for the view),
-`@preact/signals` for all client-side state, `Cloudflare` services including D1
-database, Passkeys
+The application uses a Cloudflare Worker and Hono for the backend, with a
+client-rendered Preact SPA. The existing stack includes TypeScript, `htm`,
+`@preact/signals`, Cloudflare D1, and passkeys.
 
-## 2. Coding Standards
+## Working agreements
 
-Write as little code as possible. Any time there is a free Cloudfalre service
-that can accomplish something for use, use that.
+- Keep lines under 80 columns; break lines cleanly.
+- Write as little code as practical. Prefer a free Cloudflare service when it
+  meets the requirement.
+- Do not add dependencies without asking first.
+- Use `@preact/signals` for all client-side application state. Attach functions
+  that modify state to the `State` object, following the existing template.
+- Do not use CSS `border-radius` except for icons or icon buttons.
+- Define all CSS colors as variables in a global color set; do not introduce
+  page-specific or context-specific colors.
+- Follow the existing TypeScript and ESM conventions.
 
-Use `@preact/signals` for all client-side application state.
+## Structure and commands
 
-## 3. Workflow Commands
+- `src/client/` contains the frontend; `src/server/` contains the backend.
+- `tests/` contains tests.
+- Install dependencies with `npm install` and start development with
+  `npm start`.
+- Run `npm run build` before `npm test`: the test Worker's `ASSETS` binding
+  serves `public/client/`. Run `npm run lint` as well.
+- Never write build output into `_public/`. It is Vite's `publicDir`, and an
+  `index.html` there overrides the source document in the dev server.
 
-- **Install**: `npm install`
-- **Test**: `npm test` (run `npm run build` first; the test Worker's
-  `ASSETS` serve `public/client/`. Never write build output into
-  `_public/`: it is Vite's `publicDir`, and the dev server serves an
-  `index.html` found there instead of the source one.)
+## Frontend
 
-## 4. Constraints
+The frontend uses a pattern that separates "views" from state / logic.
+The view code listens for event from the DOM, and then calls a function exposed
+by `src/client/state/index.ts`, a different function within
+`src/client/state/*.ts`. View code (anything that touches the DOM) should
+never set signals directly. IE, there should never be a file that renders
+the DOM and also calls `.set` on a signal.
 
-* Do not add new dependencies without asking first.
-
----
-
-## Project Structure
-
-```text
-src/
-├── client
-├── server
-tests/
-```
-
-* `src/client` has frontend code
-* `src/server` has the backend
-
-## Commands
-
-npm test && npm run lint
-
-## Code Style
-
-TypeScript (ESM): Follow standard conventions
-
-## Recent Changes
-- 051-fix-profile-devices: Added TypeScript 5.x, ESM + Preact, `htm`, `@preact/signals`, `@substrate-system/state`, `ky`, Hono, `@simplewebauthn/server`, `@simplewebauthn/browser`
-- 048-confirm-revoke-device: Added TypeScript (ES2022), ESM + Preact + @preact/signals, htm/preact,
-- 047-revoke-device-logout: Added TypeScript (ES2022) + ESM + Hono (server), Cloudflare Workers, `@simplewebauthn/server`
-
-## Active Technologies
-- TypeScript 5.x, ESM + Preact, `htm`, `@preact/signals`, `@substrate-system/state`, `ky`, Hono, `@simplewebauthn/server`, `@simplewebauthn/browser` (051-fix-profile-devices)
-- Cloudflare D1 auth tables (`users`, `devices`, `sessions`, `device_invitations`) (051-fix-profile-devices)
+The only place in the code that can call `singnal.set` is
+in `src/client/state/index.ts`, or a subfolder of `src/client/state`.

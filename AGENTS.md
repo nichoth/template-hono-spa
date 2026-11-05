@@ -41,7 +41,7 @@ The view code listens for event from the DOM, and then calls a function exposed
 by `src/client/state/index.ts`, a different function within
 `src/client/state/*.ts`. View code (anything that touches the DOM) should
 never set signals directly. IE, there should never be a file that renders
-the DOM and also calls `.set` on a signal.
+the DOM and also sets `.value` on a signal.
 
-The only place in the code that can call `singnal.set` is
+The only place in the code that can assign to `signal.value` is
 in `src/client/state/index.ts`, or a subfolder of `src/client/state`.
